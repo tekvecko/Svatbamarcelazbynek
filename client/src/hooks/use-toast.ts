@@ -131,10 +131,14 @@ const listeners: Array<(state: State) => void> = []
 let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
-    listener(memoryState)
-  })
+  try {
+    memoryState = reducer(memoryState, action)
+    listeners.forEach((listener) => {
+      listener(memoryState)
+    })
+  } catch (error) {
+    console.error('Toast dispatch error:', error)
+  }
 }
 
 type Toast = Omit<ToasterToast, "id">

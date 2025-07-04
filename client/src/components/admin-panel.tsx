@@ -7,7 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { X, Save, Trash2, Check, Settings, Eye, Download } from "lucide-react";
@@ -305,7 +311,10 @@ function AdminPanelContent({
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Moderace fotek</DialogTitle>
+                <DialogTitle>Administrace</DialogTitle>
+                <DialogDescription>
+                  Správa svatebního webu - úprava detailů, moderace fotek a playlistu
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 {pendingPhotos && pendingPhotos.length > 0 ? (

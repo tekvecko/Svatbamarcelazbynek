@@ -52,21 +52,27 @@ export const api = {
   },
 
   uploadPhotos: async (files: FileList): Promise<Photo[]> => {
-    const formData = new FormData();
-    Array.from(files).forEach(file => {
-      formData.append('photos', file);
-    });
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('photos', file);
+      });
 
-    const response = await fetch('/api/photos/upload', {
-      method: 'POST',
-      body: formData,
-    });
+      const response = await fetch('/api/photos/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(`Upload failed: ${errorData.message || response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      throw error;
     }
-
-    return response.json();
   },
 
   togglePhotoLike: async (photoId: number): Promise<{ liked: boolean; likes: number }> => {
