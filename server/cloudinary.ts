@@ -11,12 +11,31 @@ cloudinary.config({
 // Validate configuration
 const validateConfig = () => {
   const config = cloudinary.config();
-  if (!config.api_key || !config.api_secret) {
-    console.warn('⚠️ Cloudinary API credentials not configured. Upload functionality may not work.');
-    console.warn('Please set CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET environment variables.');
+  if (!config.api_key || !config.api_secret || !config.cloud_name) {
+    throw new Error('Cloudinary credentials are not properly configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
   }
+  console.log('✅ Cloudinary configured successfully');
 };
 
 validateConfig();
+
+// Generate signature for secure uploads
+export const generateSignature = (params: Record<string, any>) => {
+  const timestamp = Math.round(Date.now() / 1000);
+  const paramsWithTimestamp = {
+    ...params,
+    timestamp
+  };
+  
+  const signature = cloudinary.utils.api_sign_request(paramsWithTimestamp, process.env.CLOUDINARY_API_SECRET!);
+  
+  return {
+    signature,
+    timestamp,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+    apiKey: process.env.CLOUDINARY_API_KEY!,
+    folder: 'wedding-photos'
+  };
+};
 
 export default cloudinary;

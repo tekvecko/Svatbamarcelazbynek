@@ -190,7 +190,6 @@ export const api = {
         formData.append('timestamp', timestamp.toString());
         formData.append('signature', signature);
         formData.append('folder', folder);
-        formData.append('transformation', 'c_limit,w_2000,h_2000,q_auto');
         
         const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
           method: 'POST',
@@ -198,7 +197,9 @@ export const api = {
         });
         
         if (!uploadResponse.ok) {
-          throw new Error('Failed to upload to Cloudinary');
+          const errorText = await uploadResponse.text();
+          console.error('Cloudinary upload error:', errorText);
+          throw new Error(`Failed to upload to Cloudinary: ${uploadResponse.status} ${errorText}`);
         }
         
         const uploadResult = await uploadResponse.json();

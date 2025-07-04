@@ -76,23 +76,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cloudinary signed upload endpoint
   app.post('/api/upload-signature', async (req, res) => {
     try {
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+      const apiKey = process.env.CLOUDINARY_API_KEY;
+      const apiSecret = process.env.CLOUDINARY_API_SECRET;
+      
+      if (!cloudName || !apiKey || !apiSecret) {
+        return res.status(500).json({ 
+          message: "Cloudinary credentials not configured properly" 
+        });
+      }
+      
       const timestamp = Math.round(new Date().getTime() / 1000);
       const signature = cloudinary.utils.api_sign_request(
         {
           timestamp: timestamp,
           folder: 'wedding-photos',
-          resource_type: 'image',
-          format: 'jpg',
-          transformation: 'c_limit,w_2000,h_2000,q_auto',
         },
-        process.env.CLOUDINARY_API_SECRET!
+        apiSecret
       );
 
       res.json({
         signature,
         timestamp,
-        cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'svatba2025',
-        apiKey: process.env.CLOUDINARY_API_KEY,
+        cloudName,
+        apiKey,
         folder: 'wedding-photos',
       });
     } catch (error) {
