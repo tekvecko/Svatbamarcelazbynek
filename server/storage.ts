@@ -51,6 +51,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePhoto(id: number): Promise<void> {
+    // Get photo to extract Cloudinary public_id
+    const [photo] = await db.select().from(photos).where(eq(photos.id, id));
+    
+    if (photo && photo.filename) {
+      try {
+        // Delete from Cloudinary if it's a Cloudinary image
+        if (!photo.url.includes('unsplash.com')) {
+          const cloudinary = (await import('./cloudinary')).default;
+          await cloudinary.uploader.destroy(photo.filename);
+        }
+      } catch (error) {
+        console.error('Error deleting from Cloudinary:', error);
+      }
+    }
+    
     await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
     await db.delete(photos).where(eq(photos.id, id));
   }

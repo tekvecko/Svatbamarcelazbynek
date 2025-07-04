@@ -5,17 +5,13 @@ import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import cloudinary from "./cloudinary";
 import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema } from "@shared/schema";
 import { z } from "zod";
 
-// Configure multer for file uploads
-const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
+// Configure multer for memory storage (Cloudinary upload)
 const upload = multer({
-  dest: uploadDir,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -36,12 +32,7 @@ function getUserSession(req: any): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve uploaded files
-  app.use('/uploads', (req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    next();
-  });
-  app.use('/uploads', express.static(uploadDir));
+  // Note: Files now served from Cloudinary, no local static serving needed
 
   // Wedding details endpoints
   app.get('/api/wedding-details', async (req, res) => {
@@ -104,17 +95,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadedPhotos = [];
       
       for (const file of files) {
-        const filename = `${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
-        const newPath = path.join(uploadDir, filename);
-        
-        // Move file to permanent location
-        fs.renameSync(file.path, newPath);
+        // Upload to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              resource_type: 'image',
+              tags: ['svatba2025'],
+              transformation: [
+                { quality: 'auto:good' },
+                { fetch_format: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(file.buffer);
+        }) as any;
         
         const photo = await storage.createPhoto({
-          filename,
+          filename: uploadResult.public_id,
           originalName: file.originalname,
-          url: `/uploads/${filename}`,
-          thumbnailUrl: `/uploads/${filename}`, // In production, would generate actual thumbnails
+          url: uploadResult.secure_url,
+          thumbnailUrl: cloudinary.url(uploadResult.public_id, {
+            width: 400,
+            height: 300,
+            crop: 'fill',
+            quality: 'auto:good',
+            fetch_format: 'auto'
+          }),
           approved: true, // Auto-approve for now
         });
         
