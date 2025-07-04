@@ -33,7 +33,7 @@ function getUserSession(req: any): string {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static upload page
-  app.use('/upload', express.static(path.join(__dirname, '../client')));
+  app.use('/upload', express.static(path.join(import.meta.dirname, '../client')));
 
   // Wedding details endpoints
   app.get('/api/wedding-details', async (req, res) => {
