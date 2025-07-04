@@ -95,39 +95,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadedPhotos = [];
       
       for (const file of files) {
-        // Upload to Cloudinary
-        const uploadResult = await new Promise((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              resource_type: 'image',
-              tags: ['svatba2025'],
-              transformation: [
-                { quality: 'auto:good' },
-                { fetch_format: 'auto' }
-              ]
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          ).end(file.buffer);
-        }) as any;
+        try {
+          // Upload to Cloudinary
+          const uploadResult = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                resource_type: 'image',
+                tags: ['svatba2025'],
+                transformation: [
+                  { quality: 'auto:good' },
+                  { fetch_format: 'auto' }
+                ]
+              },
+              (error, result) => {
+                if (error) {
+                  console.error('Cloudinary upload error:', error);
+                  reject(error);
+                } else {
+                  resolve(result);
+                }
+              }
+            ).end(file.buffer);
+          }) as any;
         
         const photo = await storage.createPhoto({
-          filename: uploadResult.public_id,
-          originalName: file.originalname,
-          url: uploadResult.secure_url,
-          thumbnailUrl: cloudinary.url(uploadResult.public_id, {
-            width: 400,
-            height: 300,
-            crop: 'fill',
-            quality: 'auto:good',
-            fetch_format: 'auto'
-          }),
-          approved: true, // Auto-approve for now
-        });
-        
-        uploadedPhotos.push(photo);
+            filename: uploadResult.public_id,
+            originalName: file.originalname,
+            url: uploadResult.secure_url,
+            thumbnailUrl: cloudinary.url(uploadResult.public_id, {
+              width: 400,
+              height: 300,
+              crop: 'fill',
+              quality: 'auto:good',
+              fetch_format: 'auto'
+            }),
+            approved: true, // Auto-approve for now
+          });
+          
+          uploadedPhotos.push(photo);
+        } catch (fileError) {
+          console.error(`Error uploading file ${file.originalname}:`, fileError);
+          // Continue with other files, but log the error
+        }
       }
 
       res.json(uploadedPhotos);
