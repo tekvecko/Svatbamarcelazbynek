@@ -255,6 +255,7 @@ export default function PhotoGallery() {
                         <div className="flex items-center gap-2">
                           <Button
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
                               handleLike(photo.id, e);
                             }}
@@ -297,6 +298,7 @@ export default function PhotoGallery() {
                         <div className="flex gap-1">
                           <Button
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
                               downloadImage(photo.url, photo.originalName, e);
                             }}
@@ -307,6 +309,7 @@ export default function PhotoGallery() {
                           </Button>
                           <Button
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
                               shareImage(photo.url, e);
                             }}
@@ -391,7 +394,11 @@ export default function PhotoGallery() {
                 <h3 className="font-semibold text-lg mb-2">{selectedPhoto?.originalName}</h3>
                 <div className="flex items-center gap-4 mb-4">
                   <Button
-                    onClick={(e) => handleLike(selectedPhoto?.id || 0, e)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleLike(selectedPhoto?.id || 0, e);
+                    }}
                     className={`relative overflow-hidden flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105 ${
                       userLikes.has(selectedPhoto?.id || 0)
                         ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30'
@@ -423,7 +430,11 @@ export default function PhotoGallery() {
                     ))}
                   </Button>
                   <Button
-                    onClick={() => downloadImage(selectedPhoto?.url || '', selectedPhoto?.originalName || '')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      downloadImage(selectedPhoto?.url || '', selectedPhoto?.originalName || '');
+                    }}
                     size="sm"
                     variant="outline"
                     className="rounded-full"
