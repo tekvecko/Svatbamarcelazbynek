@@ -246,19 +246,78 @@ export default function PhotoGallery() {
                     />
                   </div>
                   
-                  {/* Three-dot menu button */}
-                  <div className="absolute top-3 right-3">
-                    <Button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setActiveMenu(activeMenu === photo.id ? null : photo.id);
-                      }}
-                      size="sm"
-                      className="bg-black/50 hover:bg-black/70 backdrop-blur-sm border-0 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                  {/* Overlay controls - visible on hover */}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-between p-4">
+                    {/* Bottom left - Like and Comments buttons */}
+                    <div className="flex gap-2">
+                      {/* Like button */}
+                      <Button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleLike(photo.id, e);
+                        }}
+                        size="sm"
+                        className={`relative overflow-hidden flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 ${
+                          userLikes.has(photo.id) 
+                            ? 'bg-red-500/90 hover:bg-red-600/90 text-white' 
+                            : 'bg-black/60 hover:bg-black/80 text-white'
+                        }`}
+                      >
+                        <Heart 
+                          className={`h-4 w-4 transition-all duration-300 ${
+                            userLikes.has(photo.id) 
+                              ? 'fill-white text-white' 
+                              : 'text-white'
+                          }`} 
+                        />
+                        <span className="text-sm font-medium">{photo.likes}</span>
+                        
+                        {/* Floating hearts animation */}
+                        {likeAnimations.map((animation) => (
+                          <div
+                            key={animation.id}
+                            className="absolute pointer-events-none"
+                            style={{
+                              left: animation.x,
+                              top: animation.y,
+                              transform: 'translate(-50%, -50%)',
+                            }}
+                          >
+                            <Heart className="h-4 w-4 fill-red-500 text-red-500 animate-ping" />
+                          </div>
+                        ))}
+                      </Button>
+
+                      {/* Comments button */}
+                      <Button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openPhoto(index);
+                        }}
+                        size="sm"
+                        className="bg-black/60 hover:bg-black/80 text-white flex items-center gap-2 px-3 py-2 rounded-full"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span className="text-sm font-medium">{photo.commentCount || 0}</span>
+                      </Button>
+                    </div>
+
+                    {/* Top right - Three-dot menu button */}
+                    <div className="absolute top-3 right-3">
+                      <Button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActiveMenu(activeMenu === photo.id ? null : photo.id);
+                        }}
+                        size="sm"
+                        className="bg-black/60 hover:bg-black/80 backdrop-blur-sm border-0 text-white p-2 rounded-full transition-all duration-200"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Menu overlay */}
@@ -343,7 +402,8 @@ export default function PhotoGallery() {
                             e.preventDefault();
                             e.stopPropagation();
                             setActiveMenu(null);
-                            openPhoto(index);
+                            setSelectedPhotoIndex(index);
+                            setIsDialogOpen(true);
                           }}
                           className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-3 px-4 py-3 rounded-xl"
                         >
