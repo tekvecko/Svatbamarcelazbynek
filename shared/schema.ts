@@ -21,6 +21,14 @@ export const photoLikes = pgTable("photo_likes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const photoComments = pgTable("photo_comments", {
+  id: serial("id").primaryKey(),
+  photoId: integer("photo_id").references(() => photos.id).notNull(),
+  author: varchar("author", { length: 255 }).notNull(),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const playlistSongs = pgTable("playlist_songs", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -52,11 +60,19 @@ export const weddingDetails = pgTable("wedding_details", {
 // Relations
 export const photosRelations = relations(photos, ({ many }) => ({
   likes: many(photoLikes),
+  comments: many(photoComments),
 }));
 
 export const photoLikesRelations = relations(photoLikes, ({ one }) => ({
   photo: one(photos, {
     fields: [photoLikes.photoId],
+    references: [photos.id],
+  }),
+}));
+
+export const photoCommentsRelations = relations(photoComments, ({ one }) => ({
+  photo: one(photos, {
+    fields: [photoComments.photoId],
     references: [photos.id],
   }),
 }));
@@ -96,6 +112,7 @@ export const updateWeddingDetailsSchema = insertWeddingDetailsSchema.partial();
 export type Photo = typeof photos.$inferSelect;
 export type InsertPhoto = z.infer<typeof insertPhotoSchema>;
 export type PhotoLike = typeof photoLikes.$inferSelect;
+export type PhotoComment = typeof photoComments.$inferSelect;
 export type PlaylistSong = typeof playlistSongs.$inferSelect;
 export type InsertPlaylistSong = z.infer<typeof insertPlaylistSongSchema>;
 export type WeddingDetails = typeof weddingDetails.$inferSelect;

@@ -1,4 +1,4 @@
-import { photos, photoLikes, playlistSongs, songLikes, weddingDetails, type Photo, type InsertPhoto, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails } from "@shared/schema";
+import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, and } from "drizzle-orm";
 
@@ -12,6 +12,10 @@ export interface IStorage {
   
   // Photo likes
   togglePhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }>;
+  
+  // Photo comments
+  getPhotoComments(photoId: number): Promise<PhotoComment[]>;
+  addPhotoComment(photoId: number, author: string, text: string): Promise<PhotoComment>;
   
   // Playlist operations
   getPlaylistSongs(): Promise<PlaylistSong[]>;
@@ -67,7 +71,21 @@ export class DatabaseStorage implements IStorage {
     }
     
     await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
+    await db.delete(photoComments).where(eq(photoComments.photoId, id));
     await db.delete(photos).where(eq(photos.id, id));
+  }
+
+  async getPhotoComments(photoId: number): Promise<PhotoComment[]> {
+    return await db.select().from(photoComments)
+      .where(eq(photoComments.photoId, photoId))
+      .orderBy(photoComments.createdAt);
+  }
+
+  async addPhotoComment(photoId: number, author: string, text: string): Promise<PhotoComment> {
+    const [comment] = await db.insert(photoComments)
+      .values({ photoId, author, text })
+      .returning();
+    return comment;
   }
 
   async togglePhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }> {

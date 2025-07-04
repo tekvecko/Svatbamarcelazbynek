@@ -181,6 +181,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Photo comments endpoints
+  app.get('/api/photos/:id/comments', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const comments = await storage.getPhotoComments(photoId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post('/api/photos/:id/comments', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const { author, text } = req.body;
+      
+      if (!author || !text) {
+        return res.status(400).json({ message: "Author and text are required" });
+      }
+      
+      const comment = await storage.addPhotoComment(photoId, author.trim(), text.trim());
+      res.json(comment);
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      res.status(500).json({ message: "Failed to add comment" });
+    }
+  });
+
   // Playlist endpoints
   app.get('/api/playlist', async (req, res) => {
     try {

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, type Photo } from "@/lib/api";
+import { api, type Photo, type PhotoComment } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 export function usePhotos(approved?: boolean) {
@@ -90,6 +90,38 @@ export function useApprovePhoto() {
     onError: (error) => {
       toast({
         title: "Chyba při schvalování",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function usePhotoComments(photoId: number) {
+  return useQuery({
+    queryKey: ["/api/photos", photoId, "comments"],
+    queryFn: () => api.getPhotoComments(photoId),
+    enabled: !!photoId,
+  });
+}
+
+export function useAddPhotoComment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ photoId, author, text }: { photoId: number; author: string; text: string }) =>
+      api.addPhotoComment(photoId, author, text),
+    onSuccess: (data, { photoId }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/photos", photoId, "comments"] });
+      toast({
+        title: "Komentář přidán",
+        description: "Váš komentář byl úspěšně přidán",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Chyba při přidávání komentáře",
         description: error.message,
         variant: "destructive",
       });

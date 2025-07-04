@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { usePhotos, useTogglePhotoLike } from "@/hooks/use-photos";
+import { usePhotos, useTogglePhotoLike, usePhotoComments, useAddPhotoComment } from "@/hooks/use-photos";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -9,13 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useToast } from "@/hooks/use-toast";
-
-interface Comment {
-  id: number;
-  text: string;
-  author: string;
-  timestamp: Date;
-}
 
 interface LikeAnimation {
   id: string;
@@ -26,15 +19,18 @@ interface LikeAnimation {
 export default function PhotoGallery() {
   const { data: photos, isLoading } = usePhotos(true);
   const toggleLike = useTogglePhotoLike();
+  const addComment = useAddPhotoComment();
   const { toast } = useToast();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [comments, setComments] = useState<{ [photoId: number]: Comment[] }>({});
   const [newComment, setNewComment] = useState("");
   const [commenterName, setCommenterName] = useState("");
   const [userLikes, setUserLikes] = useState<Set<number>>(new Set());
   const [likeAnimations, setLikeAnimations] = useState<LikeAnimation[]>([]);
   const [showUnlikeDialog, setShowUnlikeDialog] = useState<number | null>(null);
+
+  const selectedPhoto = photos?.[selectedPhotoIndex];
+  const { data: comments = [] } = usePhotoComments(selectedPhoto?.id || 0);
 
   // Load user likes from localStorage on component mount
   useEffect(() => {
@@ -177,21 +173,21 @@ export default function PhotoGallery() {
     }
   };
 
-  const addComment = (photoId: number) => {
+  const handleAddComment = (photoId: number) => {
     if (!newComment.trim() || !commenterName.trim()) return;
     
-    const comment: Comment = {
-      id: Date.now(),
-      text: newComment,
-      author: commenterName,
-      timestamp: new Date()
-    };
-
-    setComments(prev => ({
-      ...prev,
-      [photoId]: [...(prev[photoId] || []), comment]
-    }));
-    setNewComment("");
+    addComment.mutate(
+      { 
+        photoId, 
+        author: commenterName.trim(), 
+        text: newComment.trim() 
+      },
+      {
+        onSuccess: () => {
+          setNewComment("");
+        }
+      }
+    );
   };
 
   const openPhoto = (index: number) => {
@@ -230,7 +226,7 @@ export default function PhotoGallery() {
     );
   }
 
-  const selectedPhoto = photos[selectedPhotoIndex];
+  
 
   return (
     <div className="space-y-8">
@@ -296,7 +292,7 @@ export default function PhotoGallery() {
                           </Button>
                           <div className="flex items-center gap-1 text-white/80">
                             <MessageCircle className="h-4 w-4" />
-                            <span className="text-xs">{comments[photo.id]?.length || 0}</span>
+                            <span className="text-xs">0</span>
                           </div>
                         </div>
                         <div className="flex gap-1">
@@ -330,8 +326,7 @@ export default function PhotoGallery() {
         <div className="text-center mt-6">
           <p className="text-gray-600 dark:text-gray-400">
             {photos.length} {photos.length === 1 ? 'fotka' : photos.length < 5 ? 'fotky' : 'fotek'} • 
-            {' '}{photos.reduce((sum, photo) => sum + photo.likes, 0)} srdíček • 
-            {' '}{Object.values(comments).reduce((sum, photoComments) => sum + photoComments.length, 0)} komentářů
+            {' '}{photos.reduce((sum, photo) => sum + photo.likes, 0)} srdíček
           </p>
         </div>
       </div>
@@ -438,18 +433,18 @@ export default function PhotoGallery() {
               <div className="flex-1 flex flex-col">
                 <div className="p-4 border-b">
                   <h4 className="font-medium mb-3">
-                    Komentáře ({comments[selectedPhoto?.id || 0]?.length || 0})
+                    Komentáře ({comments.length})
                   </h4>
                 </div>
                 
                 {/* Comments list */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {comments[selectedPhoto?.id || 0]?.map((comment) => (
+                  {comments.map((comment) => (
                     <div key={comment.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm">{comment.author}</span>
                         <span className="text-xs text-gray-500">
-                          {comment.timestamp.toLocaleTimeString('cs-CZ', { 
+                          {new Date(comment.createdAt).toLocaleTimeString('cs-CZ', { 
                             hour: '2-digit', 
                             minute: '2-digit' 
                           })}
@@ -459,7 +454,7 @@ export default function PhotoGallery() {
                     </div>
                   ))}
                   
-                  {(!comments[selectedPhoto?.id || 0] || comments[selectedPhoto?.id || 0].length === 0) && (
+                  {comments.length === 0 && (
                     <p className="text-gray-500 text-center py-8">
                       Zatím žádné komentáře. Buďte první!
                     </p>
@@ -484,10 +479,10 @@ export default function PhotoGallery() {
                         rows={2}
                       />
                       <Button
-                        onClick={() => addComment(selectedPhoto?.id || 0)}
+                        onClick={() => handleAddComment(selectedPhoto?.id || 0)}
                         size="sm"
                         className="self-end"
-                        disabled={!newComment.trim() || !commenterName.trim()}
+                        disabled={!newComment.trim() || !commenterName.trim() || addComment.isPending}
                       >
                         <Send className="h-4 w-4" />
                       </Button>
