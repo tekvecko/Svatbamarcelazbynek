@@ -166,16 +166,72 @@ export const api = {
     if (IS_STATIC) {
       throw new Error("Upload not available in static mode");
     }
-    const formData = new FormData();
-    Array.from(files).forEach((file) => {
-      formData.append("photos", file);
-    });
 
-    const response = await fetch(`${API_BASE_URL}/api/photos/upload`, {
-      method: "POST",
-      body: formData,
-    });
-    return handleResponse<Photo[]>(response);
+    const uploadedPhotos = [];
+    
+    for (const file of Array.from(files)) {
+      try {
+        // Get signed upload parameters
+        const signatureResponse = await fetch(`${API_BASE_URL}/api/upload-signature`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (!signatureResponse.ok) {
+          throw new Error('Failed to get upload signature');
+        }
+        
+        const { signature, timestamp, cloudName, apiKey, folder } = await signatureResponse.json();
+        
+        // Upload directly to Cloudinary
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', apiKey);
+        formData.append('timestamp', timestamp.toString());
+        formData.append('signature', signature);
+        formData.append('folder', folder);
+        formData.append('transformation', 'c_limit,w_2000,h_2000,q_auto');
+        
+        const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload to Cloudinary');
+        }
+        
+        const uploadResult = await uploadResponse.json();
+        
+        // Save photo metadata to database
+        const photoData = {
+          filename: uploadResult.public_id,
+          originalName: file.name,
+          url: uploadResult.secure_url,
+          thumbnailUrl: uploadResult.secure_url.replace('/upload/', '/upload/c_thumb,w_300,h_300/'),
+          approved: false, // Requires approval
+        };
+        
+        const saveResponse = await fetch(`${API_BASE_URL}/api/photos/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(photoData),
+        });
+        
+        if (!saveResponse.ok) {
+          throw new Error('Failed to save photo metadata');
+        }
+        
+        const savedPhoto = await saveResponse.json();
+        uploadedPhotos.push(savedPhoto);
+        
+      } catch (error) {
+        console.error('Error uploading file:', file.name, error);
+        throw error;
+      }
+    }
+    
+    return uploadedPhotos;
   },
 
   async togglePhotoLike(photoId: number): Promise<{ liked: boolean; likes: number }> {
