@@ -1,4 +1,8 @@
-import { apiRequest } from "./queryClient";
+import { queryOptions } from "@tanstack/react-query";
+import { z } from "zod";
+
+const API_BASE_URL = "";
+const IS_STATIC = !import.meta.env.DEV; // Use static mode in production
 
 export interface Photo {
   id: number;
@@ -14,11 +18,9 @@ export interface Photo {
 export interface PlaylistSong {
   id: number;
   title: string;
-  artist?: string;
-  suggestion: string;
+  artist: string;
   likes: number;
-  approved: boolean;
-  submittedAt: string;
+  addedAt: string;
 }
 
 export interface WeddingDetails {
@@ -26,85 +28,271 @@ export interface WeddingDetails {
   coupleNames: string;
   weddingDate: string;
   venue: string;
-  venueAddress?: string;
+  venueAddress: string;
   allowUploads: boolean;
   moderateUploads: boolean;
-  updatedAt: string;
+}
+
+// Static data for when API is not available
+const STATIC_WEDDING_DETAILS: WeddingDetails = {
+  id: 1,
+  coupleNames: "Marcela & Zbyněk",
+  weddingDate: "2025-10-11T14:00:00",
+  venue: "Stará pošta, Kovalovice",
+  venueAddress: "Kovalovice 109, 664 07 Kovalovice",
+  allowUploads: false, // Disable uploads in static mode
+  moderateUploads: false,
+};
+
+const STATIC_PHOTOS: Photo[] = [
+  {
+    id: 1,
+    filename: "wedding-ceremony-1.jpg",
+    originalName: "Svatební obřad - výměna prstenů",
+    url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop",
+    thumbnailUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop",
+    likes: 0,
+    approved: true,
+    uploadedAt: new Date().toISOString()
+  },
+  {
+    id: 2,
+    filename: "wedding-kiss-2.jpg", 
+    originalName: "První polibek jako manželé",
+    url: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop",
+    thumbnailUrl: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=300&fit=crop",
+    likes: 0,
+    approved: true,
+    uploadedAt: new Date().toISOString()
+  },
+  {
+    id: 3,
+    filename: "wedding-rings-3.jpg",
+    originalName: "Svatební prsteny na polštářku",
+    url: "https://images.unsplash.com/photo-1594241483888-76ad31b7e17a?w=800&h=600&fit=crop",
+    thumbnailUrl: "https://images.unsplash.com/photo-1594241483888-76ad31b7e17a?w=400&h=300&fit=crop",
+    likes: 0,
+    approved: true,
+    uploadedAt: new Date().toISOString()
+  },
+  {
+    id: 4,
+    filename: "wedding-dance-4.jpg",
+    originalName: "První tanec",
+    url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop",
+    thumbnailUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=300&fit=crop",
+    likes: 0,
+    approved: true,
+    uploadedAt: new Date().toISOString()
+  },
+  {
+    id: 5,
+    filename: "wedding-bouquet-5.jpg",
+    originalName: "Nevěstin pugét",
+    url: "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&h=600&fit=crop",
+    thumbnailUrl: "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=400&h=300&fit=crop",
+    likes: 0,
+    approved: true,
+    uploadedAt: new Date().toISOString()
+  }
+];
+
+// LocalStorage helpers
+const getLocalStorageData = <T>(key: string, defaultValue: T): T => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+const setLocalStorageData = <T>(key: string, data: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error('Failed to save to localStorage:', error);
+  }
+};
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API Error: ${response.status} - ${errorText}`);
+  }
+  return response.json();
 }
 
 export const api = {
-  // Wedding details
-  getWeddingDetails: async (): Promise<WeddingDetails> => {
-    const response = await apiRequest("GET", "/api/wedding-details");
-    return response.json();
-  },
-
-  updateWeddingDetails: async (details: Partial<WeddingDetails>): Promise<WeddingDetails> => {
-    const response = await apiRequest("PATCH", "/api/wedding-details", details);
-    return response.json();
-  },
-
-  // Photos
-  getPhotos: async (approved?: boolean): Promise<Photo[]> => {
-    const params = approved !== undefined ? `?approved=${approved}` : '';
-    const response = await apiRequest("GET", `/api/photos${params}`);
-    return response.json();
-  },
-
-  uploadPhotos: async (files: FileList): Promise<Photo[]> => {
-    try {
-      const formData = new FormData();
-      Array.from(files).forEach(file => {
-        formData.append('photos', file);
-      });
-
-      const response = await fetch('/api/photos/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(`Upload failed: ${errorData.message || response.statusText}`);
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error('Photo upload error:', error);
-      throw error;
+  async getWeddingDetails(): Promise<WeddingDetails> {
+    if (IS_STATIC) {
+      return STATIC_WEDDING_DETAILS;
     }
+    const response = await fetch(`${API_BASE_URL}/api/wedding-details`);
+    return handleResponse<WeddingDetails>(response);
   },
 
-  togglePhotoLike: async (photoId: number): Promise<{ liked: boolean; likes: number }> => {
-    const response = await apiRequest("POST", `/api/photos/${photoId}/like`);
-    return response.json();
+  async updateWeddingDetails(details: Partial<WeddingDetails>): Promise<WeddingDetails> {
+    if (IS_STATIC) {
+      throw new Error("Updates not available in static mode");
+    }
+    const response = await fetch(`${API_BASE_URL}/api/wedding-details`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(details),
+    });
+    return handleResponse<WeddingDetails>(response);
   },
 
-  deletePhoto: async (photoId: number): Promise<void> => {
-    await apiRequest("DELETE", `/api/photos/${photoId}`);
+  async getPhotos(approved?: boolean): Promise<Photo[]> {
+    if (IS_STATIC) {
+      const storedPhotos = getLocalStorageData('wedding-photos', STATIC_PHOTOS);
+      const storedLikes = getLocalStorageData('photo-likes', {} as Record<number, number>);
+
+      return storedPhotos.map(photo => ({
+        ...photo,
+        likes: storedLikes[photo.id] || 0
+      }));
+    }
+    const params = new URLSearchParams();
+    if (approved !== undefined) {
+      params.append("approved", String(approved));
+    }
+    const response = await fetch(`${API_BASE_URL}/api/photos?${params}`);
+    return handleResponse<Photo[]>(response);
   },
 
-  approvePhoto: async (photoId: number): Promise<void> => {
-    await apiRequest("PATCH", `/api/photos/${photoId}/approve`);
+  async uploadPhotos(files: FileList): Promise<Photo[]> {
+    if (IS_STATIC) {
+      throw new Error("Upload not available in static mode");
+    }
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append("photos", file);
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/photos/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    return handleResponse<Photo[]>(response);
   },
 
-  // Playlist
-  getPlaylist: async (): Promise<PlaylistSong[]> => {
-    const response = await apiRequest("GET", "/api/playlist");
-    return response.json();
+  async togglePhotoLike(photoId: number): Promise<{ liked: boolean; likes: number }> {
+    if (IS_STATIC) {
+      const userLikes = getLocalStorageData(`user-likes`, {} as Record<number, boolean>);
+      const photoLikes = getLocalStorageData('photo-likes', {} as Record<number, number>);
+
+      const isLiked = userLikes[photoId] || false;
+      const newLikedState = !isLiked;
+      const currentLikes = photoLikes[photoId] || 0;
+      const newLikes = newLikedState ? currentLikes + 1 : Math.max(0, currentLikes - 1);
+
+      userLikes[photoId] = newLikedState;
+      photoLikes[photoId] = newLikes;
+
+      setLocalStorageData('user-likes', userLikes);
+      setLocalStorageData('photo-likes', photoLikes);
+
+      return { liked: newLikedState, likes: newLikes };
+    }
+    const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/like`, {
+      method: "POST",
+    });
+    return handleResponse<{ liked: boolean; likes: number }>(response);
   },
 
-  addSong: async (song: { suggestion: string; title?: string; artist?: string }): Promise<PlaylistSong> => {
-    const response = await apiRequest("POST", "/api/playlist", song);
-    return response.json();
+  async deletePhoto(photoId: number): Promise<void> {
+    if (IS_STATIC) {
+      throw new Error("Delete not available in static mode");
+    }
+    const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}`, {
+      method: "DELETE",
+    });
+    await handleResponse<void>(response);
   },
 
-  toggleSongLike: async (songId: number): Promise<{ liked: boolean; likes: number }> => {
-    const response = await apiRequest("POST", `/api/playlist/${songId}/like`);
-    return response.json();
+  async approvePhoto(photoId: number): Promise<void> {
+    if (IS_STATIC) {
+      throw new Error("Approve not available in static mode");
+    }
+    const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/approve`, {
+      method: "PATCH",
+    });
+    await handleResponse<void>(response);
   },
 
-  deleteSong: async (songId: number): Promise<void> => {
-    await apiRequest("DELETE", `/api/playlist/${songId}`);
+  async getPlaylistSongs(): Promise<PlaylistSong[]> {
+    if (IS_STATIC) {
+      const storedSongs = getLocalStorageData('playlist-songs', [] as PlaylistSong[]);
+      const storedLikes = getLocalStorageData('song-likes', {} as Record<number, number>);
+
+      return storedSongs.map(song => ({
+        ...song,
+        likes: storedLikes[song.id] || 0
+      }));
+    }
+    const response = await fetch(`${API_BASE_URL}/api/playlist`);
+    return handleResponse<PlaylistSong[]>(response);
+  },
+
+  async addPlaylistSong(song: { title: string; artist: string }): Promise<PlaylistSong> {
+    if (IS_STATIC) {
+      const storedSongs = getLocalStorageData('playlist-songs', [] as PlaylistSong[]);
+      const newSong: PlaylistSong = {
+        id: Date.now(),
+        title: song.title,
+        artist: song.artist,
+        likes: 0,
+        addedAt: new Date().toISOString()
+      };
+
+      const updatedSongs = [...storedSongs, newSong];
+      setLocalStorageData('playlist-songs', updatedSongs);
+      return newSong;
+    }
+    const response = await fetch(`${API_BASE_URL}/api/playlist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(song),
+    });
+    return handleResponse<PlaylistSong>(response);
+  },
+
+  async toggleSongLike(songId: number): Promise<{ liked: boolean; likes: number }> {
+    if (IS_STATIC) {
+      const userLikes = getLocalStorageData(`user-song-likes`, {} as Record<number, boolean>);
+      const songLikes = getLocalStorageData('song-likes', {} as Record<number, number>);
+
+      const isLiked = userLikes[songId] || false;
+      const newLikedState = !isLiked;
+      const currentLikes = songLikes[songId] || 0;
+      const newLikes = newLikedState ? currentLikes + 1 : Math.max(0, currentLikes - 1);
+
+      userLikes[songId] = newLikedState;
+      songLikes[songId] = newLikes;
+
+      setLocalStorageData('user-song-likes', userLikes);
+      setLocalStorageData('song-likes', songLikes);
+
+      return { liked: newLikedState, likes: newLikes };
+    }
+    const response = await fetch(`${API_BASE_URL}/api/playlist/${songId}/like`, {
+      method: "POST",
+    });
+    return handleResponse<{ liked: boolean; likes: number }>(response);
+  },
+
+  async deletePlaylistSong(songId: number): Promise<void> {
+    if (IS_STATIC) {
+      const storedSongs = getLocalStorageData('playlist-songs', [] as PlaylistSong[]);
+      const updatedSongs = storedSongs.filter(song => song.id !== songId);
+      setLocalStorageData('playlist-songs', updatedSongs);
+      return;
+    }
+    const response = await fetch(`${API_BASE_URL}/api/playlist/${songId}`, {
+      method: "DELETE",
+    });
+    await handleResponse<void>(response);
   },
 };

@@ -19,6 +19,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useToast } from "@/hooks/use-toast";
 import { X, Save, Trash2, Check, Settings, Eye, Download } from "lucide-react";
 
+const IS_STATIC = !import.meta.env.DEV;
+
 interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -243,6 +245,23 @@ function AdminPanelContent({
 
   return (
     <div className="space-y-6">
+      {/* Static Mode Notice */}
+      {IS_STATIC && (
+        <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+              <AlertCircle className="h-5 w-5" />
+              <p className="text-sm font-medium">
+                Statický režim - některé funkce jsou omezené
+              </p>
+            </div>
+            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+              Nahrávání fotek a úpravy nejsou dostupné ve statickém nasazení
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Wedding Details */}
       <Card>
         <CardHeader>
@@ -289,10 +308,10 @@ function AdminPanelContent({
           <Button 
             onClick={handleUpdateDetails}
             className="w-full bg-success hover:bg-success/90 text-white"
-            disabled={updateWeddingDetails.isPending}
+            disabled={updateWeddingDetails.isPending || IS_STATIC}
           >
             <Save className="h-4 w-4 mr-2" />
-            {updateWeddingDetails.isPending ? "Ukládám..." : "Aktualizovat"}
+            {updateWeddingDetails.isPending ? "Ukládám..." : IS_STATIC ? "Nedostupné" : "Aktualizovat"}
           </Button>
         </CardContent>
       </Card>
@@ -305,7 +324,7 @@ function AdminPanelContent({
         <CardContent className="space-y-3">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="w-full text-sm">
+              <Button variant="outline" className="w-full text-sm" disabled={IS_STATIC}>
                 <Eye className="h-4 w-4 mr-2" />
                 Moderovat fotky
               </Button>
@@ -333,6 +352,7 @@ function AdminPanelContent({
                           onClick={() => handleApprovePhoto(photo.id)}
                           size="sm"
                           className="bg-success hover:bg-success/90 text-white"
+                          disabled={IS_STATIC}
                         >
                           <Check className="h-4 w-4" />
                         </Button>
@@ -340,6 +360,7 @@ function AdminPanelContent({
                           onClick={() => handleDeletePhoto(photo.id)}
                           size="sm"
                           variant="destructive"
+                          disabled={IS_STATIC}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -380,6 +401,7 @@ function AdminPanelContent({
               id="allowUploads"
               checked={weddingForm.allowUploads}
               onCheckedChange={(checked) => setWeddingForm(prev => ({ ...prev, allowUploads: checked }))}
+              disabled={IS_STATIC}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -388,6 +410,7 @@ function AdminPanelContent({
               id="moderateUploads"
               checked={weddingForm.moderateUploads}
               onCheckedChange={(checked) => setWeddingForm(prev => ({ ...prev, moderateUploads: checked }))}
+              disabled={IS_STATIC}
             />
           </div>
         </CardContent>
