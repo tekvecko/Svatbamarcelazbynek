@@ -32,7 +32,8 @@ function getUserSession(req: any): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Note: Files now served from Cloudinary, no local static serving needed
+  // Serve static upload page
+  app.use('/upload', express.static(path.join(__dirname, '../client')));
 
   // Wedding details endpoints
   app.get('/api/wedding-details', async (req, res) => {
