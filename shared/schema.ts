@@ -114,12 +114,19 @@ export const insertPlaylistSongSchema = createInsertSchema(playlistSongs).omit({
   submittedAt: true,
 });
 
-export const insertWeddingDetailsSchema = createInsertSchema(weddingDetails).omit({
+export const insertWeddingDetailsSchema = createInsertSchema(weddingDetails, {
+  weddingDate: z.coerce.date(),
+}).omit({
   id: true,
   updatedAt: true,
 });
 
-export const updateWeddingDetailsSchema = insertWeddingDetailsSchema.partial();
+export const updateWeddingDetailsSchema = createInsertSchema(weddingDetails, {
+  weddingDate: z.coerce.date().optional(),
+}).omit({
+  id: true,
+  updatedAt: true,
+}).partial();
 
 export const insertSiteMetadataSchema = createInsertSchema(siteMetadata).omit({
   id: true,
