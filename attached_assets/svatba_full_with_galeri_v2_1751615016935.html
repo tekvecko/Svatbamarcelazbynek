@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💍 Svatba Marcela & Zbyněk – 2025</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.css" />
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+      theme: {
+        extend: {
+          colors: { primary: '#8b5cf6' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <header class="bg-cover bg-center h-64 flex flex-col justify-center items-center text-white shadow" style="background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1350&q=80');">
+    <h1 class="text-5xl font-bold">Marcela & Zbyněk</h1>
+    <p class="text-lg mt-2">11. října 2025 – Stará pošta, Kovalovice</p>
+  </header>
+
+  <nav class="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow text-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-center gap-6">
+      <a href="#odpocet" class="text-primary hover:underline">Odpočet</a>
+      <a href="#program" class="text-primary hover:underline">Program</a>
+      <a href="#mapa" class="text-primary hover:underline">Mapa</a>
+      <a href="#galerie" class="text-primary hover:underline">Galerie</a>
+      <a href="#partylist" class="text-primary hover:underline">Playlist</a>
+      <a href="#kontakt" class="text-primary hover:underline">Kontakt</a>
+    </div>
+  </nav>
+
+  <section id="odpocet" class="text-center p-10 bg-purple-50 dark:bg-gray-800">
+    <h2 class="text-2xl font-bold mb-4">⏳ Do svatby zbývá:</h2>
+    <div id="countdown" class="text-3xl font-mono text-primary"></div>
+  </section>
+
+  <section id="program" class="max-w-3xl mx-auto p-6 my-6 bg-white dark:bg-gray-800 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4">📅 Program</h2>
+    <ul class="list-disc pl-6 space-y-2">
+      <li><strong>13:00</strong> – Příjezd hostů</li>
+      <li><strong>14:00</strong> – Obřad</li>
+      <li><strong>15:00</strong> – Focení</li>
+      <li><strong>16:00</strong> – Raut a zábava</li>
+    </ul>
+  </section>
+
+  <section id="mapa" class="max-w-4xl mx-auto p-6 my-6 bg-white dark:bg-gray-800 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4">🗺️ Mapa</h2>
+    <iframe class="w-full h-80 rounded" src="https://maps.google.com/maps?q=Kovalovice%20109&t=&z=15&ie=UTF8&iwloc=&output=embed" loading="lazy"></iframe>
+  </section>
+
+  <section id="galerie" class="max-w-5xl mx-auto p-6 my-6 bg-white dark:bg-gray-800 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4 text-center">📸 Galerie</h2>
+    <div class="mb-8 max-w-md mx-auto bg-gray-50 dark:bg-gray-700 p-4 rounded shadow">
+      <input id="fileInput" type="file" accept="image/*" multiple class="block mb-4 w-full">
+      <button onclick="uploadImages()" class="bg-primary text-white px-4 py-2 rounded hover:bg-purple-700">Nahrát obrázky</button>
+      <p id="uploadStatus" class="text-sm mt-2 text-center text-gray-600 dark:text-gray-300"></p>
+    </div>
+    <div id="gallery" class="gallery grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+  </section>
+
+  <section id="partylist" class="max-w-3xl mx-auto p-6 my-6 bg-white dark:bg-gray-800 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4">🎵 Party Playlist</h2>
+    <p>Napište nám skladbu, kterou chcete slyšet!</p>
+    <input id="partyInput" type="text" placeholder="Název skladby..." class="mt-2 p-2 border w-full rounded bg-gray-50 dark:bg-gray-700">
+    <button onclick="addSong()" class="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-purple-700">Přidat</button>
+    <ul id="partyList" class="mt-4 list-disc pl-5 space-y-1 text-sm"></ul>
+  </section>
+
+  <section id="kontakt" class="max-w-3xl mx-auto p-6 my-6 bg-white dark:bg-gray-800 rounded shadow text-center">
+    <h2 class="text-2xl font-bold mb-4">📞 Kontakt</h2>
+    <p>Dotazy a potvrzení účasti posílejte na <a href="mailto:svatba2025@example.com" class="text-primary underline">svatba2025@example.com</a></p>
+  </section>
+
+  <footer class="text-center text-sm py-6 bg-white dark:bg-gray-800 border-t">
+    &copy; 2025 Marcela & Zbyněk – S láskou
+  </footer>
+
+  <!-- Lightbox + funkce -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.js"></script>
+  <script>
+    const CLOUD_NAME = "svatba2025";
+    const UPLOAD_PRESET = "svatba2025_unsigned";
+    const TAG = "svatba2025";
+
+    const gallery = document.getElementById("gallery");
+    const status = document.getElementById("uploadStatus");
+
+    async function uploadImages() {
+      const files = document.getElementById("fileInput").files;
+      if (!files.length) return alert("Vyberte soubory");
+      status.textContent = `Nahrávám ${files.length} obrázků...`;
+      for (let file of files) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", UPLOAD_PRESET);
+        formData.append("tags", TAG);
+        try {
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+            method: "POST", body: formData });
+          const data = await res.json();
+          addImageToGallery(data);
+        } catch (err) {
+          console.error(`Chyba při nahrávání:`, err);
+        }
+      }
+      status.textContent = "✅ Vše nahráno!";
+    }
+
+    function addImageToGallery(img) {
+      const fullURL = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${img.public_id}.${img.format}`;
+      const thumbURL = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/w_600/${img.public_id}.${img.format}`;
+      const wrapper = document.createElement("a");
+      wrapper.href = fullURL;
+      wrapper.setAttribute("data-caption", img.original_filename || img.public_id);
+      wrapper.setAttribute("download", "");
+      const el = document.createElement("img");
+      el.src = thumbURL;
+      el.alt = img.original_filename || img.public_id;
+      el.className = "rounded shadow hover:scale-105 transition-transform duration-200";
+      wrapper.appendChild(el);
+      gallery.insertBefore(wrapper, gallery.firstChild);
+      baguetteBox.run('.gallery');
+    }
+
+    async function loadGallery() {
+      gallery.innerHTML = "⏳ Načítání fotek...";
+      try {
+        const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${TAG}.json`);
+        const data = await res.json();
+        gallery.innerHTML = "";
+        data.resources.reverse().forEach(addImageToGallery);
+        if (!data.resources.length) gallery.textContent = "Zatím žádné fotky.";
+      } catch (err) {
+        gallery.textContent = "❌ Nelze načíst galerii.";
+        console.error(err);
+      }
+    }
+
+    function updateCountdown() {
+      const target = new Date("2025-10-11T12:00:00").getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+      if (diff < 0) return countdown.textContent = "🎉 Je to tady!";
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      document.getElementById("countdown").textContent = `${d} dní ${h}h ${m}m ${s}s`;
+    }
+
+    function addSong() {
+      const input = document.getElementById("partyInput");
+      const list = document.getElementById("partyList");
+      if (!input.value.trim()) return;
+      const li = document.createElement("li");
+      li.textContent = input.value;
+      list.appendChild(li);
+      input.value = "";
+    }
+
+    setInterval(updateCountdown, 1000);
+    loadGallery();
+  </script>
+</body>
+</html>
