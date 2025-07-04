@@ -1,4 +1,4 @@
-import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails } from "@shared/schema";
+import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, and } from "drizzle-orm";
 
@@ -27,6 +27,13 @@ export interface IStorage {
   getWeddingDetails(): Promise<WeddingDetails | undefined>;
   updateWeddingDetails(details: UpdateWeddingDetails): Promise<WeddingDetails>;
   createWeddingDetails(details: InsertWeddingDetails): Promise<WeddingDetails>;
+
+  // Site metadata
+  getSiteMetadata(key?: string): Promise<SiteMetadata[]>;
+  getSiteMetadataByKey(key: string): Promise<SiteMetadata | undefined>;
+  setSiteMetadata(metadata: InsertSiteMetadata): Promise<SiteMetadata>;
+  updateSiteMetadata(key: string, updates: UpdateSiteMetadata): Promise<SiteMetadata>;
+  deleteSiteMetadata(key: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -181,6 +188,58 @@ export class DatabaseStorage implements IStorage {
   async createWeddingDetails(details: InsertWeddingDetails): Promise<WeddingDetails> {
     const [newDetails] = await db.insert(weddingDetails).values(details).returning();
     return newDetails;
+  }
+
+  // Site metadata methods
+  async getSiteMetadata(key?: string): Promise<SiteMetadata[]> {
+    let query = db.select().from(siteMetadata);
+    
+    if (key) {
+      query = query.where(eq(siteMetadata.metaKey, key)) as any;
+    }
+    
+    return await query;
+  }
+
+  async getSiteMetadataByKey(key: string): Promise<SiteMetadata | undefined> {
+    const [metadata] = await db.select().from(siteMetadata).where(eq(siteMetadata.metaKey, key));
+    return metadata;
+  }
+
+  async setSiteMetadata(metadata: InsertSiteMetadata): Promise<SiteMetadata> {
+    const existing = await this.getSiteMetadataByKey(metadata.metaKey);
+    
+    if (existing) {
+      // Update existing metadata
+      const [updated] = await db
+        .update(siteMetadata)
+        .set({ ...metadata, updatedAt: new Date() })
+        .where(eq(siteMetadata.metaKey, metadata.metaKey))
+        .returning();
+      return updated;
+    } else {
+      // Create new metadata
+      const [newMetadata] = await db.insert(siteMetadata).values(metadata).returning();
+      return newMetadata;
+    }
+  }
+
+  async updateSiteMetadata(key: string, updates: UpdateSiteMetadata): Promise<SiteMetadata> {
+    const [updated] = await db
+      .update(siteMetadata)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(siteMetadata.metaKey, key))
+      .returning();
+    
+    if (!updated) {
+      throw new Error(`Site metadata with key '${key}' not found`);
+    }
+    
+    return updated;
+  }
+
+  async deleteSiteMetadata(key: string): Promise<void> {
+    await db.delete(siteMetadata).where(eq(siteMetadata.metaKey, key));
   }
 }
 

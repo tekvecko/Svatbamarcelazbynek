@@ -6,7 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import cloudinary from "./cloudinary";
-import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema } from "@shared/schema";
+import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema, insertSiteMetadataSchema, updateSiteMetadataSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Configure multer for memory storage (Cloudinary upload)
@@ -257,6 +257,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting song:", error);
       res.status(500).json({ message: "Failed to delete song" });
+    }
+  });
+
+  // Site metadata endpoints
+  app.get('/api/metadata', async (req, res) => {
+    try {
+      const key = req.query.key as string;
+      const metadata = await storage.getSiteMetadata(key);
+      res.json(metadata);
+    } catch (error) {
+      console.error("Error fetching metadata:", error);
+      res.status(500).json({ message: "Failed to fetch metadata" });
+    }
+  });
+
+  app.get('/api/metadata/:key', async (req, res) => {
+    try {
+      const key = req.params.key;
+      const metadata = await storage.getSiteMetadataByKey(key);
+      if (!metadata) {
+        return res.status(404).json({ message: "Metadata not found" });
+      }
+      res.json(metadata);
+    } catch (error) {
+      console.error("Error fetching metadata:", error);
+      res.status(500).json({ message: "Failed to fetch metadata" });
+    }
+  });
+
+  app.post('/api/metadata', async (req, res) => {
+    try {
+      const validation = insertSiteMetadataSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid data", errors: validation.error.errors });
+      }
+
+      const metadata = await storage.setSiteMetadata(validation.data);
+      res.json(metadata);
+    } catch (error) {
+      console.error("Error setting metadata:", error);
+      res.status(500).json({ message: "Failed to set metadata" });
+    }
+  });
+
+  app.patch('/api/metadata/:key', async (req, res) => {
+    try {
+      const key = req.params.key;
+      const validation = updateSiteMetadataSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid data", errors: validation.error.errors });
+      }
+
+      const metadata = await storage.updateSiteMetadata(key, validation.data);
+      res.json(metadata);
+    } catch (error) {
+      console.error("Error updating metadata:", error);
+      res.status(500).json({ message: "Failed to update metadata" });
+    }
+  });
+
+  app.delete('/api/metadata/:key', async (req, res) => {
+    try {
+      const key = req.params.key;
+      await storage.deleteSiteMetadata(key);
+      res.json({ message: "Metadata deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting metadata:", error);
+      res.status(500).json({ message: "Failed to delete metadata" });
     }
   });
 

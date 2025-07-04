@@ -57,6 +57,19 @@ export const weddingDetails = pgTable("wedding_details", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Metadata storage for dynamic content
+export const siteMetadata = pgTable("site_metadata", {
+  id: serial("id").primaryKey(),
+  metaKey: varchar("meta_key", { length: 255 }).notNull().unique(),
+  metaValue: text("meta_value"),
+  metaType: varchar("meta_type", { length: 50 }).default("string").notNull(), // string, number, boolean, json
+  description: text("description"),
+  category: varchar("category", { length: 100 }).default("general").notNull(),
+  isEditable: boolean("is_editable").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const photosRelations = relations(photos, ({ many }) => ({
   likes: many(photoLikes),
@@ -108,6 +121,14 @@ export const insertWeddingDetailsSchema = createInsertSchema(weddingDetails).omi
 
 export const updateWeddingDetailsSchema = insertWeddingDetailsSchema.partial();
 
+export const insertSiteMetadataSchema = createInsertSchema(siteMetadata).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateSiteMetadataSchema = insertSiteMetadataSchema.partial();
+
 // Types
 export type Photo = typeof photos.$inferSelect;
 export type InsertPhoto = z.infer<typeof insertPhotoSchema>;
@@ -118,3 +139,6 @@ export type InsertPlaylistSong = z.infer<typeof insertPlaylistSongSchema>;
 export type WeddingDetails = typeof weddingDetails.$inferSelect;
 export type InsertWeddingDetails = z.infer<typeof insertWeddingDetailsSchema>;
 export type UpdateWeddingDetails = z.infer<typeof updateWeddingDetailsSchema>;
+export type SiteMetadata = typeof siteMetadata.$inferSelect;
+export type InsertSiteMetadata = z.infer<typeof insertSiteMetadataSchema>;
+export type UpdateSiteMetadata = z.infer<typeof updateSiteMetadataSchema>;
