@@ -380,6 +380,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cloudinary photos endpoints
+  app.get('/api/cloudinary-photos', async (req, res) => {
+    try {
+      const photos = await storage.getCloudinaryPhotos();
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching cloudinary photos:", error);
+      res.status(500).json({ message: "Failed to fetch cloudinary photos" });
+    }
+  });
+
+  app.post('/api/cloudinary-photos/sync', async (req, res) => {
+    try {
+      // This endpoint will sync photos from Cloudinary folder to database
+      const { photos } = req.body;
+      const syncedPhotos = await storage.syncCloudinaryPhotos(photos);
+      res.json(syncedPhotos);
+    } catch (error) {
+      console.error("Error syncing cloudinary photos:", error);
+      res.status(500).json({ message: "Failed to sync cloudinary photos" });
+    }
+  });
+
+  app.post('/api/cloudinary-photos/:id/like', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const userSession = req.ip + req.get('User-Agent') || 'anonymous';
+      const result = await storage.toggleCloudinaryPhotoLike(photoId, userSession);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
   // Wedding schedule endpoints
   app.get('/api/schedule', async (req, res) => {
     try {

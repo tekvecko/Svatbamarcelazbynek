@@ -14,6 +14,18 @@ export const photos = pgTable("photos", {
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
 });
 
+// Table for mapping Cloudinary photos to our database IDs
+export const cloudinaryPhotos = pgTable("cloudinary_photos", {
+  id: serial("id").primaryKey(),
+  cloudinaryId: varchar("cloudinary_id", { length: 255 }).notNull().unique(),
+  cloudinaryUrl: text("cloudinary_url").notNull(),
+  thumbnailUrl: text("thumbnail_url").notNull(),
+  originalName: varchar("original_name", { length: 255 }),
+  likes: integer("likes").default(0).notNull(),
+  approved: boolean("approved").default(true).notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
 export const photoLikes = pgTable("photo_likes", {
   id: serial("id").primaryKey(),
   photoId: integer("photo_id").references(() => photos.id).notNull(),
@@ -100,6 +112,14 @@ export const photoCommentsRelations = relations(photoComments, ({ one }) => ({
     fields: [photoComments.photoId],
     references: [photos.id],
   }),
+  cloudinaryPhoto: one(cloudinaryPhotos, {
+    fields: [photoComments.photoId],
+    references: [cloudinaryPhotos.id],
+  }),
+}));
+
+export const cloudinaryPhotosRelations = relations(cloudinaryPhotos, ({ many }) => ({
+  comments: many(photoComments),
 }));
 
 export const playlistSongsRelations = relations(playlistSongs, ({ many }) => ({
@@ -172,3 +192,11 @@ export type UpdateSiteMetadata = z.infer<typeof updateSiteMetadataSchema>;
 export type WeddingScheduleItem = typeof weddingSchedule.$inferSelect;
 export type InsertWeddingScheduleItem = z.infer<typeof insertWeddingScheduleSchema>;
 export type UpdateWeddingScheduleItem = z.infer<typeof updateWeddingScheduleSchema>;
+
+export type CloudinaryPhoto = typeof cloudinaryPhotos.$inferSelect;
+export const insertCloudinaryPhotoSchema = createInsertSchema(cloudinaryPhotos).omit({
+  id: true,
+  likes: true,
+  uploadedAt: true,
+});
+export type InsertCloudinaryPhoto = z.infer<typeof insertCloudinaryPhotoSchema>;

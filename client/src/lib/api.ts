@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
-const API_BASE_URL = "";
-const IS_STATIC = true; // Temporarily test static mode
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://your-repl-name.your-username.repl.co' : "";
+const IS_STATIC = false; // Use database for all operations
 
 export interface Photo {
   id: number;
@@ -404,6 +404,27 @@ export const api = {
       body: JSON.stringify({ author, text }),
     });
     return handleResponse<PhotoComment>(response);
+  },
+
+  async getCloudinaryPhotos(): Promise<Photo[]> {
+    const response = await fetch(`${API_BASE_URL}/api/cloudinary-photos`);
+    return handleResponse<Photo[]>(response);
+  },
+
+  async syncCloudinaryPhotos(photos: any[]): Promise<Photo[]> {
+    const response = await fetch(`${API_BASE_URL}/api/cloudinary-photos/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ photos }),
+    });
+    return handleResponse<Photo[]>(response);
+  },
+
+  async toggleCloudinaryPhotoLike(photoId: number): Promise<{ liked: boolean; likes: number }> {
+    const response = await fetch(`${API_BASE_URL}/api/cloudinary-photos/${photoId}/like`, {
+      method: "POST",
+    });
+    return handleResponse<{ liked: boolean; likes: number }>(response);
   },
 
   async getWeddingSchedule(): Promise<any[]> {

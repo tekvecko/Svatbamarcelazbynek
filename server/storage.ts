@@ -1,5 +1,5 @@
-import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem } from "@shared/schema";
 import { db } from "./db";
+import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, cloudinaryPhotos, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem, type CloudinaryPhoto, type InsertCloudinaryPhoto } from "@shared/schema";
 import { eq, sql, desc, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -9,20 +9,20 @@ export interface IStorage {
   createPhoto(photo: InsertPhoto): Promise<Photo>;
   approvePhoto(id: number): Promise<void>;
   deletePhoto(id: number): Promise<void>;
-  
+
   // Photo likes
   togglePhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }>;
-  
+
   // Photo comments
   getPhotoComments(photoId: number): Promise<PhotoComment[]>;
   addPhotoComment(photoId: number, author: string, text: string): Promise<PhotoComment>;
-  
+
   // Playlist operations
   getPlaylistSongs(): Promise<PlaylistSong[]>;
   createPlaylistSong(song: InsertPlaylistSong): Promise<PlaylistSong>;
   toggleSongLike(songId: number, userSession: string): Promise<{ liked: boolean; likes: number }>;
   deletePlaylistSong(id: number): Promise<void>;
-  
+
   // Wedding details
   getWeddingDetails(): Promise<WeddingDetails | undefined>;
   updateWeddingDetails(details: UpdateWeddingDetails): Promise<WeddingDetails>;
@@ -55,11 +55,11 @@ export class DatabaseStorage implements IStorage {
       uploadedAt: photos.uploadedAt,
       commentCount: sql<number>`(SELECT COUNT(*) FROM photo_comments WHERE photo_id = ${photos.id})`
     }).from(photos).orderBy(desc(photos.uploadedAt));
-    
+
     if (approved !== undefined) {
       query = query.where(eq(photos.approved, approved)) as any;
     }
-    
+
     return await query;
   }
 
@@ -80,7 +80,7 @@ export class DatabaseStorage implements IStorage {
   async deletePhoto(id: number): Promise<void> {
     // Get photo to extract Cloudinary public_id
     const [photo] = await db.select().from(photos).where(eq(photos.id, id));
-    
+
     if (photo && photo.filename) {
       try {
         // Delete from Cloudinary if it's a Cloudinary image
@@ -92,7 +92,7 @@ export class DatabaseStorage implements IStorage {
         console.error('Error deleting from Cloudinary:', error);
       }
     }
-    
+
     await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
     await db.delete(photoComments).where(eq(photoComments.photoId, id));
     await db.delete(photos).where(eq(photos.id, id));
@@ -124,7 +124,7 @@ export class DatabaseStorage implements IStorage {
         .update(photos)
         .set({ likes: sql`${photos.likes} - 1` })
         .where(eq(photos.id, photoId));
-      
+
       const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
       return { liked: false, likes: photo.likes };
     } else {
@@ -134,7 +134,7 @@ export class DatabaseStorage implements IStorage {
         .update(photos)
         .set({ likes: sql`${photos.likes} + 1` })
         .where(eq(photos.id, photoId));
-      
+
       const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
       return { liked: true, likes: photo.likes };
     }
@@ -162,7 +162,7 @@ export class DatabaseStorage implements IStorage {
         .update(playlistSongs)
         .set({ likes: sql`${playlistSongs.likes} - 1` })
         .where(eq(playlistSongs.id, songId));
-      
+
       const [song] = await db.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
       return { liked: false, likes: song.likes };
     } else {
@@ -172,7 +172,7 @@ export class DatabaseStorage implements IStorage {
         .update(playlistSongs)
         .set({ likes: sql`${playlistSongs.likes} + 1` })
         .where(eq(playlistSongs.id, songId));
-      
+
       const [song] = await db.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
       return { liked: true, likes: song.likes };
     }
@@ -193,11 +193,11 @@ export class DatabaseStorage implements IStorage {
       .update(weddingDetails)
       .set({ ...details, updatedAt: new Date() })
       .returning();
-    
+
     if (!updated) {
       throw new Error("Wedding details not found");
     }
-    
+
     return updated;
   }
 
@@ -209,11 +209,11 @@ export class DatabaseStorage implements IStorage {
   // Site metadata methods
   async getSiteMetadata(key?: string): Promise<SiteMetadata[]> {
     let query = db.select().from(siteMetadata);
-    
+
     if (key) {
       query = query.where(eq(siteMetadata.metaKey, key)) as any;
     }
-    
+
     return await query;
   }
 
@@ -224,7 +224,7 @@ export class DatabaseStorage implements IStorage {
 
   async setSiteMetadata(metadata: InsertSiteMetadata): Promise<SiteMetadata> {
     const existing = await this.getSiteMetadataByKey(metadata.metaKey);
-    
+
     if (existing) {
       // Update existing metadata
       const [updated] = await db
@@ -246,11 +246,11 @@ export class DatabaseStorage implements IStorage {
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(siteMetadata.metaKey, key))
       .returning();
-    
+
     if (!updated) {
       throw new Error(`Site metadata with key '${key}' not found`);
     }
-    
+
     return updated;
   }
 
