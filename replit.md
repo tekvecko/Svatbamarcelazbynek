@@ -105,6 +105,83 @@ This is a full-stack wedding website application built with React, Express.js, a
 
 ## Changelog
 - July 04, 2025. Initial setup
+- July 04, 2025. Added comprehensive test suite with unit tests, API tests, storage tests, component tests, and integration tests covering all functions including admin features
+
+## Testing Infrastructure
+
+### Test Framework Setup
+- **Vitest**: Modern testing framework with TypeScript support
+- **React Testing Library**: Component testing with user interaction simulation
+- **Supertest**: API endpoint testing
+- **jsdom**: Browser environment simulation for component tests
+
+### Test Categories Implemented
+1. **Unit Tests** (`tests/unit.test.ts`): Core functionality validation
+   - User session generation and validation
+   - Date formatting and countdown calculations
+   - File validation (type, size limits)
+   - Song parsing and metadata extraction
+   - Admin authentication logic
+   - Form validation rules
+   - Like system calculations
+
+2. **API Tests** (`tests/api.test.ts`): REST endpoint validation
+   - Wedding details CRUD operations
+   - Photo upload, approval, and management
+   - Playlist song management
+   - Like system for photos and songs
+   - User session tracking
+   - Error handling and validation
+
+3. **Storage Tests** (`tests/storage.test.ts`): Database operations
+   - Photo storage with approval workflows
+   - Playlist management with filtering
+   - Wedding details persistence
+   - Like counting and user tracking
+   - Cascade deletion operations
+
+4. **Component Tests** (`tests/components.test.tsx`): React UI testing
+   - CountdownTimer functionality
+   - PhotoUpload interface and file handling
+   - Playlist song addition and display
+   - AdminPanel authentication and management
+   - User interaction simulations
+
+5. **Integration Tests** (`tests/integration.test.ts`): Complete workflows
+   - Full wedding website user journey
+   - Admin moderation workflows
+   - Multi-user concurrent interactions
+   - Error handling scenarios
+   - High-load testing
+
+### Admin Functions Testing Coverage
+- **Authentication**: Password validation (admin123)
+- **Wedding Details**: All CRUD operations and validation
+- **Photo Management**: Upload approval, deletion, moderation
+- **Playlist Management**: Song approval, like tracking
+- **Settings Control**: Upload permissions, moderation toggles
+- **Content Export**: Gallery data export functionality
+
+### Running Tests
+```bash
+# All unit tests (no database required)
+npx vitest run tests/unit.test.ts
+
+# API tests (requires database)
+npx vitest run tests/api.test.ts
+
+# Storage tests (requires database)  
+npx vitest run tests/storage.test.ts
+
+# Component tests
+npx vitest run tests/components.test.tsx
+
+# Integration tests (requires database)
+npx vitest run tests/integration.test.ts
+
+# Run all tests
+npx vitest run
+```
 
 ## User Preferences
 
