@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
 const API_BASE_URL = "";
-const IS_STATIC = !import.meta.env.DEV; // Use static mode in production
+const IS_STATIC = true; // Temporarily test static mode
 
 export interface Photo {
   id: number;
@@ -404,5 +404,53 @@ export const api = {
       body: JSON.stringify({ author, text }),
     });
     return handleResponse<PhotoComment>(response);
+  },
+
+  async getWeddingSchedule(): Promise<any[]> {
+    if (IS_STATIC) {
+      const defaultSchedule = [
+        { id: 1, time: "11:00", title: "Příjezd hostů", description: "Uvítání a registrace hostů", orderIndex: 1, isActive: true },
+        { id: 2, time: "12:00", title: "Svatební obřad", description: "Ceremonie a výměna prstenů", orderIndex: 2, isActive: true },
+        { id: 3, time: "13:00", title: "Focení", description: "Svatební fotografie s rodinou", orderIndex: 3, isActive: true },
+        { id: 4, time: "14:00", title: "Raut a zábava", description: "Večeře, tanec a oslava", orderIndex: 4, isActive: true }
+      ];
+      return getLocalStorageData('wedding-schedule', defaultSchedule);
+    }
+    const response = await fetch(`${API_BASE_URL}/api/schedule`);
+    return handleResponse<any[]>(response);
+  },
+
+  async createScheduleItem(data: any): Promise<any> {
+    if (IS_STATIC) {
+      throw new Error("Schedule editing not available in static mode");
+    }
+    const response = await fetch(`${API_BASE_URL}/api/schedule`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<any>(response);
+  },
+
+  async updateScheduleItem(id: number, data: any): Promise<any> {
+    if (IS_STATIC) {
+      throw new Error("Schedule editing not available in static mode");
+    }
+    const response = await fetch(`${API_BASE_URL}/api/schedule/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<any>(response);
+  },
+
+  async deleteScheduleItem(id: number): Promise<void> {
+    if (IS_STATIC) {
+      throw new Error("Schedule editing not available in static mode");
+    }
+    const response = await fetch(`${API_BASE_URL}/api/schedule/${id}`, {
+      method: "DELETE",
+    });
+    await handleResponse<void>(response);
   },
 };

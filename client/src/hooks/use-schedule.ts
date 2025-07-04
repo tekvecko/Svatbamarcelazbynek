@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 export interface WeddingScheduleItem {
   id: number;
@@ -15,13 +16,7 @@ export interface WeddingScheduleItem {
 export function useWeddingSchedule() {
   return useQuery({
     queryKey: ["/api/schedule"],
-    queryFn: async (): Promise<WeddingScheduleItem[]> => {
-      const response = await fetch("/api/schedule");
-      if (!response.ok) {
-        throw new Error("Failed to fetch schedule");
-      }
-      return response.json();
-    },
+    queryFn: api.getWeddingSchedule,
   });
 }
 
@@ -30,17 +25,8 @@ export function useCreateScheduleItem() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: { time: string; title: string; description?: string; orderIndex: number }) => {
-      const response = await fetch("/api/schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create schedule item");
-      }
-      return response.json();
-    },
+    mutationFn: (data: { time: string; title: string; description?: string; orderIndex: number }) =>
+      api.createScheduleItem(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/schedule"] });
       toast({
@@ -63,17 +49,8 @@ export function useUpdateScheduleItem() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<WeddingScheduleItem> }) => {
-      const response = await fetch(`/api/schedule/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to update schedule item");
-      }
-      return response.json();
-    },
+    mutationFn: ({ id, data }: { id: number; data: Partial<WeddingScheduleItem> }) =>
+      api.updateScheduleItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/schedule"] });
       toast({
@@ -96,14 +73,7 @@ export function useDeleteScheduleItem() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/schedule/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete schedule item");
-      }
-    },
+    mutationFn: (id: number) => api.deleteScheduleItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/schedule"] });
       toast({
