@@ -106,6 +106,7 @@ This is a full-stack wedding website application built with React, Express.js, a
 ## Changelog
 - July 04, 2025. Initial setup
 - July 04, 2025. Added comprehensive test suite with unit tests, API tests, storage tests, component tests, and integration tests covering all functions including admin features
+- July 04, 2025. Implemented Wedding Moment Highlight Reel with cinematic transitions, including framer-motion animations, fullscreen mode, cinematic controls, background music simulation, and demo photo seeding
 
 ## Testing Infrastructure
 

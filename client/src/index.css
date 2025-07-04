@@ -228,3 +228,116 @@ html {
 .admin-panel.closed {
   transform: translateX(100%);
 }
+
+/* Highlight Reel animations */
+.highlight-reel-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.highlight-reel-image {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.highlight-reel-image:hover {
+  transform: scale(1.02);
+}
+
+/* Cinematic transition effects */
+.cinematic-fade {
+  animation: cinematicFade 0.8s ease-in-out;
+}
+
+@keyframes cinematicFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.cinematic-slide {
+  animation: cinematicSlide 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes cinematicSlide {
+  0% { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.cinematic-zoom {
+  animation: cinematicZoom 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes cinematicZoom {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Fullscreen highlight reel */
+.highlight-reel-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background: black;
+}
+
+/* Thumbnail dots animation */
+.thumbnail-dot {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.thumbnail-dot.active {
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  50% { 
+    transform: scale(1.1);
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+  }
+}
+
+/* Control button hover effects */
+.control-button {
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.control-button:hover {
+  transform: scale(1.05);
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Progress bar animation */
+.progress-bar {
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 25%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    rgba(255, 255, 255, 0.3) 75%, 
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: progressShimmer 2s linear infinite;
+}
+
+@keyframes progressShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Cinematic bars for fullscreen mode */
+.cinematic-bars {
+  background: linear-gradient(90deg, 
+    rgba(0,0,0,1) 0%, 
+    rgba(0,0,0,0.95) 20%, 
+    rgba(0,0,0,0.95) 80%, 
+    rgba(0,0,0,1) 100%
+  );
+}

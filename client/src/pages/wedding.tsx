@@ -6,11 +6,19 @@ import PhotoGallery from "@/components/photo-gallery";
 import PhotoUpload from "@/components/photo-upload";
 import AdminPanel from "@/components/admin-panel";
 import Playlist from "@/components/playlist";
+import HighlightReel from "@/components/highlight-reel";
+import CinematicControls from "@/components/cinematic-controls";
 import { Button } from "@/components/ui/button";
-import { Heart, Calendar, MapPin, Camera, Music, Phone, Settings } from "lucide-react";
+import { Heart, Calendar, MapPin, Camera, Music, Phone, Settings, Film } from "lucide-react";
 
 export default function WeddingPage() {
   const [showAdmin, setShowAdmin] = useState(false);
+  const [highlightReelSettings, setHighlightReelSettings] = useState({
+    transition: 'fadeIn',
+    speed: 5000,
+    autoPlay: true
+  });
+  
   const { data: weddingDetails } = useQuery({
     queryKey: ["/api/wedding-details"],
     queryFn: api.getWeddingDetails,
@@ -61,6 +69,12 @@ export default function WeddingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
+              onClick={() => scrollToSection('highlight-reel')}
+              className="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-full transition-colors"
+            >
+              🎬 Naše momenty
+            </Button>
+            <Button 
               onClick={() => scrollToSection('program')}
               className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-full transition-colors"
             >
@@ -97,9 +111,12 @@ export default function WeddingPage() {
             </div>
             
             {/* Navigation Links */}
-            <div className="flex gap-6 mx-auto md:mx-0 text-sm">
+            <div className="flex gap-4 mx-auto md:mx-0 text-sm">
               <button onClick={() => scrollToSection('odpocet')} className="text-primary hover:text-primary/80 transition-colors">
                 Odpočet
+              </button>
+              <button onClick={() => scrollToSection('highlight-reel')} className="text-primary hover:text-primary/80 transition-colors">
+                Momenty
               </button>
               <button onClick={() => scrollToSection('program')} className="text-primary hover:text-primary/80 transition-colors">
                 Program
@@ -131,6 +148,85 @@ export default function WeddingPage() {
             Do svatby zbývá
           </h2>
           <CountdownTimer targetDate={weddingDate} />
+        </div>
+      </section>
+
+      {/* Highlight Reel Section */}
+      <section id="highlight-reel" className="py-16 bg-gray-900 text-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px'
+          }} />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="text-center mb-12">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4">
+              <Film className="inline-block text-accent mr-3" />
+              Highlight Reel našich momentů
+            </h2>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Prožijte naše nejkrásnější okamžiky s kinematografickými přechody a hudebním podkresem
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Main Highlight Reel */}
+            <div className="lg:col-span-2">
+              <HighlightReel 
+                autoPlay={highlightReelSettings.autoPlay}
+                transitionDuration={highlightReelSettings.speed}
+              />
+            </div>
+
+            {/* Cinematic Controls */}
+            <div className="lg:col-span-1">
+              <CinematicControls
+                onTransitionChange={(transition) => 
+                  setHighlightReelSettings(prev => ({ ...prev, transition }))
+                }
+                onSpeedChange={(speed) => 
+                  setHighlightReelSettings(prev => ({ ...prev, speed }))
+                }
+              />
+            </div>
+          </div>
+
+          {/* Feature Highlights */}
+          <div className="mt-12 grid md:grid-cols-3 gap-6">
+            <div className="text-center p-6 bg-white/5 rounded-xl backdrop-blur-sm">
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <Film className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold mb-2">Kinematografické přechody</h3>
+              <p className="text-sm text-gray-300">
+                Různé styly přechodů pro dokonalou atmosféru
+              </p>
+            </div>
+            
+            <div className="text-center p-6 bg-white/5 rounded-xl backdrop-blur-sm">
+              <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                <Music className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold mb-2">Hudební podkres</h3>
+              <p className="text-sm text-gray-300">
+                Emotivní hudba pro lepší prožitek
+              </p>
+            </div>
+            
+            <div className="text-center p-6 bg-white/5 rounded-xl backdrop-blur-sm">
+              <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold mb-2">Interaktivní ovládání</h3>
+              <p className="text-sm text-gray-300">
+                Přizpůsobte si prožitek podle vašich představ
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
