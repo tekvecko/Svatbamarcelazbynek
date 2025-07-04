@@ -294,7 +294,8 @@ export default function PhotoGallery() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          openPhoto(index);
+                          setSelectedPhotoIndex(index);
+                          setIsDialogOpen(true);
                         }}
                         size="sm"
                         className="bg-black/60 hover:bg-black/80 text-white flex items-center gap-2 px-3 py-2 rounded-full"
