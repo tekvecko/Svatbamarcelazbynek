@@ -168,7 +168,7 @@ export const api = {
     }
 
     // Get wedding details to check moderation settings
-    const weddingDetails = await this.getWeddingDetails();
+    const weddingDetails = await api.getWeddingDetails();
     const shouldAutoApprove = !weddingDetails.moderateUploads;
 
     const uploadedPhotos = [];
