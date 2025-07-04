@@ -292,7 +292,7 @@ export default function PhotoGallery() {
                           </Button>
                           <div className="flex items-center gap-1 text-white/80">
                             <MessageCircle className="h-4 w-4" />
-                            <span className="text-xs">0</span>
+                            <span className="text-xs">{photo.commentCount || 0}</span>
                           </div>
                         </div>
                         <div className="flex gap-1">

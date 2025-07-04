@@ -13,6 +13,7 @@ export interface Photo {
   likes: number;
   approved: boolean;
   uploadedAt: string;
+  commentCount?: number;
 }
 
 export interface PlaylistSong {
@@ -21,6 +22,14 @@ export interface PlaylistSong {
   artist: string;
   likes: number;
   addedAt: string;
+}
+
+export interface PhotoComment {
+  id: number;
+  photoId: number;
+  author: string;
+  text: string;
+  createdAt: string;
 }
 
 export interface WeddingDetails {
@@ -53,7 +62,8 @@ const STATIC_PHOTOS: Photo[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop",
     likes: 0,
     approved: true,
-    uploadedAt: new Date().toISOString()
+    uploadedAt: new Date().toISOString(),
+    commentCount: 0
   },
   {
     id: 2,
@@ -63,7 +73,8 @@ const STATIC_PHOTOS: Photo[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=300&fit=crop",
     likes: 0,
     approved: true,
-    uploadedAt: new Date().toISOString()
+    uploadedAt: new Date().toISOString(),
+    commentCount: 0
   },
   {
     id: 3,
@@ -73,7 +84,8 @@ const STATIC_PHOTOS: Photo[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1594241483888-76ad31b7e17a?w=400&h=300&fit=crop",
     likes: 0,
     approved: true,
-    uploadedAt: new Date().toISOString()
+    uploadedAt: new Date().toISOString(),
+    commentCount: 0
   },
   {
     id: 4,
@@ -83,7 +95,8 @@ const STATIC_PHOTOS: Photo[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=300&fit=crop",
     likes: 0,
     approved: true,
-    uploadedAt: new Date().toISOString()
+    uploadedAt: new Date().toISOString(),
+    commentCount: 0
   },
   {
     id: 5,
@@ -93,7 +106,8 @@ const STATIC_PHOTOS: Photo[] = [
     thumbnailUrl: "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=400&h=300&fit=crop",
     likes: 0,
     approved: true,
-    uploadedAt: new Date().toISOString()
+    uploadedAt: new Date().toISOString(),
+    commentCount: 0
   }
 ];
 
@@ -148,10 +162,12 @@ export const api = {
     if (IS_STATIC) {
       const storedPhotos = getLocalStorageData('wedding-photos', STATIC_PHOTOS);
       const storedLikes = getLocalStorageData('photo-likes', {} as Record<number, number>);
+      const storedComments = getLocalStorageData('photo-comments', {} as Record<number, any[]>);
 
       return storedPhotos.map(photo => ({
         ...photo,
-        likes: storedLikes[photo.id] || 0
+        likes: storedLikes[photo.id] || 0,
+        commentCount: (storedComments[photo.id] || []).length
       }));
     }
     const params = new URLSearchParams();
@@ -355,5 +371,38 @@ export const api = {
       method: "DELETE",
     });
     await handleResponse<void>(response);
+  },
+
+  async getPhotoComments(photoId: number): Promise<PhotoComment[]> {
+    if (IS_STATIC) {
+      const storedComments = getLocalStorageData('photo-comments', {} as Record<number, PhotoComment[]>);
+      return storedComments[photoId] || [];
+    }
+    const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/comments`);
+    return handleResponse<PhotoComment[]>(response);
+  },
+
+  async addPhotoComment(photoId: number, author: string, text: string): Promise<PhotoComment> {
+    if (IS_STATIC) {
+      const storedComments = getLocalStorageData('photo-comments', {} as Record<number, PhotoComment[]>);
+      const newComment: PhotoComment = {
+        id: Date.now(),
+        photoId,
+        author,
+        text,
+        createdAt: new Date().toISOString()
+      };
+
+      const photoComments = storedComments[photoId] || [];
+      storedComments[photoId] = [...photoComments, newComment];
+      setLocalStorageData('photo-comments', storedComments);
+      return newComment;
+    }
+    const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ author, text }),
+    });
+    return handleResponse<PhotoComment>(response);
   },
 };
