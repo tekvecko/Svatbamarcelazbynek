@@ -1,0 +1,218 @@
+import type { Express } from "express";
+import express from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema } from "@shared/schema";
+import { z } from "zod";
+
+// Configure multer for file uploads
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({
+  dest: uploadDir,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+function getUserSession(req: any): string {
+  // Simple session ID based on IP and User-Agent
+  return Buffer.from(`${req.ip}_${req.get('User-Agent') || 'unknown'}`).toString('base64');
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve uploaded files
+  app.use('/uploads', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+  });
+  app.use('/uploads', express.static(uploadDir));
+
+  // Wedding details endpoints
+  app.get('/api/wedding-details', async (req, res) => {
+    try {
+      let details = await storage.getWeddingDetails();
+      
+      if (!details) {
+        // Create default wedding details if none exist
+        details = await storage.createWeddingDetails({
+          coupleNames: "Marcela & Zbyněk",
+          weddingDate: new Date("2025-10-11T14:00:00"),
+          venue: "Stará pošta, Kovalovice",
+          venueAddress: "Kovalovice 109, 664 07 Kovalovice",
+          allowUploads: true,
+          moderateUploads: false,
+        });
+      }
+      
+      res.json(details);
+    } catch (error) {
+      console.error("Error fetching wedding details:", error);
+      res.status(500).json({ message: "Failed to fetch wedding details" });
+    }
+  });
+
+  app.patch('/api/wedding-details', async (req, res) => {
+    try {
+      const validation = updateWeddingDetailsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid data", errors: validation.error.errors });
+      }
+
+      const details = await storage.updateWeddingDetails(validation.data);
+      res.json(details);
+    } catch (error) {
+      console.error("Error updating wedding details:", error);
+      res.status(500).json({ message: "Failed to update wedding details" });
+    }
+  });
+
+  // Photo endpoints
+  app.get('/api/photos', async (req, res) => {
+    try {
+      const approved = req.query.approved === 'true' ? true : req.query.approved === 'false' ? false : undefined;
+      const photos = await storage.getPhotos(approved);
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching photos:", error);
+      res.status(500).json({ message: "Failed to fetch photos" });
+    }
+  });
+
+  app.post('/api/photos/upload', upload.array('photos', 10), async (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const uploadedPhotos = [];
+      
+      for (const file of files) {
+        const filename = `${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
+        const newPath = path.join(uploadDir, filename);
+        
+        // Move file to permanent location
+        fs.renameSync(file.path, newPath);
+        
+        const photo = await storage.createPhoto({
+          filename,
+          originalName: file.originalname,
+          url: `/uploads/${filename}`,
+          thumbnailUrl: `/uploads/${filename}`, // In production, would generate actual thumbnails
+          approved: true, // Auto-approve for now
+        });
+        
+        uploadedPhotos.push(photo);
+      }
+
+      res.json(uploadedPhotos);
+    } catch (error) {
+      console.error("Error uploading photos:", error);
+      res.status(500).json({ message: "Failed to upload photos" });
+    }
+  });
+
+  app.post('/api/photos/:id/like', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const userSession = getUserSession(req);
+      
+      const result = await storage.togglePhotoLike(photoId, userSession);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling photo like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  app.delete('/api/photos/:id', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      await storage.deletePhoto(photoId);
+      res.json({ message: "Photo deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      res.status(500).json({ message: "Failed to delete photo" });
+    }
+  });
+
+  app.patch('/api/photos/:id/approve', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      await storage.approvePhoto(photoId);
+      res.json({ message: "Photo approved successfully" });
+    } catch (error) {
+      console.error("Error approving photo:", error);
+      res.status(500).json({ message: "Failed to approve photo" });
+    }
+  });
+
+  // Playlist endpoints
+  app.get('/api/playlist', async (req, res) => {
+    try {
+      const songs = await storage.getPlaylistSongs();
+      res.json(songs);
+    } catch (error) {
+      console.error("Error fetching playlist:", error);
+      res.status(500).json({ message: "Failed to fetch playlist" });
+    }
+  });
+
+  app.post('/api/playlist', async (req, res) => {
+    try {
+      const validation = insertPlaylistSongSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid data", errors: validation.error.errors });
+      }
+
+      const song = await storage.createPlaylistSong(validation.data);
+      res.json(song);
+    } catch (error) {
+      console.error("Error adding song to playlist:", error);
+      res.status(500).json({ message: "Failed to add song" });
+    }
+  });
+
+  app.post('/api/playlist/:id/like', async (req, res) => {
+    try {
+      const songId = parseInt(req.params.id);
+      const userSession = getUserSession(req);
+      
+      const result = await storage.toggleSongLike(songId, userSession);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling song like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  app.delete('/api/playlist/:id', async (req, res) => {
+    try {
+      const songId = parseInt(req.params.id);
+      await storage.deletePlaylistSong(songId);
+      res.json({ message: "Song deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting song:", error);
+      res.status(500).json({ message: "Failed to delete song" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}

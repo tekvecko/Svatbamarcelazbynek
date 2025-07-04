@@ -1,0 +1,154 @@
+import { photos, photoLikes, playlistSongs, songLikes, weddingDetails, type Photo, type InsertPhoto, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails } from "@shared/schema";
+import { db } from "./db";
+import { eq, sql, desc, and } from "drizzle-orm";
+
+export interface IStorage {
+  // Photo operations
+  getPhotos(approved?: boolean): Promise<Photo[]>;
+  getPhoto(id: number): Promise<Photo | undefined>;
+  createPhoto(photo: InsertPhoto): Promise<Photo>;
+  approvePhoto(id: number): Promise<void>;
+  deletePhoto(id: number): Promise<void>;
+  
+  // Photo likes
+  togglePhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }>;
+  
+  // Playlist operations
+  getPlaylistSongs(): Promise<PlaylistSong[]>;
+  createPlaylistSong(song: InsertPlaylistSong): Promise<PlaylistSong>;
+  toggleSongLike(songId: number, userSession: string): Promise<{ liked: boolean; likes: number }>;
+  deletePlaylistSong(id: number): Promise<void>;
+  
+  // Wedding details
+  getWeddingDetails(): Promise<WeddingDetails | undefined>;
+  updateWeddingDetails(details: UpdateWeddingDetails): Promise<WeddingDetails>;
+  createWeddingDetails(details: InsertWeddingDetails): Promise<WeddingDetails>;
+}
+
+export class DatabaseStorage implements IStorage {
+  async getPhotos(approved?: boolean): Promise<Photo[]> {
+    let query = db.select().from(photos).orderBy(desc(photos.uploadedAt));
+    
+    if (approved !== undefined) {
+      query = query.where(eq(photos.approved, approved)) as any;
+    }
+    
+    return await query;
+  }
+
+  async getPhoto(id: number): Promise<Photo | undefined> {
+    const [photo] = await db.select().from(photos).where(eq(photos.id, id));
+    return photo;
+  }
+
+  async createPhoto(photo: InsertPhoto): Promise<Photo> {
+    const [newPhoto] = await db.insert(photos).values(photo).returning();
+    return newPhoto;
+  }
+
+  async approvePhoto(id: number): Promise<void> {
+    await db.update(photos).set({ approved: true }).where(eq(photos.id, id));
+  }
+
+  async deletePhoto(id: number): Promise<void> {
+    await db.delete(photoLikes).where(eq(photoLikes.photoId, id));
+    await db.delete(photos).where(eq(photos.id, id));
+  }
+
+  async togglePhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }> {
+    const [existingLike] = await db
+      .select()
+      .from(photoLikes)
+      .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.userSession, userSession)));
+
+    if (existingLike) {
+      // Remove like
+      await db.delete(photoLikes).where(eq(photoLikes.id, existingLike.id));
+      await db
+        .update(photos)
+        .set({ likes: sql`${photos.likes} - 1` })
+        .where(eq(photos.id, photoId));
+      
+      const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
+      return { liked: false, likes: photo.likes };
+    } else {
+      // Add like
+      await db.insert(photoLikes).values({ photoId, userSession });
+      await db
+        .update(photos)
+        .set({ likes: sql`${photos.likes} + 1` })
+        .where(eq(photos.id, photoId));
+      
+      const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
+      return { liked: true, likes: photo.likes };
+    }
+  }
+
+  async getPlaylistSongs(): Promise<PlaylistSong[]> {
+    return await db.select().from(playlistSongs).where(eq(playlistSongs.approved, true)).orderBy(desc(playlistSongs.submittedAt));
+  }
+
+  async createPlaylistSong(song: InsertPlaylistSong): Promise<PlaylistSong> {
+    const [newSong] = await db.insert(playlistSongs).values(song).returning();
+    return newSong;
+  }
+
+  async toggleSongLike(songId: number, userSession: string): Promise<{ liked: boolean; likes: number }> {
+    const [existingLike] = await db
+      .select()
+      .from(songLikes)
+      .where(and(eq(songLikes.songId, songId), eq(songLikes.userSession, userSession)));
+
+    if (existingLike) {
+      // Remove like
+      await db.delete(songLikes).where(eq(songLikes.id, existingLike.id));
+      await db
+        .update(playlistSongs)
+        .set({ likes: sql`${playlistSongs.likes} - 1` })
+        .where(eq(playlistSongs.id, songId));
+      
+      const [song] = await db.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
+      return { liked: false, likes: song.likes };
+    } else {
+      // Add like
+      await db.insert(songLikes).values({ songId, userSession });
+      await db
+        .update(playlistSongs)
+        .set({ likes: sql`${playlistSongs.likes} + 1` })
+        .where(eq(playlistSongs.id, songId));
+      
+      const [song] = await db.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
+      return { liked: true, likes: song.likes };
+    }
+  }
+
+  async deletePlaylistSong(id: number): Promise<void> {
+    await db.delete(songLikes).where(eq(songLikes.songId, id));
+    await db.delete(playlistSongs).where(eq(playlistSongs.id, id));
+  }
+
+  async getWeddingDetails(): Promise<WeddingDetails | undefined> {
+    const [details] = await db.select().from(weddingDetails).limit(1);
+    return details;
+  }
+
+  async updateWeddingDetails(details: UpdateWeddingDetails): Promise<WeddingDetails> {
+    const [updated] = await db
+      .update(weddingDetails)
+      .set({ ...details, updatedAt: new Date() })
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Wedding details not found");
+    }
+    
+    return updated;
+  }
+
+  async createWeddingDetails(details: InsertWeddingDetails): Promise<WeddingDetails> {
+    const [newDetails] = await db.insert(weddingDetails).values(details).returning();
+    return newDetails;
+  }
+}
+
+export const storage = new DatabaseStorage();
