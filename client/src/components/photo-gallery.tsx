@@ -64,8 +64,6 @@ export default function PhotoGallery() {
   };
 
   const handleLike = (photoId: number, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    
     const isAlreadyLiked = userLikes.has(photoId);
     
     if (isAlreadyLiked) {
@@ -144,7 +142,6 @@ export default function PhotoGallery() {
   };
 
   const downloadImage = (url: string, filename: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
@@ -154,7 +151,6 @@ export default function PhotoGallery() {
   };
 
   const shareImage = async (url: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
     if (navigator.share) {
       try {
         await navigator.share({
@@ -258,7 +254,10 @@ export default function PhotoGallery() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Button
-                            onClick={(e) => handleLike(photo.id, e)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLike(photo.id, e);
+                            }}
                             size="sm"
                             className={`relative overflow-hidden backdrop-blur-sm border-0 px-3 py-1.5 rounded-full transition-all duration-300 transform hover:scale-110 ${
                               userLikes.has(photo.id) 
@@ -297,14 +296,20 @@ export default function PhotoGallery() {
                         </div>
                         <div className="flex gap-1">
                           <Button
-                            onClick={(e) => downloadImage(photo.url, photo.originalName, e)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadImage(photo.url, photo.originalName, e);
+                            }}
                             size="sm"
                             className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 text-white p-1.5 rounded-full"
                           >
                             <Download className="h-3 w-3" />
                           </Button>
                           <Button
-                            onClick={(e) => shareImage(photo.url, e)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              shareImage(photo.url, e);
+                            }}
                             size="sm"
                             className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 text-white p-1.5 rounded-full"
                           >
