@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, MoreVertical } from "lucide-react";
+import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, MoreVertical, Maximize } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useToast } from "@/hooks/use-toast";
 
@@ -235,8 +235,7 @@ export default function PhotoGallery() {
             {photos.map((photo, index) => (
               <CarouselItem key={photo.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
                 <Card 
-                  className="relative group cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
-                  onClick={() => openPhoto(index)}
+                  className="relative group overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
                 >
                   <div className="aspect-[4/3] overflow-hidden">
                     <img 
@@ -322,6 +321,20 @@ export default function PhotoGallery() {
                               <Heart className="h-4 w-4 fill-red-500 text-red-500 animate-ping" />
                             </div>
                           ))}
+                        </Button>
+
+                        {/* Fullscreen button */}
+                        <Button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveMenu(null);
+                            openPhoto(index);
+                          }}
+                          className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-3 px-4 py-3 rounded-xl"
+                        >
+                          <Maximize className="h-5 w-5" />
+                          <span className="flex-1 text-left">Celá obrazovka</span>
                         </Button>
 
                         {/* Comments button */}
