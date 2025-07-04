@@ -6,7 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import cloudinary from "./cloudinary";
-import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema, insertSiteMetadataSchema, updateSiteMetadataSchema } from "@shared/schema";
+import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema, insertSiteMetadataSchema, updateSiteMetadataSchema, insertWeddingScheduleSchema, updateWeddingScheduleSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Configure multer for memory storage (Cloudinary upload)
@@ -377,6 +377,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting metadata:", error);
       res.status(500).json({ message: "Failed to delete metadata" });
+    }
+  });
+
+  // Wedding schedule endpoints
+  app.get('/api/schedule', async (req, res) => {
+    try {
+      const schedule = await storage.getWeddingSchedule();
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error fetching schedule:", error);
+      res.status(500).json({ message: "Failed to fetch schedule" });
+    }
+  });
+
+  app.post('/api/schedule', async (req, res) => {
+    try {
+      const validation = insertWeddingScheduleSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid data", errors: validation.error.errors });
+      }
+
+      const scheduleItem = await storage.createWeddingScheduleItem(validation.data);
+      res.json(scheduleItem);
+    } catch (error) {
+      console.error("Error creating schedule item:", error);
+      res.status(500).json({ message: "Failed to create schedule item" });
+    }
+  });
+
+  app.patch('/api/schedule/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validation = updateWeddingScheduleSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid data", errors: validation.error.errors });
+      }
+
+      const updatedItem = await storage.updateWeddingScheduleItem(id, validation.data);
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating schedule item:", error);
+      res.status(500).json({ message: "Failed to update schedule item" });
+    }
+  });
+
+  app.delete('/api/schedule/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteWeddingScheduleItem(id);
+      res.json({ message: "Schedule item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting schedule item:", error);
+      res.status(500).json({ message: "Failed to delete schedule item" });
     }
   });
 

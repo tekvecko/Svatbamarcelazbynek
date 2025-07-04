@@ -70,6 +70,18 @@ export const siteMetadata = pgTable("site_metadata", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Wedding schedule storage
+export const weddingSchedule = pgTable("wedding_schedule", {
+  id: serial("id").primaryKey(),
+  time: varchar("time", { length: 10 }).notNull(), // e.g. "12:00"
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const photosRelations = relations(photos, ({ many }) => ({
   likes: many(photoLikes),
@@ -136,6 +148,14 @@ export const insertSiteMetadataSchema = createInsertSchema(siteMetadata).omit({
 
 export const updateSiteMetadataSchema = insertSiteMetadataSchema.partial();
 
+export const insertWeddingScheduleSchema = createInsertSchema(weddingSchedule).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateWeddingScheduleSchema = insertWeddingScheduleSchema.partial();
+
 // Types
 export type Photo = typeof photos.$inferSelect;
 export type InsertPhoto = z.infer<typeof insertPhotoSchema>;
@@ -149,3 +169,6 @@ export type UpdateWeddingDetails = z.infer<typeof updateWeddingDetailsSchema>;
 export type SiteMetadata = typeof siteMetadata.$inferSelect;
 export type InsertSiteMetadata = z.infer<typeof insertSiteMetadataSchema>;
 export type UpdateSiteMetadata = z.infer<typeof updateSiteMetadataSchema>;
+export type WeddingScheduleItem = typeof weddingSchedule.$inferSelect;
+export type InsertWeddingScheduleItem = z.infer<typeof insertWeddingScheduleSchema>;
+export type UpdateWeddingScheduleItem = z.infer<typeof updateWeddingScheduleSchema>;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useWeddingSchedule } from "@/hooks/use-schedule";
 import CountdownTimer from "@/components/countdown-timer";
 import PhotoGallery from "@/components/photo-gallery";
 import PhotoUpload from "@/components/photo-upload";
@@ -16,6 +17,8 @@ export default function WeddingPage() {
     queryKey: ["/api/wedding-details"],
     queryFn: api.getWeddingDetails,
   });
+
+  const { data: schedule } = useWeddingSchedule();
 
   const weddingDate = weddingDetails?.weddingDate ? new Date(weddingDetails.weddingDate) : new Date("2025-10-11T14:00:00");
   
@@ -53,13 +56,21 @@ export default function WeddingPage() {
           <h1 className="font-serif text-4xl md:text-6xl font-bold mb-4">
             {weddingDetails?.coupleNames || "Marcela & Zbyněk"}
           </h1>
-          <p className="text-lg md:text-xl mb-8">
-            {weddingDate.toLocaleDateString('cs-CZ', { 
-              day: 'numeric', 
-              month: 'long', 
-              year: 'numeric' 
-            })} – {weddingDetails?.venue || "Stará pošta, Kovalovice"}
-          </p>
+          <div className="mb-8">
+            <p className="text-lg md:text-xl mb-2">
+              {weddingDate.toLocaleDateString('cs-CZ', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </p>
+            <p className="text-xl md:text-2xl font-semibold mb-2 text-yellow-300">
+              12:00
+            </p>
+            <p className="text-lg md:text-xl">
+              {weddingDetails?.venue || "Stará pošta, Kovalovice"}
+            </p>
+          </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               onClick={() => scrollToSection('program')}
@@ -145,46 +156,57 @@ export default function WeddingPage() {
             Program svatby
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <div className="bg-primary text-white rounded-full w-12 h-12 flex items-center justify-center font-bold">
-                  13
+            {schedule && schedule.length > 0 ? (
+              <>
+                <div className="space-y-6">
+                  {schedule.slice(0, Math.ceil(schedule.length / 2)).map((item, index) => {
+                    const colorClasses = [
+                      'bg-primary',
+                      'bg-secondary', 
+                      'bg-accent',
+                      'bg-success'
+                    ];
+                    return (
+                      <div key={item.id} className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                        <div className={`${colorClasses[index % colorClasses.length]} text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-sm`}>
+                          {item.time.substring(0, 2)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">{item.title}</h3>
+                          <p className="text-gray-600 dark:text-gray-400">{item.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Příjezd hostů</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Uvítání a registrace hostů</p>
+                <div className="space-y-6">
+                  {schedule.slice(Math.ceil(schedule.length / 2)).map((item, index) => {
+                    const colorClasses = [
+                      'bg-primary',
+                      'bg-secondary', 
+                      'bg-accent',
+                      'bg-success'
+                    ];
+                    const colorIndex = Math.ceil(schedule.length / 2) + index;
+                    return (
+                      <div key={item.id} className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                        <div className={`${colorClasses[colorIndex % colorClasses.length]} text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-sm`}>
+                          {item.time.substring(0, 2)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">{item.title}</h3>
+                          <p className="text-gray-600 dark:text-gray-400">{item.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              </>
+            ) : (
+              <div className="col-span-2 text-center text-gray-500">
+                Načítám harmonogram...
               </div>
-              <div className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <div className="bg-secondary text-white rounded-full w-12 h-12 flex items-center justify-center font-bold">
-                  14
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Svatební obřad</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Ceremonie a výměna prstenů</p>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <div className="bg-accent text-white rounded-full w-12 h-12 flex items-center justify-center font-bold">
-                  15
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Focení</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Svatební fotografie s rodinou</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <div className="bg-success text-white rounded-full w-12 h-12 flex items-center justify-center font-bold">
-                  16
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Raut a zábava</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Večeře, tanec a oslava</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>

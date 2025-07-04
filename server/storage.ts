@@ -1,6 +1,6 @@
-import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata } from "@shared/schema";
+import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc, and, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Photo operations
@@ -34,6 +34,12 @@ export interface IStorage {
   setSiteMetadata(metadata: InsertSiteMetadata): Promise<SiteMetadata>;
   updateSiteMetadata(key: string, updates: UpdateSiteMetadata): Promise<SiteMetadata>;
   deleteSiteMetadata(key: string): Promise<void>;
+
+  // Wedding schedule
+  getWeddingSchedule(): Promise<WeddingScheduleItem[]>;
+  createWeddingScheduleItem(item: InsertWeddingScheduleItem): Promise<WeddingScheduleItem>;
+  updateWeddingScheduleItem(id: number, updates: UpdateWeddingScheduleItem): Promise<WeddingScheduleItem>;
+  deleteWeddingScheduleItem(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -250,6 +256,29 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSiteMetadata(key: string): Promise<void> {
     await db.delete(siteMetadata).where(eq(siteMetadata.metaKey, key));
+  }
+
+  async getWeddingSchedule(): Promise<WeddingScheduleItem[]> {
+    return await db.select().from(weddingSchedule)
+      .where(eq(weddingSchedule.isActive, true))
+      .orderBy(asc(weddingSchedule.orderIndex));
+  }
+
+  async createWeddingScheduleItem(item: InsertWeddingScheduleItem): Promise<WeddingScheduleItem> {
+    const [newItem] = await db.insert(weddingSchedule).values(item).returning();
+    return newItem;
+  }
+
+  async updateWeddingScheduleItem(id: number, updates: UpdateWeddingScheduleItem): Promise<WeddingScheduleItem> {
+    const [updatedItem] = await db.update(weddingSchedule)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(weddingSchedule.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  async deleteWeddingScheduleItem(id: number): Promise<void> {
+    await db.delete(weddingSchedule).where(eq(weddingSchedule.id, id));
   }
 }
 
