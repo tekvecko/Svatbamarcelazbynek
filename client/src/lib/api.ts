@@ -167,6 +167,10 @@ export const api = {
       throw new Error("Upload not available in static mode");
     }
 
+    // Get wedding details to check moderation settings
+    const weddingDetails = await this.getWeddingDetails();
+    const shouldAutoApprove = !weddingDetails.moderateUploads;
+
     const uploadedPhotos = [];
     
     for (const file of Array.from(files)) {
@@ -210,7 +214,7 @@ export const api = {
           originalName: file.name,
           url: uploadResult.secure_url,
           thumbnailUrl: uploadResult.secure_url.replace('/upload/', '/upload/c_thumb,w_300,h_300/'),
-          approved: false, // Requires approval
+          approved: shouldAutoApprove, // Auto-approve based on settings
         };
         
         const saveResponse = await fetch(`${API_BASE_URL}/api/photos/save`, {
