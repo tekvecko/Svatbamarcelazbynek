@@ -61,10 +61,10 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 max-w-2xl mx-auto">
       {timeUnits.map((unit, index) => (
-        <div key={unit.label} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
-          <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
+        <div key={unit.label} className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg text-center">
+          <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-1 sm:mb-2">
             {unit.value.toString().padStart(2, '0')}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">

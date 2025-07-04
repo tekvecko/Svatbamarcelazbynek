@@ -145,10 +145,10 @@ export default function HighlightReel({
                 alt={photos[currentIndex].originalName}
                 className="w-full h-full object-cover"
               />
-              
+
               {/* Gradient Overlay for Text */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              
+
               {/* Photo Info */}
               <motion.div 
                 className="absolute bottom-6 left-6 right-6 text-white"
@@ -190,7 +190,7 @@ export default function HighlightReel({
           >
             <SkipBack className="h-6 w-6 text-white" />
           </button>
-          
+
           <button
             onClick={goToNext}
             className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 transition-colors"

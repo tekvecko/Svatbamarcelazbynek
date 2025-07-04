@@ -120,7 +120,7 @@ export default function CinematicControls({
           <h4 className="font-medium mb-3 flex items-center gap-2">
             🎵 Hudební podkres
           </h4>
-          
+
           {/* Track Selection */}
           <div className="bg-white dark:bg-gray-600 rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-3">
