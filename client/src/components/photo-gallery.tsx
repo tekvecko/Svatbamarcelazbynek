@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePhotos, useTogglePhotoLike } from "@/hooks/use-photos";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useToast } from "@/hooks/use-toast";
 
 interface Comment {
   id: number;
@@ -16,18 +17,134 @@ interface Comment {
   timestamp: Date;
 }
 
+interface LikeAnimation {
+  id: string;
+  x: number;
+  y: number;
+}
+
 export default function PhotoGallery() {
   const { data: photos, isLoading } = usePhotos(true);
   const toggleLike = useTogglePhotoLike();
+  const { toast } = useToast();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [comments, setComments] = useState<{ [photoId: number]: Comment[] }>({});
   const [newComment, setNewComment] = useState("");
   const [commenterName, setCommenterName] = useState("");
+  const [userLikes, setUserLikes] = useState<Set<number>>(new Set());
+  const [likeAnimations, setLikeAnimations] = useState<LikeAnimation[]>([]);
+  const [showUnlikeDialog, setShowUnlikeDialog] = useState<number | null>(null);
+
+  // Load user likes from localStorage on component mount
+  useEffect(() => {
+    const savedLikes = localStorage.getItem('user-likes');
+    if (savedLikes) {
+      try {
+        const likesObj = JSON.parse(savedLikes);
+        const likedPhotoIds = Object.keys(likesObj).filter(id => likesObj[id]).map(Number);
+        setUserLikes(new Set(likedPhotoIds));
+      } catch (error) {
+        console.error('Failed to load user likes:', error);
+      }
+    }
+  }, []);
+
+  // Clean up animations
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLikeAnimations(prev => prev.slice(0, -1));
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [likeAnimations]);
+
+  const createHeartAnimation = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const animationId = `heart-${Date.now()}-${Math.random()}`;
+    setLikeAnimations(prev => [...prev, { id: animationId, x, y }]);
+  };
 
   const handleLike = (photoId: number, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    toggleLike.mutate(photoId);
+    
+    const isAlreadyLiked = userLikes.has(photoId);
+    
+    if (isAlreadyLiked) {
+      // Show confirmation dialog for unlike
+      setShowUnlikeDialog(photoId);
+      return;
+    }
+
+    // Create heart animation
+    if (e) {
+      createHeartAnimation(e);
+    }
+
+    // Add to user likes immediately for UI feedback
+    setUserLikes(prev => new Set([...prev, photoId]));
+    
+    toggleLike.mutate(photoId, {
+      onSuccess: (data) => {
+        // Update localStorage
+        const savedLikes = JSON.parse(localStorage.getItem('user-likes') || '{}');
+        savedLikes[photoId] = data.liked;
+        localStorage.setItem('user-likes', JSON.stringify(savedLikes));
+        
+        // Show success toast
+        toast({
+          title: "❤️ Lajk přidán!",
+          description: "Foto se vám líbí",
+          duration: 2000,
+        });
+      },
+      onError: () => {
+        // Revert UI change on error
+        setUserLikes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(photoId);
+          return newSet;
+        });
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se přidat lajk",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const confirmUnlike = (photoId: number) => {
+    setUserLikes(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(photoId);
+      return newSet;
+    });
+
+    toggleLike.mutate(photoId, {
+      onSuccess: (data) => {
+        const savedLikes = JSON.parse(localStorage.getItem('user-likes') || '{}');
+        savedLikes[photoId] = data.liked;
+        localStorage.setItem('user-likes', JSON.stringify(savedLikes));
+        
+        toast({
+          title: "💔 Lajk odebrán",
+          description: "Lajk byl úspěšně odebrán",
+          duration: 2000,
+        });
+      },
+      onError: () => {
+        setUserLikes(prev => new Set([...prev, photoId]));
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se odebrat lajk",
+          variant: "destructive",
+        });
+      }
+    });
+    setShowUnlikeDialog(null);
   };
 
   const downloadImage = (url: string, filename: string, e?: React.MouseEvent) => {
@@ -147,10 +264,35 @@ export default function PhotoGallery() {
                           <Button
                             onClick={(e) => handleLike(photo.id, e)}
                             size="sm"
-                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 text-white px-3 py-1.5 rounded-full"
+                            className={`relative overflow-hidden backdrop-blur-sm border-0 px-3 py-1.5 rounded-full transition-all duration-300 transform hover:scale-110 ${
+                              userLikes.has(photo.id) 
+                                ? 'bg-red-500/80 hover:bg-red-600/80 text-white shadow-lg shadow-red-500/30' 
+                                : 'bg-white/20 hover:bg-white/30 text-white'
+                            }`}
                           >
-                            <Heart className={`h-4 w-4 mr-1 ${photo.likes > 0 ? 'fill-red-500 text-red-500' : ''}`} />
-                            <span className="text-xs">{photo.likes}</span>
+                            <Heart 
+                              className={`h-4 w-4 mr-1 transition-all duration-300 ${
+                                userLikes.has(photo.id) 
+                                  ? 'fill-white text-white scale-110' 
+                                  : 'text-white hover:text-red-300'
+                              }`} 
+                            />
+                            <span className="text-xs font-medium">{photo.likes}</span>
+                            
+                            {/* Floating hearts animation */}
+                            {likeAnimations.map((animation) => (
+                              <div
+                                key={animation.id}
+                                className="absolute pointer-events-none animate-ping"
+                                style={{
+                                  left: animation.x,
+                                  top: animation.y,
+                                  transform: 'translate(-50%, -50%)',
+                                }}
+                              >
+                                <Heart className="h-3 w-3 fill-red-500 text-red-500 animate-bounce" />
+                              </div>
+                            ))}
                           </Button>
                           <div className="flex items-center gap-1 text-white/80">
                             <MessageCircle className="h-4 w-4" />
@@ -249,11 +391,36 @@ export default function PhotoGallery() {
                 <h3 className="font-semibold text-lg mb-2">{selectedPhoto?.originalName}</h3>
                 <div className="flex items-center gap-4 mb-4">
                   <Button
-                    onClick={() => handleLike(selectedPhoto?.id || 0)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+                    onClick={(e) => handleLike(selectedPhoto?.id || 0, e)}
+                    className={`relative overflow-hidden flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105 ${
+                      userLikes.has(selectedPhoto?.id || 0)
+                        ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30'
+                        : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                    }`}
                   >
-                    <Heart className={`h-5 w-5 ${(selectedPhoto?.likes || 0) > 0 ? 'fill-red-500 text-red-500' : ''}`} />
-                    <span>{selectedPhoto?.likes || 0}</span>
+                    <Heart 
+                      className={`h-5 w-5 transition-all duration-300 ${
+                        userLikes.has(selectedPhoto?.id || 0)
+                          ? 'fill-white text-white'
+                          : 'text-gray-600 dark:text-gray-300'
+                      }`} 
+                    />
+                    <span className="font-medium">{selectedPhoto?.likes || 0}</span>
+                    
+                    {/* Floating hearts for dialog */}
+                    {likeAnimations.map((animation) => (
+                      <div
+                        key={animation.id}
+                        className="absolute pointer-events-none"
+                        style={{
+                          left: animation.x,
+                          top: animation.y,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        <Heart className="h-4 w-4 fill-red-500 text-red-500 animate-ping" />
+                      </div>
+                    ))}
                   </Button>
                   <Button
                     onClick={() => downloadImage(selectedPhoto?.url || '', selectedPhoto?.originalName || '')}
@@ -329,6 +496,33 @@ export default function PhotoGallery() {
                 </div>
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unlike Confirmation Dialog */}
+      <Dialog open={showUnlikeDialog !== null} onOpenChange={() => setShowUnlikeDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Odebrat lajk?</DialogTitle>
+          <DialogDescription>
+            Už jste této fotce dal/a lajk. Chcete svůj lajk odebrat?
+          </DialogDescription>
+          
+          <div className="flex items-center gap-3 mt-6">
+            <Button
+              onClick={() => setShowUnlikeDialog(null)}
+              variant="outline"
+              className="flex-1"
+            >
+              Ne, ponechat lajk
+            </Button>
+            <Button
+              onClick={() => showUnlikeDialog && confirmUnlike(showUnlikeDialog)}
+              variant="destructive"
+              className="flex-1"
+            >
+              Ano, odebrat lajk
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
