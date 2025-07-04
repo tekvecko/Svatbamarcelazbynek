@@ -196,7 +196,7 @@ export default function PhotoGallery() {
                     />
                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                       <Button
-                        onClick={() => handleLike(photo.id, {} as React.MouseEvent)}
+                        onClick={(e) => handleLike(photo.id, e)}
                         className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-full transition-colors text-white"
                       >
                         <Heart className="h-4 w-4 text-red-400" fill="currentColor" />
@@ -204,14 +204,14 @@ export default function PhotoGallery() {
                       </Button>
                       <div className="flex gap-2">
                         <Button
-                          onClick={() => downloadImage(photo.url, photo.originalName, {} as React.MouseEvent)}
+                          onClick={(e) => downloadImage(photo.url, photo.originalName, e)}
                           size="icon"
                           className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors text-white"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
                         <Button
-                          onClick={() => shareImage(photo.url, {} as React.MouseEvent)}
+                          onClick={(e) => shareImage(photo.url, e)}
                           size="icon"
                           className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors text-white"
                         >
