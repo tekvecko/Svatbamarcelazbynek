@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, MoreVertical } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,6 +28,7 @@ export default function PhotoGallery() {
   const [userLikes, setUserLikes] = useState<Set<number>>(new Set());
   const [likeAnimations, setLikeAnimations] = useState<LikeAnimation[]>([]);
   const [showUnlikeDialog, setShowUnlikeDialog] = useState<number | null>(null);
+  const [activeMenu, setActiveMenu] = useState<number | null>(null);
 
   const selectedPhoto = photos?.[selectedPhotoIndex];
   const { data: comments = [] } = usePhotoComments(selectedPhoto?.id || 0);
@@ -189,6 +190,7 @@ export default function PhotoGallery() {
   const openPhoto = (index: number) => {
     setSelectedPhotoIndex(index);
     setIsDialogOpen(true);
+    setActiveMenu(null);
   };
 
   const navigatePhoto = (direction: 'prev' | 'next') => {
@@ -245,83 +247,128 @@ export default function PhotoGallery() {
                     />
                   </div>
                   
-                  {/* Overlay with info */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <p className="text-white text-sm font-medium mb-3 truncate">
-                        {photo.originalName}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleLike(photo.id, e);
-                            }}
-                            size="sm"
-                            className={`relative overflow-hidden backdrop-blur-sm border-0 px-3 py-1.5 rounded-full transition-all duration-300 transform hover:scale-110 ${
+                  {/* Three-dot menu button */}
+                  <div className="absolute top-3 right-3">
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveMenu(activeMenu === photo.id ? null : photo.id);
+                      }}
+                      size="sm"
+                      className="bg-black/50 hover:bg-black/70 backdrop-blur-sm border-0 text-white p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Menu overlay */}
+                  {activeMenu === photo.id && (
+                    <div 
+                      className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col justify-center items-center p-4 transition-all duration-300"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveMenu(null);
+                      }}
+                    >
+                      <div 
+                        className="bg-white/10 backdrop-blur-md rounded-2xl p-6 w-full max-w-sm space-y-4"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <h3 className="text-white font-medium text-center mb-4 truncate">
+                          {photo.originalName}
+                        </h3>
+                        
+                        {/* Like button */}
+                        <Button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleLike(photo.id, e);
+                          }}
+                          className={`w-full relative overflow-hidden flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                            userLikes.has(photo.id) 
+                              ? 'bg-red-500/80 hover:bg-red-600/80 text-white' 
+                              : 'bg-white/20 hover:bg-white/30 text-white'
+                          }`}
+                        >
+                          <Heart 
+                            className={`h-5 w-5 transition-all duration-300 ${
                               userLikes.has(photo.id) 
-                                ? 'bg-red-500/80 hover:bg-red-600/80 text-white shadow-lg shadow-red-500/30' 
-                                : 'bg-white/20 hover:bg-white/30 text-white'
-                            }`}
-                          >
-                            <Heart 
-                              className={`h-4 w-4 mr-1 transition-all duration-300 ${
-                                userLikes.has(photo.id) 
-                                  ? 'fill-white text-white scale-110' 
-                                  : 'text-white hover:text-red-300'
-                              }`} 
-                            />
-                            <span className="text-xs font-medium">{photo.likes}</span>
-                            
-                            {/* Floating hearts animation */}
-                            {likeAnimations.map((animation) => (
-                              <div
-                                key={animation.id}
-                                className="absolute pointer-events-none animate-ping"
-                                style={{
-                                  left: animation.x,
-                                  top: animation.y,
-                                  transform: 'translate(-50%, -50%)',
-                                }}
-                              >
-                                <Heart className="h-3 w-3 fill-red-500 text-red-500 animate-bounce" />
-                              </div>
-                            ))}
-                          </Button>
-                          <div className="flex items-center gap-1 text-white/80">
-                            <MessageCircle className="h-4 w-4" />
-                            <span className="text-xs">{photo.commentCount || 0}</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-1">
+                                ? 'fill-white text-white' 
+                                : 'text-white'
+                            }`} 
+                          />
+                          <span className="flex-1 text-left">
+                            {userLikes.has(photo.id) ? 'Odebrat lajk' : 'Lajknout'}
+                          </span>
+                          <span className="text-sm">{photo.likes}</span>
+                          
+                          {/* Floating hearts animation */}
+                          {likeAnimations.map((animation) => (
+                            <div
+                              key={animation.id}
+                              className="absolute pointer-events-none"
+                              style={{
+                                left: animation.x,
+                                top: animation.y,
+                                transform: 'translate(-50%, -50%)',
+                              }}
+                            >
+                              <Heart className="h-4 w-4 fill-red-500 text-red-500 animate-ping" />
+                            </div>
+                          ))}
+                        </Button>
+
+                        {/* Comments button */}
+                        <Button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveMenu(null);
+                            openPhoto(index);
+                          }}
+                          className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-3 px-4 py-3 rounded-xl"
+                        >
+                          <MessageCircle className="h-5 w-5" />
+                          <span className="flex-1 text-left">Komentáře</span>
+                          <span className="text-sm">{photo.commentCount || 0}</span>
+                        </Button>
+
+                        {/* Action buttons */}
+                        <div className="flex gap-3">
                           <Button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               downloadImage(photo.url, photo.originalName, e);
+                              setActiveMenu(null);
                             }}
-                            size="sm"
-                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 text-white p-1.5 rounded-full"
+                            className="flex-1 bg-white/20 hover:bg-white/30 text-white flex items-center gap-2 px-4 py-3 rounded-xl"
                           >
-                            <Download className="h-3 w-3" />
+                            <Download className="h-4 w-4" />
+                            <span>Stáhnout</span>
                           </Button>
                           <Button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               shareImage(photo.url, e);
+                              setActiveMenu(null);
                             }}
-                            size="sm"
-                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 text-white p-1.5 rounded-full"
+                            className="flex-1 bg-white/20 hover:bg-white/30 text-white flex items-center gap-2 px-4 py-3 rounded-xl"
                           >
-                            <Share2 className="h-3 w-3" />
+                            <Share2 className="h-4 w-4" />
+                            <span>Sdílet</span>
                           </Button>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </Card>
               </CarouselItem>
             ))}
