@@ -23,6 +23,8 @@ export default function PhotoGallery() {
   const { toast } = useToast();
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(false);
+  const [selectedCommentPhotoId, setSelectedCommentPhotoId] = useState<number | null>(null);
   const [newComment, setNewComment] = useState("");
   const [commenterName, setCommenterName] = useState("");
   const [userLikes, setUserLikes] = useState<Set<number>>(new Set());
@@ -32,6 +34,7 @@ export default function PhotoGallery() {
 
   const selectedPhoto = photos?.[selectedPhotoIndex];
   const { data: comments = [] } = usePhotoComments(selectedPhoto?.id || 0);
+  const { data: commentDialogComments = [] } = usePhotoComments(selectedCommentPhotoId || 0);
 
   // Load user likes from localStorage on component mount
   useEffect(() => {
@@ -79,7 +82,11 @@ export default function PhotoGallery() {
     }
 
     // Add to user likes immediately for UI feedback
-    setUserLikes(prev => new Set([...prev, photoId]));
+    setUserLikes(prev => {
+      const newSet = new Set(prev);
+      newSet.add(photoId);
+      return newSet;
+    });
     
     toggleLike.mutate(photoId, {
       onSuccess: (data) => {
@@ -131,7 +138,11 @@ export default function PhotoGallery() {
         });
       },
       onError: () => {
-        setUserLikes(prev => new Set([...prev, photoId]));
+        setUserLikes(prev => {
+          const newSet = new Set(prev);
+          newSet.add(photoId);
+          return newSet;
+        });
         toast({
           title: "Chyba",
           description: "Nepodařilo se odebrat lajk",
@@ -185,6 +196,12 @@ export default function PhotoGallery() {
         }
       }
     );
+  };
+
+  const openCommentsDialog = (photoId: number) => {
+    setSelectedCommentPhotoId(photoId);
+    setIsCommentsDialogOpen(true);
+    setActiveMenu(null);
   };
 
   const openPhoto = (index: number) => {
@@ -294,8 +311,7 @@ export default function PhotoGallery() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setSelectedPhotoIndex(index);
-                          setIsDialogOpen(true);
+                          openCommentsDialog(photo.id);
                         }}
                         size="sm"
                         className="bg-black/60 hover:bg-black/80 text-white flex items-center gap-2 px-3 py-2 rounded-full"
@@ -402,9 +418,7 @@ export default function PhotoGallery() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setActiveMenu(null);
-                            setSelectedPhotoIndex(index);
-                            setIsDialogOpen(true);
+                            openCommentsDialog(photo.id);
                           }}
                           className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-3 px-4 py-3 rounded-xl"
                         >
@@ -625,6 +639,76 @@ export default function PhotoGallery() {
                       </Button>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Comments Dialog */}
+      <Dialog open={isCommentsDialogOpen} onOpenChange={setIsCommentsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+          <DialogTitle>Komentáře</DialogTitle>
+          <DialogDescription>
+            Komentáře k fotce {photos?.find(p => p.id === selectedCommentPhotoId)?.originalName || 'neznámá fotka'}
+          </DialogDescription>
+          
+          <div className="flex flex-col max-h-[60vh]">
+            {/* Comments list */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {commentDialogComments.map((comment) => (
+                <div key={comment.id} className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-sm">{comment.author}</span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(comment.createdAt).toLocaleString('cs-CZ', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm">{comment.text}</p>
+                  </div>
+                </div>
+              ))}
+              
+              {commentDialogComments.length === 0 && (
+                <p className="text-gray-500 text-center py-8">
+                  Zatím žádné komentáře. Buďte první!
+                </p>
+              )}
+            </div>
+
+            {/* Add comment form */}
+            <div className="p-4 border-t bg-gray-50 dark:bg-gray-700/50">
+              <div className="space-y-3">
+                <Input
+                  placeholder="Vaše jméno"
+                  value={commenterName}
+                  onChange={(e) => setCommenterName(e.target.value)}
+                  className="text-sm"
+                />
+                <div className="flex gap-2">
+                  <Textarea
+                    placeholder="Napište komentář..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="flex-1 text-sm resize-none"
+                    rows={2}
+                  />
+                  <Button
+                    onClick={() => handleAddComment(selectedCommentPhotoId || 0)}
+                    size="sm"
+                    className="self-end"
+                    disabled={!newComment.trim() || !commenterName.trim() || addComment.isPending}
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>

@@ -38,7 +38,17 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getPhotos(approved?: boolean): Promise<Photo[]> {
-    let query = db.select().from(photos).orderBy(desc(photos.uploadedAt));
+    let query = db.select({
+      id: photos.id,
+      filename: photos.filename,
+      originalName: photos.originalName,
+      url: photos.url,
+      thumbnailUrl: photos.thumbnailUrl,
+      likes: photos.likes,
+      approved: photos.approved,
+      uploadedAt: photos.uploadedAt,
+      commentCount: sql<number>`(SELECT COUNT(*) FROM photo_comments WHERE photo_id = ${photos.id})`
+    }).from(photos).orderBy(desc(photos.uploadedAt));
     
     if (approved !== undefined) {
       query = query.where(eq(photos.approved, approved)) as any;
