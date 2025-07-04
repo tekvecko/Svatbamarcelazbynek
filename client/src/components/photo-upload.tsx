@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useUploadPhotos } from "@/hooks/use-photos";
 import { Card } from "@/components/ui/card";
