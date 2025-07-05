@@ -19,6 +19,12 @@ interface AIPhotoEnhancerProps {
   inlineMode?: boolean;
 }
 
+const SeverityColors = {
+  low: "bg-green-100 text-green-800 border-green-200",
+  medium: "bg-yellow-100 text-yellow-800 border-yellow-200", 
+  high: "bg-red-100 text-red-800 border-red-200",
+};
+
 const CategoryIcons = {
   lighting: Sun,
   composition: Camera,
@@ -27,14 +33,9 @@ const CategoryIcons = {
   artistic: Sparkles,
 };
 
-const SeverityColors = {
-  low: "bg-green-100 text-green-800 border-green-200",
-  medium: "bg-yellow-100 text-yellow-800 border-yellow-200", 
-  high: "bg-red-100 text-red-800 border-red-200",
-};
-
 export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false, inlineMode = false }: AIPhotoEnhancerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   const { data: enhancement, isLoading: isLoadingEnhancement, error } = usePhotoEnhancement(photoId);
   const analyzePhoto = useAnalyzePhoto();
   const updateVisibility = useUpdateEnhancementVisibility();
@@ -47,7 +48,6 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
       await analyzePhoto.mutateAsync(photoId);
     } catch (error) {
       console.error('Analysis failed:', error);
-      // Error will be handled by React Query and shown in UI
     }
   };
 
@@ -63,45 +63,6 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
       case 'low': return <CheckCircle className="h-4 w-4" />;
       default: return <Lightbulb className="h-4 w-4" />;
     }
-  };
-
-  const renderSuggestionCard = (suggestion: PhotoEnhancementSuggestion, index: number) => {
-    const CategoryIcon = CategoryIcons[suggestion.category] || Lightbulb;
-    
-    return (
-      <Card key={index} className={`border-l-4 ${suggestion.severity === 'high' ? 'border-l-red-500' : suggestion.severity === 'medium' ? 'border-l-yellow-500' : 'border-l-green-500'}`}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CategoryIcon className="h-4 w-4 text-gray-600" />
-              <CardTitle className="text-base">{suggestion.title}</CardTitle>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge className={SeverityColors[suggestion.severity]} variant="outline">
-                {getSeverityIcon(suggestion.severity)}
-                <span className="ml-1 capitalize">{suggestion.severity}</span>
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                {Math.round(suggestion.confidence * 100)}%
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <CardDescription className="mb-3">
-            {suggestion.description}
-          </CardDescription>
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-              💡 Doporučení:
-            </p>
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              {suggestion.suggestion}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
   };
 
   // For inline mode (inside other dialogs), just show a button
@@ -151,28 +112,36 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-yellow-500" />
-                <span className="font-medium">Skóre: {enhancement.overallScore}/10</span>
+                <span className="font-semibold">Skóre: {enhancement.overallScore}/10</span>
               </div>
               
               {enhancement.suggestions.slice(0, 2).map((suggestion, index) => (
-                <div key={index} className="p-3 bg-blue-50 rounded-lg border-l-4 border-l-blue-400">
-                  <div className="font-medium text-sm">{suggestion.title}</div>
-                  <div className="text-xs text-gray-600 mt-1">{suggestion.suggestion}</div>
+                <div key={index} className="p-3 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline" className={SeverityColors[suggestion.severity]}>
+                      {getSeverityIcon(suggestion.severity)}
+                      <span className="ml-1 capitalize">{suggestion.severity}</span>
+                    </Badge>
+                  </div>
+                  <h4 className="font-medium text-sm">{suggestion.title}</h4>
+                  <p className="text-xs text-gray-600 mt-1">{suggestion.suggestion}</p>
                 </div>
               ))}
               
-              <button 
+              <Button 
                 onClick={() => setIsOpen(true)}
-                className="w-full text-xs text-blue-600 hover:text-blue-800"
+                variant="outline" 
+                size="sm" 
+                className="w-full"
               >
                 Zobrazit kompletní analýzu
-              </button>
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
       );
     }
-    
+
     return null;
   }
 
@@ -209,90 +178,72 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
             </div>
           )}
 
+          {/* Need Analysis */}
           {needsAnalysis && !analyzePhoto.isPending && (
-            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <Sparkles className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Analyzovat fotku pomocí AI</h3>
-                  <p className="text-gray-600 mb-4">
-                    Nechte umělou inteligenci analyzovat tuto fotku a získejte odborné návrhy na vylepšení osvětlení, kompozice a celkového vzhledu.
-                  </p>
-                  <Button onClick={handleAnalyze} className="bg-purple-600 hover:bg-purple-700">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Spustit AI analýzu
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {analyzePhoto.isPending && (
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
-                  <h3 className="text-lg font-semibold mb-2">Analýza probíhá...</h3>
-                  <p className="text-gray-600">
-                    AI analyzuje vaši fotku. Může to trvat několik sekund.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {analyzePhoto.error && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                <strong>Chyba při analýze:</strong>
-                <p className="mt-1">
-                  {analyzePhoto.error.message.includes('OPENAI_API_KEY') || analyzePhoto.error.message.includes('Failed to analyze') 
-                    ? 'AI analýza není momentálně dostupná. Kontaktujte správce.'
-                    : 'Nastala chyba při analýze fotky. Zkuste to prosím znovu.'}
+            <div className="text-center py-8">
+              <div className="mb-4">
+                <Sparkles className="h-12 w-12 text-purple-500 mx-auto mb-2" />
+                <h3 className="text-lg font-semibold mb-2">Fotka zatím nebyla analyzována</h3>
+                <p className="text-gray-600 mb-4">
+                  Spusťte AI analýzu pro získání personalizovaných návrhů na vylepšení této svatební fotky.
                 </p>
-                <Button 
-                  onClick={() => analyzePhoto.reset()} 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                >
-                  Zkusit znovu
-                </Button>
+              </div>
+              <Button onClick={handleAnalyze} className="bg-purple-600 hover:bg-purple-700">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Spustit AI analýzu
+              </Button>
+            </div>
+          )}
+
+          {/* Analysis in Progress */}
+          {analyzePhoto.isPending && (
+            <div className="text-center py-8">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Analyzuji fotku...</h3>
+              <p className="text-gray-600">
+                Umělá inteligence analyzuje kompozici, osvětlení, barvy a další aspekty vaší fotky.
+              </p>
+            </div>
+          )}
+
+          {/* Analysis Error */}
+          {analyzePhoto.error && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {analyzePhoto.error.message || "Nepodařilo se analyzovat fotku. Zkuste to prosím znovu."}
               </AlertDescription>
             </Alert>
           )}
 
-          {/* Enhancement Results */}
+          {/* Analysis Results */}
           {hasEnhancement && (
-            <>
+            <div className="space-y-6">
               {/* Admin Controls */}
               {isAdminMode && (
-                <Card className="bg-gray-50 border-gray-200">
+                <Card>
                   <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
                       <Eye className="h-4 w-4" />
                       Nastavení viditelnosti
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Zobrazit návrhy hostům</p>
-                        <p className="text-sm text-gray-600">Hosté uvidí AI návrhy na vylepšení této fotky</p>
-                      </div>
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={enhancement.isVisible}
                         onCheckedChange={handleVisibilityToggle}
-                        disabled={updateVisibility.isPending}
                       />
+                      <span className="text-sm">
+                        {enhancement.isVisible ? "Návrhy jsou viditelné pro hosty" : "Návrhy jsou skryty před hosty"}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
               {/* Overall Score */}
-              <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Star className="h-5 w-5 text-yellow-500" />
@@ -301,108 +252,241 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4">
-                    <div className="text-3xl font-bold text-emerald-600">
+                    <div className="text-3xl font-bold text-purple-600">
                       {enhancement.overallScore}/10
                     </div>
                     <div className="flex-1">
                       <Progress value={enhancement.overallScore * 10} className="h-3" />
-                      <p className="text-sm text-gray-600 mt-1">
-                        {enhancement.overallScore >= 8 ? 'Výborná fotka!' : 
-                         enhancement.overallScore >= 6 ? 'Dobrá fotka s potenciálem pro vylepšení' : 
-                         'Fotka by mohla být výrazně vylepšena'}
-                      </p>
                     </div>
                   </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {enhancement.overallScore >= 8 ? "Výborná fotka!" : 
+                     enhancement.overallScore >= 6 ? "Dobrá fotka s potenciálem pro vylepšení" :
+                     "Fotka by mohla být výrazně vylepšena"}
+                  </p>
                 </CardContent>
               </Card>
 
-              {/* Strengths */}
-              {enhancement.strengths.length > 0 && (
-                <Card className="bg-green-50 border-green-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-800">
-                      <CheckCircle className="h-5 w-5" />
-                      Silné stránky
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {enhancement.strengths.map((strength, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-green-800">{strength}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Primary Issues */}
-              {enhancement.primaryIssues.length > 0 && (
-                <Card className="bg-amber-50 border-amber-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-amber-800">
-                      <AlertTriangle className="h-5 w-5" />
-                      Hlavní problémy
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {enhancement.primaryIssues.map((issue, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-amber-800">{issue}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Enhancement Preview */}
-              {enhancement.enhancementPreview && (
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-800">
-                      <Eye className="h-5 w-5" />
-                      Náhled vylepšení
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-blue-800 italic">"{enhancement.enhancementPreview}"</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Suggestions */}
-              {enhancement.suggestions.length > 0 && (
+              {/* Summary View */}
+              {!showFullAnalysis && (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Lightbulb className="h-5 w-5 text-yellow-600" />
-                    <h3 className="text-lg font-semibold">Návrhy na vylepšení</h3>
-                    <Badge variant="secondary">{enhancement.suggestions.length}</Badge>
-                  </div>
+                  {/* Top Suggestions Preview */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-orange-500" />
+                        Hlavní návrhy na vylepšení
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {enhancement.suggestions.slice(0, 3).map((suggestion, index) => {
+                          const IconComponent = CategoryIcons[suggestion.category] || Lightbulb;
+                          return (
+                            <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
+                              <div className="flex-shrink-0">
+                                <IconComponent className="h-5 w-5 text-purple-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-medium text-sm">{suggestion.title}</h4>
+                                  <Badge variant="outline" className={SeverityColors[suggestion.severity]}>
+                                    {suggestion.severity}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-gray-600">{suggestion.suggestion}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {enhancement.suggestions.length > 3 && (
+                        <Button 
+                          onClick={() => setShowFullAnalysis(true)}
+                          variant="outline" 
+                          className="w-full mt-4"
+                        >
+                          Zobrazit kompletní analýzu ({enhancement.suggestions.length} návrhů)
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                  <div className="space-y-4">
-                    {enhancement.suggestions
-                      .sort((a, b) => {
-                        const severityOrder = { high: 3, medium: 2, low: 1 };
-                        return severityOrder[b.severity] - severityOrder[a.severity];
-                      })
-                      .map((suggestion, index) => renderSuggestionCard(suggestion, index))
-                    }
-                  </div>
+                  {/* Strengths */}
+                  {enhancement.strengths.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          Silné stránky fotky
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 gap-2">
+                          {enhancement.strengths.map((strength, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <span className="text-sm">{strength}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
 
-              <Separator className="my-4" />
+              {/* Full Analysis View */}
+              {showFullAnalysis && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Kompletní analýza</h3>
+                    <Button 
+                      onClick={() => setShowFullAnalysis(false)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Zobrazit souhrn
+                    </Button>
+                  </div>
 
-              <div className="text-center text-sm text-gray-500">
-                <p>Analýza provedena: {new Date(enhancement.analysisDate).toLocaleString('cs-CZ')}</p>
-                <p className="mt-1">Powered by AI</p>
-              </div>
-            </>
+                  {/* Wedding Context */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Camera className="h-5 w-5 text-blue-500" />
+                        Kontext fotky
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Typ fotky:</span>
+                          <span className="ml-2 capitalize">{enhancement.weddingContext.photoType}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Osvětlení:</span>
+                          <span className="ml-2 capitalize">{enhancement.weddingContext.lighting}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Prostředí:</span>
+                          <span className="ml-2 capitalize">{enhancement.weddingContext.setting}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Objekty:</span>
+                          <span className="ml-2">{enhancement.weddingContext.subjects.join(", ")}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* All Suggestions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-orange-500" />
+                        Všechny návrhy na vylepšení
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {enhancement.suggestions.map((suggestion, index) => {
+                          const IconComponent = CategoryIcons[suggestion.category] || Lightbulb;
+                          return (
+                            <div key={index} className="border rounded-lg p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0">
+                                  <IconComponent className="h-5 w-5 text-purple-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-medium">{suggestion.title}</h4>
+                                    <Badge variant="outline" className={SeverityColors[suggestion.severity]}>
+                                      {getSeverityIcon(suggestion.severity)}
+                                      <span className="ml-1 capitalize">{suggestion.severity}</span>
+                                    </Badge>
+                                    <Badge variant="outline">
+                                      {suggestion.category}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-2">{suggestion.description}</p>
+                                  <p className="text-sm font-medium text-purple-600">{suggestion.suggestion}</p>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <span className="text-xs text-gray-500">Jistota:</span>
+                                    <Progress value={suggestion.confidence * 100} className="h-2 w-20" />
+                                    <span className="text-xs text-gray-500">{Math.round(suggestion.confidence * 100)}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Primary Issues */}
+                  {enhancement.primaryIssues.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5 text-orange-500" />
+                          Hlavní problémy
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {enhancement.primaryIssues.map((issue, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-orange-500" />
+                              <span className="text-sm">{issue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Strengths */}
+                  {enhancement.strengths.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          Silné stránky fotky
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {enhancement.strengths.map((strength, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <span className="text-sm">{strength}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Enhancement Preview */}
+                  {enhancement.enhancementPreview && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-purple-500" />
+                          Náhled vylepšené verze
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-700">{enhancement.enhancementPreview}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </DialogContent>
