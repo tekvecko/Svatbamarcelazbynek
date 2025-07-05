@@ -6,12 +6,15 @@ const groq = new Groq({
 });
 
 export interface PhotoEnhancementSuggestion {
-  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic';
-  severity: 'low' | 'medium' | 'high';
+  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast';
+  severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
   suggestion: string;
+  technicalDetails: string;
+  specificValues: string;
   confidence: number;
+  priority: number;
 }
 
 export interface PhotoAnalysisResult {
@@ -73,15 +76,47 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
       messages: [
         {
           role: "system",
-          content: `Jste profesionální svatební fotograf a expert na vylepšení fotografií. Analyzujte svatební fotky a poskytněte detailní, praktické návrhy na vylepšení. Zaměřte se na:
+          content: `Jste renomovaný svatební fotograf s 20letou praxí a expert na digitální postprodukci. Analyzujte tuto svatební fotografii s maximální přesností a poskytněte detailní, technicky fundované návrhy na vylepšení.
 
-1. Technické aspekty (expozice, zaostření, vyvážení bílé, šum)
-2. Kompozice (pravidlo třetin, vedoucí linky, rámování)
-3. Osvětlení (přirozené vs umělé, tvrdé vs měkké, směr)
-4. Barevné ladění (sytost, teplota, odstín)
-5. Umělecké prvky (emoce, vyprávění, nálada)
+ANALYZUJTE TYTO ASPEKTY:
 
-Uvažujte o svatebním kontextu - jsou to vzácné vzpomínky, které by měly vypadat nejlépe. Buďte konstruktivní a konkrétní ve svých doporučeních.
+🔍 TECHNICKÁ KVALITA:
+- Expozice (histogram, světla/stíny, ořezané hodnoty)
+- Zaostření (hloubka ostrosti, motion blur, správné zaostření na subjekt)
+- Vyvážení bílé (teplota, odstín, konzistence osvětlení)
+- Šum a zrnitost (ISO performance, detail v stínech)
+- Dynamický rozsah a kontrast
+
+📐 KOMPOZICE A RÁMOVÁNÍ:
+- Pravidlo třetin a zlatý řez
+- Vedoucí linky a vizuální flow
+- Rámování a ořez (headroom, breathing room)
+- Symetrie vs asymetrie
+- Pozadí a rušivé elementy
+- Hloubka kompozice (foreground/background)
+
+💡 OSVĚTLENÍ A ATMOSFÉRA:
+- Kvalita a směr světla (tvrdé/měkké, front/back/side lit)
+- Stíny a jejich charakter
+- Modelování obličeje a postav
+- Atmospheric lighting (golden hour, blue hour, backlight)
+- Reflections a bliky
+
+🎨 BAREVNÉ LADĚNÍ:
+- Barevná harmonie a paleta
+- Sytost a luminance jednotlivých kanálů
+- Skin tones a jejich přirozenost
+- Color grading potential
+- Konzistence barev v celé fotografii
+
+👰🤵 SVATEBNÍ SPECIFIKA:
+- Emocionální moment a jeho zachycení
+- Svatební detaily (šaty, oblek, květiny, prsteny)
+- Interakce mezi lidmi
+- Storytelling a narativní síla
+- Tradice a kulturní aspekty
+
+Buďte VELMI KONKRÉTNÍ ve svých návrzích - uveďte přesné hodnoty pro korekce (např. "+0.7 EV expozice", "-10 highlights", "+25 shadows", "teplota 5200K"). Pro každý návrh poskytněte technické odůvodnění.
 
 Odpovězte POUZE validním JSON objektem v češtině. Dodržte přesně tento formát bez dalšího textu:
 {
@@ -92,22 +127,34 @@ Odpovězte POUZE validním JSON objektem v češtině. Dodržte přesně tento f
       "category": "lighting",
       "severity": "medium",
       "title": "Krátký český název",
-      "description": "Popis problému v češtině",
+      "description": "Detailní popis problému v češtině",
       "suggestion": "Návrh řešení v češtině",
-      "confidence": 0.8
+      "technicalDetails": "Technické vysvětlení proč je tento problém důležitý",
+      "specificValues": "Konkrétní hodnoty pro korekci (např. +0.7 EV, -10 highlights)",
+      "confidence": 0.8,
+      "priority": 1
     }
   ],
   "strengths": ["silná stránka1", "silná stránka2"],
+  "technicalAnalysis": {
+    "exposureAnalysis": "Detailní analýza expozice",
+    "focusAnalysis": "Analýza zaostření a hloubky ostrosti",
+    "colorAnalysis": "Analýza barevného ladění",
+    "compositionAnalysis": "Analýza kompozice"
+  },
   "weddingContext": {
     "photoType": "ceremony",
     "subjects": ["nevěsta", "ženich"],
     "setting": "outdoor",
-    "lighting": "natural"
+    "lighting": "natural",
+    "emotionalTone": "romantic",
+    "technicalContext": "handheld/tripod"
   }
 }
 
-DŮLEŽITÉ: Použijte pouze tyto hodnoty pro category: "lighting", "composition", "color", "technical", "artistic"
-Použijte pouze tyto hodnoty pro severity: "low", "medium", "high"
+DŮLEŽITÉ: Použijte pouze tyto hodnoty pro category: "lighting", "composition", "color", "technical", "artistic", "exposure", "focus", "noise", "white-balance", "contrast"
+Použijte pouze tyto hodnoty pro severity: "low", "medium", "high", "critical"
+Řaďte návrhy podle priority (1 = nejvyšší priorita)
 Všechny texty (title, description, suggestion, strengths, primaryIssues) pište v češtině.`
         },
         {
@@ -137,14 +184,17 @@ Všechny texty (title, description, suggestion, strengths, primaryIssues) pište
     return {
       overallScore: Math.max(1, Math.min(10, result.overallScore || 7)),
       primaryIssues: Array.isArray(result.primaryIssues) ? result.primaryIssues.slice(0, 3) : [],
-      suggestions: Array.isArray(result.suggestions) ? result.suggestions.slice(0, 5).map((s: any) => ({
-        category: ['lighting', 'composition', 'color', 'technical', 'artistic'].includes(s.category) ? s.category : 'technical',
-        severity: ['low', 'medium', 'high'].includes(s.severity) ? s.severity : 'medium',
+      suggestions: Array.isArray(result.suggestions) ? result.suggestions.slice(0, 8).map((s: any) => ({
+        category: ['lighting', 'composition', 'color', 'technical', 'artistic', 'exposure', 'focus', 'noise', 'white-balance', 'contrast'].includes(s.category) ? s.category : 'technical',
+        severity: ['low', 'medium', 'high', 'critical'].includes(s.severity) ? s.severity : 'medium',
         title: String(s.title || '').substring(0, 100),
-        description: String(s.description || '').substring(0, 200),
-        suggestion: String(s.suggestion || '').substring(0, 300),
-        confidence: Math.max(0, Math.min(1, s.confidence || 0.5))
-      })) : [],
+        description: String(s.description || '').substring(0, 300),
+        suggestion: String(s.suggestion || '').substring(0, 400),
+        technicalDetails: String(s.technicalDetails || '').substring(0, 300),
+        specificValues: String(s.specificValues || '').substring(0, 200),
+        confidence: Math.max(0, Math.min(1, s.confidence || 0.5)),
+        priority: Math.max(1, Math.min(10, s.priority || 5))
+      })).sort((a: any, b: any) => a.priority - b.priority) : [],
       strengths: Array.isArray(result.strengths) ? result.strengths.slice(0, 3) : [],
       weddingContext: {
         photoType: result.weddingContext?.photoType || 'candid',

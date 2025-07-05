@@ -2,12 +2,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 export interface PhotoEnhancementSuggestion {
-  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic';
-  severity: 'low' | 'medium' | 'high';
+  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast';
+  severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
   suggestion: string;
+  technicalDetails?: string;
+  specificValues?: string;
   confidence: number;
+  priority?: number;
 }
 
 export interface PhotoEnhancementAnalysis {

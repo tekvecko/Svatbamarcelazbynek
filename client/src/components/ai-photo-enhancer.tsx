@@ -23,6 +23,7 @@ const SeverityColors = {
   low: "bg-green-100 text-green-800 border-green-200",
   medium: "bg-yellow-100 text-yellow-800 border-yellow-200", 
   high: "bg-red-100 text-red-800 border-red-200",
+  critical: "bg-purple-100 text-purple-800 border-purple-200",
 };
 
 const CategoryIcons = {
@@ -31,6 +32,11 @@ const CategoryIcons = {
   color: Palette,
   technical: Focus,
   artistic: Sparkles,
+  exposure: Sun,
+  focus: Focus,
+  noise: AlertTriangle,
+  'white-balance': Palette,
+  contrast: Star,
 };
 
 export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false, inlineMode = false }: AIPhotoEnhancerProps) {
@@ -411,7 +417,17 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                                     </Badge>
                                   </div>
                                   <p className="text-sm text-gray-600 mb-2">{suggestion.description}</p>
-                                  <p className="text-sm font-medium text-purple-600">{suggestion.suggestion}</p>
+                                  <p className="text-sm font-medium text-purple-600 mb-1">{suggestion.suggestion}</p>
+                                  {suggestion.technicalDetails && (
+                                    <p className="text-xs text-gray-500 mb-1">
+                                      <span className="font-medium">Technické info:</span> {suggestion.technicalDetails}
+                                    </p>
+                                  )}
+                                  {suggestion.specificValues && (
+                                    <p className="text-xs text-blue-600 font-mono bg-blue-50 px-2 py-1 rounded">
+                                      {suggestion.specificValues}
+                                    </p>
+                                  )}
                                   <div className="flex items-center gap-2 mt-2">
                                     <span className="text-xs text-gray-500">Jistota:</span>
                                     <Progress value={suggestion.confidence * 100} className="h-2 w-20" />
