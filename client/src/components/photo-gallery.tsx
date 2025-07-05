@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, Grid, Filter, Search, Eye, Camera, Sparkles, ZoomIn, Play, Pause } from "lucide-react";
+import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, Search, Menu, MoreVertical, Eye, Camera, Star, Clock, TrendingUp, Grid3X3, List, Play, Pause, Maximize2, MinusCircle, PlusCircle } from "lucide-react";
 import AIPhotoEnhancer from "@/components/ai-photo-enhancer";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +18,7 @@ interface LikeAnimation {
   y: number;
 }
 
-type ViewMode = 'grid' | 'masonry' | 'carousel';
+type ViewMode = 'grid' | 'list' | 'cards';
 type FilterType = 'all' | 'liked' | 'recent' | 'popular';
 
 export default function PhotoGallery() {
@@ -38,12 +38,14 @@ export default function PhotoGallery() {
   const [likeAnimations, setLikeAnimations] = useState<LikeAnimation[]>([]);
   const [showUnlikeDialog, setShowUnlikeDialog] = useState<number | null>(null);
   
-  // New states for enhanced gallery
-  const [viewMode, setViewMode] = useState<ViewMode>('masonry');
+  // Android-style states
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const [isAutoPlay, setIsAutoPlay] = useState(false);
-  const [hoveredPhoto, setHoveredPhoto] = useState<number | null>(null);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
   const selectedPhoto = photos?.[selectedPhotoIndex];
   const { data: comments = [] } = usePhotoComments(selectedPhoto?.id || 0);
@@ -51,17 +53,15 @@ export default function PhotoGallery() {
 
   // Filter and search photos
   const filteredPhotos = photos?.filter(photo => {
-    // Search filter
     if (searchTerm && !photo.originalName.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     
-    // Type filter
     switch (filterType) {
       case 'liked':
         return userLikes.has(photo.id);
       case 'recent':
-        return new Date(photo.uploadedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000; // Last 7 days
+        return new Date(photo.uploadedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000;
       case 'popular':
         return photo.likes >= 3;
       default:
@@ -88,7 +88,7 @@ export default function PhotoGallery() {
     if (isAutoPlay && isDialogOpen && photos && photos.length > 1) {
       const interval = setInterval(() => {
         setSelectedPhotoIndex(prev => (prev + 1) % photos.length);
-      }, 3000);
+      }, 4000);
       return () => clearInterval(interval);
     }
   }, [isAutoPlay, isDialogOpen, photos]);
@@ -135,8 +135,8 @@ export default function PhotoGallery() {
         localStorage.setItem('user-likes', JSON.stringify(savedLikes));
         
         toast({
-          title: "❤️ Lajk přidán!",
-          description: "Foto se vám líbí",
+          title: "Líbí se mi!",
+          description: "Fotka byla označena jako oblíbená",
           duration: 2000,
         });
       },
@@ -148,7 +148,7 @@ export default function PhotoGallery() {
         });
         toast({
           title: "Chyba",
-          description: "Nepodařilo se přidat lajk",
+          description: "Nepodařilo se přidat do oblíbených",
           variant: "destructive",
         });
       }
@@ -169,8 +169,8 @@ export default function PhotoGallery() {
         localStorage.setItem('user-likes', JSON.stringify(savedLikes));
         
         toast({
-          title: "💔 Lajk odebrán",
-          description: "Lajk byl úspěšně odebrán",
+          title: "Odebrané z oblíbených",
+          description: "Fotka již není v oblíbených",
           duration: 2000,
         });
       },
@@ -182,7 +182,7 @@ export default function PhotoGallery() {
         });
         toast({
           title: "Chyba",
-          description: "Nepodařilo se odebrat lajk",
+          description: "Nepodařilo se odebrat z oblíbených",
           variant: "destructive",
         });
       }
@@ -213,7 +213,7 @@ export default function PhotoGallery() {
       try {
         await navigator.clipboard.writeText(window.location.origin + url);
         toast({
-          title: "Zkopírováno!",
+          title: "Zkopírováno",
           description: "Odkaz byl zkopírován do schránky",
           duration: 2000,
         });
@@ -236,7 +236,7 @@ export default function PhotoGallery() {
         onSuccess: () => {
           setNewComment("");
           toast({
-            title: "Komentář přidán!",
+            title: "Komentář přidán",
             description: "Váš komentář byl úspěšně přidán",
             duration: 2000,
           });
@@ -265,350 +265,602 @@ export default function PhotoGallery() {
     }
   };
 
-  const getGridClasses = () => {
-    switch (viewMode) {
-      case 'grid':
-        return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
-      case 'masonry':
-        return 'columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4';
-      case 'carousel':
-        return 'flex overflow-x-auto gap-4 pb-4';
-      default:
-        return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
+  const toggleCardExpansion = (photoId: number) => {
+    setExpandedCard(expandedCard === photoId ? null : photoId);
+  };
+
+  const getFilterIcon = (filter: FilterType) => {
+    switch (filter) {
+      case 'liked': return Heart;
+      case 'recent': return Clock;
+      case 'popular': return TrendingUp;
+      default: return Grid3X3;
+    }
+  };
+
+  const getFilterLabel = (filter: FilterType) => {
+    switch (filter) {
+      case 'liked': return 'Oblíbené';
+      case 'recent': return 'Nedávné';
+      case 'popular': return 'Populární';
+      default: return 'Vše';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-24">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-xl font-medium">Načítám galerii...</p>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Připravuji krásné vzpomínky</p>
+      <div className="flex flex-col items-center justify-center py-24 px-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Camera className="h-6 w-6 text-blue-600" />
+          </div>
         </div>
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Načítám galerii</h3>
+        <p className="text-gray-600 dark:text-gray-400 text-center">Připravuji vaše krásné vzpomínky</p>
       </div>
     );
   }
 
   if (!photos || photos.length === 0) {
     return (
-      <div className="text-center py-24">
-        <div className="max-w-md mx-auto">
-          <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
-            <Camera className="h-16 w-16 text-primary" />
-          </div>
-          <h3 className="text-3xl font-bold mb-4 text-gray-800 dark:text-white">Zatím žádné fotky</h3>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-            Buďte první, kdo sdílí své snímky ze svatby!
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90">
-              <Camera className="h-5 w-5 mr-2" />
-              Přidat fotku
-            </Button>
-          </div>
+      <div className="flex flex-col items-center justify-center py-24 px-4">
+        <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
+          <Camera className="h-12 w-12 text-blue-600 dark:text-blue-400" />
         </div>
+        <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">Žádné fotky</h3>
+        <p className="text-gray-600 dark:text-gray-400 text-center mb-6 max-w-sm">
+          Zatím zde nejsou žádné fotografie. Buďte první, kdo sdílí vzpomínky!
+        </p>
+        <Button 
+          size="lg" 
+          className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+        >
+          <Camera className="h-5 w-5 mr-2" />
+          Přidat fotku
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Enhanced Gallery Header */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Camera className="h-8 w-8 text-primary" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Android-style App Bar */}
+      <div className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <Camera className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-800 dark:text-white">Galerie</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {filteredPhotos.length} fotek • {photos.reduce((sum, photo) => sum + photo.likes, 0)} srdíček
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-              Svatební galerie
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {filteredPhotos.length} {filteredPhotos.length === 1 ? 'fotka' : filteredPhotos.length < 5 ? 'fotky' : 'fotek'} • 
-              {' '}{photos.reduce((sum, photo) => sum + photo.likes, 0)} srdíček
-            </p>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {/* Search */}
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Hledat fotky..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-48"
-            />
-          </div>
-
-          {/* Filter */}
-          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-            {[
-              { key: 'all', label: 'Vše', icon: Grid },
-              { key: 'liked', label: 'Líbí se', icon: Heart },
-              { key: 'recent', label: 'Nové', icon: Eye },
-              { key: 'popular', label: 'Populární', icon: Sparkles }
-            ].map(({ key, label, icon: Icon }) => (
-              <Button
-                key={key}
-                onClick={() => setFilterType(key as FilterType)}
-                variant={filterType === key ? 'default' : 'ghost'}
-                size="sm"
-                className="h-8 px-3 text-xs"
-              >
-                <Icon className="h-3 w-3 mr-1" />
-                {label}
-              </Button>
-            ))}
-          </div>
-
-          {/* View Mode */}
-          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-            {[
-              { key: 'masonry', label: 'Zeď', icon: Grid },
-              { key: 'grid', label: 'Mřížka', icon: Grid },
-              { key: 'carousel', label: 'Posuvník', icon: Eye }
-            ].map(({ key, label, icon: Icon }) => (
-              <Button
-                key={key}
-                onClick={() => setViewMode(key as ViewMode)}
-                variant={viewMode === key ? 'default' : 'ghost'}
-                size="sm"
-                className="h-8 px-3 text-xs"
-              >
-                <Icon className="h-3 w-3 mr-1" />
-                {label}
-              </Button>
-            ))}
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSearchActive(!isSearchActive)}
+              className="w-10 h-10 p-0 rounded-full"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowFilterMenu(!showFilterMenu)}
+              className="w-10 h-10 p-0 rounded-full"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
         </div>
+        
+        {/* Search Bar */}
+        <AnimatePresence>
+          {isSearchActive && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-4 pb-3 overflow-hidden"
+            >
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Hledat fotky..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-gray-100 dark:bg-gray-700 border-0 rounded-full"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Filter Menu */}
+        <AnimatePresence>
+          {showFilterMenu && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-4 pb-3 overflow-hidden"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filtr:</span>
+                <div className="flex gap-2 flex-wrap">
+                  {(['all', 'liked', 'recent', 'popular'] as FilterType[]).map((filter) => {
+                    const Icon = getFilterIcon(filter);
+                    return (
+                      <Button
+                        key={filter}
+                        variant={filterType === filter ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFilterType(filter)}
+                        className={`rounded-full h-8 ${
+                          filterType === filter 
+                            ? 'bg-blue-600 text-white' 
+                            : 'border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <Icon className="h-3 w-3 mr-1" />
+                        {getFilterLabel(filter)}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Zobrazení:</span>
+                <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-full p-1">
+                  {([
+                    { key: 'cards', icon: Grid3X3, label: 'Karty' },
+                    { key: 'grid', icon: Grid3X3, label: 'Mřížka' },
+                    { key: 'list', icon: List, label: 'Seznam' }
+                  ] as const).map(({ key, icon: Icon, label }) => (
+                    <Button
+                      key={key}
+                      variant={viewMode === key ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode(key)}
+                      className={`h-8 px-3 rounded-full ${
+                        viewMode === key ? 'bg-blue-600 text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      <Icon className="h-3 w-3 mr-1" />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Gallery Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={viewMode}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
-          className={getGridClasses()}
-        >
-          {filteredPhotos.map((photo, index) => (
-            <motion.div
-              key={photo.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`group relative ${viewMode === 'masonry' ? 'break-inside-avoid mb-4' : ''} ${
-                viewMode === 'carousel' ? 'flex-shrink-0 w-80' : ''
-              }`}
-              onMouseEnter={() => setHoveredPhoto(photo.id)}
-              onMouseLeave={() => setHoveredPhoto(null)}
-            >
-              <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform group-hover:scale-[1.02] border-0">
-                <div className="relative">
-                  <img 
-                    src={photo.thumbnailUrl} 
-                    alt={photo.originalName}
-                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
-                  {/* Photo info overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <h4 className="font-medium text-sm mb-2 truncate">{photo.originalName}</h4>
+      {/* Content Area */}
+      <div className="flex-1 p-4">
+        {/* Android Cards View */}
+        {viewMode === 'cards' && (
+          <div className="space-y-4">
+            {filteredPhotos.map((photo, index) => (
+              <motion.div
+                key={photo.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between p-4 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <Camera className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-800 dark:text-white line-clamp-1">
+                          {photo.originalName}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(photo.uploadedAt).toLocaleDateString('cs-CZ')}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleCardExpansion(photo.id)}
+                      className="w-8 h-8 p-0 rounded-full"
+                    >
+                      {expandedCard === photo.id ? (
+                        <MinusCircle className="h-4 w-4" />
+                      ) : (
+                        <PlusCircle className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Photo */}
+                  <div 
+                    className="relative cursor-pointer group"
+                    onClick={() => openPhoto(photos.findIndex(p => p.id === photo.id))}
+                  >
+                    <img
+                      src={photo.thumbnailUrl}
+                      alt={photo.originalName}
+                      className="w-full h-80 object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-black/50 backdrop-blur-sm rounded-full p-2">
+                        <Maximize2 className="h-4 w-4 text-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className="p-4 pt-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleLike(photo.id, e);
                           }}
-                          size="sm"
-                          className={`relative overflow-hidden h-8 px-3 rounded-full backdrop-blur-sm ${
-                            userLikes.has(photo.id) 
-                              ? 'bg-red-500/80 hover:bg-red-600/80' 
-                              : 'bg-white/20 hover:bg-white/30'
+                          className={`h-9 px-3 rounded-full relative ${
+                            userLikes.has(photo.id)
+                              ? 'text-red-500 hover:text-red-600'
+                              : 'text-gray-600 hover:text-red-500'
                           }`}
                         >
                           <Heart 
                             className={`h-4 w-4 mr-1 ${
-                              userLikes.has(photo.id) ? 'fill-white' : ''
-                            }`} 
+                              userLikes.has(photo.id) ? 'fill-current' : ''
+                            }`}
                           />
-                          <span className="text-xs">{photo.likes}</span>
+                          {photo.likes}
                           
-                          {/* Floating hearts */}
                           {likeAnimations.map((animation) => (
-                            <div
+                            <motion.div
                               key={animation.id}
-                              className="absolute pointer-events-none"
+                              initial={{ opacity: 1, scale: 1, y: 0 }}
+                              animate={{ opacity: 0, scale: 1.5, y: -20 }}
+                              transition={{ duration: 1 }}
+                              className="absolute"
                               style={{
                                 left: animation.x,
                                 top: animation.y,
                                 transform: 'translate(-50%, -50%)',
                               }}
                             >
-                              <Heart className="h-3 w-3 fill-red-500 text-red-500 animate-ping" />
-                            </div>
+                              <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                            </motion.div>
                           ))}
                         </Button>
                         
                         <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             openCommentsDialog(photo.id);
                           }}
-                          size="sm"
-                          className="h-8 px-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                          className="h-9 px-3 rounded-full text-gray-600 hover:text-blue-500"
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
-                          <span className="text-xs">{photo.commentCount || 0}</span>
+                          {photo.commentCount || 0}
                         </Button>
                       </div>
                       
                       <div className="flex items-center gap-2">
                         <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            openPhoto(photos.findIndex(p => p.id === photo.id));
+                            shareImage(photo.url);
                           }}
-                          size="sm"
-                          className="h-8 px-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                          className="h-9 w-9 p-0 rounded-full text-gray-600 hover:text-blue-500"
                         >
-                          <ZoomIn className="h-4 w-4" />
+                          <Share2 className="h-4 w-4" />
                         </Button>
                         
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <AIPhotoEnhancer 
-                            photoId={photo.id} 
-                            photoUrl={photo.url}
-                            inlineMode={true}
-                          />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadImage(photo.url, photo.originalName);
+                          }}
+                          className="h-9 w-9 p-0 rounded-full text-gray-600 hover:text-green-500"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Expanded Content */}
+                    <AnimatePresence>
+                      {expandedCard === photo.id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <AIPhotoEnhancer 
+                              photoId={photo.id} 
+                              photoUrl={photo.url}
+                              inlineMode={true}
+                            />
+                            {userLikes.has(photo.id) && (
+                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                                <Heart className="h-3 w-3 mr-1 fill-current" />
+                                Oblíbené
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="mb-2">
+                              <span className="font-medium">Nahrané:</span> {' '}
+                              {new Date(photo.uploadedAt).toLocaleString('cs-CZ')}
+                            </p>
+                            <p>
+                              <span className="font-medium">Velikost:</span> {' '}
+                              {photo.originalName}
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Grid View */}
+        {viewMode === 'grid' && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filteredPhotos.map((photo, index) => (
+              <motion.div
+                key={photo.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                className="relative aspect-square"
+              >
+                <Card className="overflow-hidden h-full group cursor-pointer">
+                  <div 
+                    className="relative h-full"
+                    onClick={() => openPhoto(photos.findIndex(p => p.id === photo.id))}
+                  >
+                    <img
+                      src={photo.thumbnailUrl}
+                      alt={photo.originalName}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
+                    {/* Overlay info */}
+                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="flex items-center justify-between text-white">
+                        <div className="flex items-center gap-2">
+                          <Heart className={`h-4 w-4 ${userLikes.has(photo.id) ? 'fill-current text-red-400' : ''}`} />
+                          <span className="text-sm">{photo.likes}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="h-4 w-4" />
+                          <span className="text-sm">{photo.commentCount || 0}</span>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Quick actions on hover */}
-                  <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        downloadImage(photo.url, photo.originalName);
-                      }}
-                      size="sm"
-                      className="h-8 w-8 p-0 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
                     
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        shareImage(photo.url);
-                      }}
-                      size="sm"
-                      className="h-8 w-8 p-0 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+                    {/* Like indicator */}
+                    {userLikes.has(photo.id) && (
+                      <div className="absolute top-2 right-2">
+                        <div className="bg-red-500 text-white rounded-full p-1">
+                          <Heart className="h-3 w-3 fill-current" />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Liked indicator */}
-                  {userLikes.has(photo.id) && (
-                    <div className="absolute top-3 left-3">
-                      <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                        <Heart className="h-3 w-3 fill-white" />
-                        Líbí se
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="space-y-2">
+            {filteredPhotos.map((photo, index) => (
+              <motion.div
+                key={photo.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200">
+                  <div 
+                    className="flex items-center p-4 cursor-pointer"
+                    onClick={() => openPhoto(photos.findIndex(p => p.id === photo.id))}
+                  >
+                    <div className="w-16 h-16 rounded-lg overflow-hidden mr-4 flex-shrink-0">
+                      <img
+                        src={photo.thumbnailUrl}
+                        alt={photo.originalName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-800 dark:text-white truncate">
+                        {photo.originalName}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(photo.uploadedAt).toLocaleDateString('cs-CZ')}
+                      </p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Heart className={`h-3 w-3 ${userLikes.has(photo.id) ? 'fill-current text-red-500' : ''}`} />
+                          {photo.likes}
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <MessageCircle className="h-3 w-3" />
+                          {photo.commentCount || 0}
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Empty state for filtered results */}
-      {filteredPhotos.length === 0 && photos.length > 0 && (
-        <div className="text-center py-12">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <Search className="h-10 w-10 text-gray-400" />
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLike(photo.id, e);
+                        }}
+                        className={`w-8 h-8 p-0 rounded-full ${
+                          userLikes.has(photo.id) ? 'text-red-500' : 'text-gray-400'
+                        }`}
+                      >
+                        <Heart className={`h-4 w-4 ${userLikes.has(photo.id) ? 'fill-current' : ''}`} />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Show more options
+                        }}
+                        className="w-8 h-8 p-0 rounded-full text-gray-400 hover:text-gray-600"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
           </div>
-          <h3 className="text-xl font-semibold mb-2">Žádné fotky nenalezeny</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Zkuste změnit vyhledávací kritéria nebo filtr
-          </p>
-          <Button 
-            onClick={() => {
-              setSearchTerm('');
-              setFilterType('all');
-            }}
-            variant="outline"
-          >
-            Obnovit filtry
-          </Button>
-        </div>
-      )}
+        )}
 
-      {/* Photo Detail Dialog */}
+        {/* Empty state for filtered results */}
+        {filteredPhotos.length === 0 && photos.length > 0 && (
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-10 w-10 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+              Nenalezeny žádné fotky
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Zkuste upravit kritéria vyhledávání nebo filtru
+            </p>
+            <Button 
+              onClick={() => {
+                setSearchTerm('');
+                setFilterType('all');
+                setIsSearchActive(false);
+              }}
+              variant="outline"
+              className="rounded-full"
+            >
+              Vymazat filtry
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Photo Detail Dialog - Android Full Screen */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden [&>button]:hidden">
+        <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 bg-black [&>button]:hidden">
           <DialogTitle className="sr-only">Detail fotky</DialogTitle>
           <DialogDescription className="sr-only">
-            Detailní zobrazení fotky s možností lajkování, komentování a stahování
+            Detailní zobrazení fotky s možností navigace a interakce
           </DialogDescription>
           
-          <div className="grid lg:grid-cols-4 h-[95vh]">
-            {/* Main image */}
-            <div className="lg:col-span-3 relative bg-black flex items-center justify-center">
-              {/* Header controls */}
-              <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+          <div className="relative h-full flex flex-col">
+            {/* Status bar style header */}
+            <div className="absolute top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm">
+              <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
-                  <Badge variant="secondary" className="bg-black/50 text-white backdrop-blur-sm">
-                    {selectedPhotoIndex + 1} z {photos.length}
-                  </Badge>
                   <Button
-                    onClick={() => setIsAutoPlay(!isAutoPlay)}
+                    onClick={() => setIsDialogOpen(false)}
+                    variant="ghost"
                     size="sm"
-                    className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
+                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
                   >
-                    {isAutoPlay ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    <X className="h-5 w-5" />
                   </Button>
+                  <div className="text-white">
+                    <div className="text-sm font-medium">
+                      {selectedPhotoIndex + 1} z {photos.length}
+                    </div>
+                    <div className="text-xs text-gray-300">
+                      {selectedPhoto?.originalName}
+                    </div>
+                  </div>
                 </div>
                 
-                <Button
-                  onClick={() => setIsDialogOpen(false)}
-                  size="sm"
-                  className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setIsAutoPlay(!isAutoPlay)}
+                    variant="ghost"
+                    size="sm"
+                    className={`text-white hover:bg-white/20 rounded-full w-10 h-10 p-0 ${
+                      isAutoPlay ? 'bg-white/20' : ''
+                    }`}
+                  >
+                    {isAutoPlay ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                  </Button>
+                  
+                  <Button
+                    onClick={() => shareImage(selectedPhoto?.url || '')}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                  >
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                  
+                  <Button
+                    onClick={() => downloadImage(selectedPhoto?.url || '', selectedPhoto?.originalName || '')}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                  >
+                    <Download className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
-              
-              {/* Navigation arrows */}
+            </div>
+
+            {/* Photo container */}
+            <div className="flex-1 relative flex items-center justify-center">
               <Button
                 onClick={() => navigatePhoto('prev')}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-                size="lg"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm rounded-full w-12 h-12 p-0"
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
               
               <Button
                 onClick={() => navigatePhoto('next')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-                size="lg"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm rounded-full w-12 h-12 p-0"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
@@ -624,134 +876,43 @@ export default function PhotoGallery() {
               />
             </div>
 
-            {/* Sidebar */}
-            <div className="bg-white dark:bg-gray-900 flex flex-col">
-              {/* Photo info */}
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="font-bold text-xl mb-3 text-gray-800 dark:text-white">
-                  {selectedPhoto?.originalName}
-                </h3>
-                
-                <div className="flex items-center gap-3 mb-4">
+            {/* Bottom action bar */}
+            <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm">
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-4">
                   <Button
                     onClick={(e) => handleLike(selectedPhoto?.id || 0, e)}
-                    className={`relative overflow-hidden flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
-                      userLikes.has(selectedPhoto?.id || 0)
-                        ? 'bg-red-500 hover:bg-red-600 text-white'
-                        : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                    variant="ghost"
+                    className={`text-white hover:bg-white/20 rounded-full h-12 px-4 ${
+                      userLikes.has(selectedPhoto?.id || 0) ? 'bg-red-500/20' : ''
                     }`}
                   >
                     <Heart 
-                      className={`h-5 w-5 ${
-                        userLikes.has(selectedPhoto?.id || 0)
-                          ? 'fill-white text-white'
-                          : 'text-gray-600 dark:text-gray-300'
-                      }`} 
+                      className={`h-5 w-5 mr-2 ${
+                        userLikes.has(selectedPhoto?.id || 0) ? 'fill-current text-red-400' : ''
+                      }`}
                     />
-                    <span className="font-medium">{selectedPhoto?.likes || 0}</span>
-                    
-                    {likeAnimations.map((animation) => (
-                      <div
-                        key={animation.id}
-                        className="absolute pointer-events-none"
-                        style={{
-                          left: animation.x,
-                          top: animation.y,
-                          transform: 'translate(-50%, -50%)',
-                        }}
-                      >
-                        <Heart className="h-4 w-4 fill-red-500 text-red-500 animate-ping" />
-                      </div>
-                    ))}
+                    {selectedPhoto?.likes || 0}
                   </Button>
                   
                   <Button
-                    onClick={() => downloadImage(selectedPhoto?.url || '', selectedPhoto?.originalName || '')}
-                    size="sm"
-                    variant="outline"
-                    className="rounded-full"
+                    onClick={() => openCommentsDialog(selectedPhoto?.id || 0)}
+                    variant="ghost"
+                    className="text-white hover:bg-white/20 rounded-full h-12 px-4"
                   >
-                    <Download className="h-4 w-4 mr-2" />
-                    Stáhnout
+                    <MessageCircle className="h-5 w-5 mr-2" />
+                    {comments.length}
                   </Button>
                 </div>
                 
-                {/* AI Enhancement */}
-                {selectedPhoto && (
-                  <div className="mb-4">
+                <div className="flex items-center gap-2">
+                  {selectedPhoto && (
                     <AIPhotoEnhancer 
                       photoId={selectedPhoto.id} 
                       photoUrl={selectedPhoto.url}
                       inlineMode={true}
                     />
-                  </div>
-                )}
-              </div>
-
-              {/* Comments section */}
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h4 className="font-semibold text-lg flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5 text-primary" />
-                    Komentáře ({comments.length})
-                  </h4>
-                </div>
-                
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {comments.map((comment) => (
-                      <motion.div 
-                        key={comment.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-primary">{comment.author}</span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(comment.createdAt).toLocaleString('cs-CZ')}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{comment.text}</p>
-                      </motion.div>
-                    ))}
-                    
-                    {comments.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                        <p>Zatím žádné komentáře</p>
-                        <p className="text-sm">Buďte první, kdo přidá komentář!</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Add comment form */}
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                  <div className="space-y-3">
-                    <Input
-                      placeholder="Vaše jméno"
-                      value={commenterName}
-                      onChange={(e) => setCommenterName(e.target.value)}
-                      className="bg-white dark:bg-gray-900"
-                    />
-                    <div className="flex gap-2">
-                      <Textarea
-                        placeholder="Napište komentář..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        className="flex-1 resize-none bg-white dark:bg-gray-900"
-                        rows={2}
-                      />
-                      <Button
-                        onClick={() => handleAddComment(selectedPhoto?.id || 0)}
-                        disabled={!newComment.trim() || !commenterName.trim() || addComment.isPending}
-                        className="self-end"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -759,35 +920,65 @@ export default function PhotoGallery() {
         </DialogContent>
       </Dialog>
 
-      {/* Comments Dialog */}
+      {/* Comments Dialog - Android Style */}
       <Dialog open={isCommentsDialogOpen} onOpenChange={setIsCommentsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-          <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            Komentáře
-          </DialogTitle>
-          <DialogDescription>
-            Komentáře k fotce {photos?.find(p => p.id === selectedCommentPhotoId)?.originalName}
+        <DialogContent className="max-w-md max-h-[90vh] p-0 m-4 rounded-2xl overflow-hidden">
+          <DialogTitle className="sr-only">Komentáře</DialogTitle>
+          <DialogDescription className="sr-only">
+            Komentáře k fotce
           </DialogDescription>
           
-          <div className="flex flex-col max-h-[60vh]">
+          <div className="flex flex-col h-full max-h-[80vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 border-b">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <MessageCircle className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 dark:text-white">Komentáře</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {commentDialogComments.length} komentářů
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setIsCommentsDialogOpen(false)}
+                variant="ghost"
+                size="sm"
+                className="w-8 h-8 p-0 rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Comments list */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {commentDialogComments.map((comment) => (
                   <motion.div 
                     key={comment.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-3"
                   >
-                    <div className="flex-1">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-sm font-medium">
+                        {comment.author.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl p-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-primary">{comment.author}</span>
+                        <span className="font-medium text-sm text-gray-800 dark:text-white">
+                          {comment.author}
+                        </span>
                         <span className="text-xs text-gray-500">
                           {new Date(comment.createdAt).toLocaleString('cs-CZ')}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{comment.text}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        {comment.text}
+                      </p>
                     </div>
                   </motion.div>
                 ))}
@@ -795,34 +986,34 @@ export default function PhotoGallery() {
                 {commentDialogComments.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Zatím žádné komentáře</p>
-                    <p className="text-sm">Buďte první, kdo přidá komentář!</p>
+                    <p className="font-medium">Žádné komentáře</p>
+                    <p className="text-sm">Buďte první, kdo přidá komentář</p>
                   </div>
                 )}
               </div>
             </ScrollArea>
 
             {/* Add comment form */}
-            <div className="p-4 border-t bg-gray-50 dark:bg-gray-800">
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 border-t">
               <div className="space-y-3">
                 <Input
                   placeholder="Vaše jméno"
                   value={commenterName}
                   onChange={(e) => setCommenterName(e.target.value)}
-                  className="bg-white dark:bg-gray-900"
+                  className="bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 rounded-xl"
                 />
                 <div className="flex gap-2">
                   <Textarea
                     placeholder="Napište komentář..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    className="flex-1 resize-none bg-white dark:bg-gray-900"
+                    className="flex-1 resize-none bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 rounded-xl"
                     rows={2}
                   />
                   <Button
                     onClick={() => handleAddComment(selectedCommentPhotoId || 0)}
                     disabled={!newComment.trim() || !commenterName.trim() || addComment.isPending}
-                    className="self-end"
+                    className="self-end bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
@@ -833,31 +1024,30 @@ export default function PhotoGallery() {
         </DialogContent>
       </Dialog>
 
-      {/* Unlike Confirmation Dialog */}
+      {/* Unlike Confirmation Dialog - Android Style */}
       <Dialog open={showUnlikeDialog !== null} onOpenChange={() => setShowUnlikeDialog(null)}>
-        <DialogContent className="max-w-md">
-          <DialogTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-red-500" />
-            Odebrat lajk?
+        <DialogContent className="max-w-sm mx-4 rounded-2xl p-6">
+          <DialogTitle className="text-lg font-semibold text-center mb-2">
+            Odebrat z oblíbených?
           </DialogTitle>
-          <DialogDescription>
-            Už jste této fotce dal/a lajk. Chcete svůj lajk odebrat?
+          <DialogDescription className="text-center text-gray-600 dark:text-gray-400 mb-6">
+            Tato fotka již nebude v seznamu oblíbených fotek.
           </DialogDescription>
           
-          <div className="flex items-center gap-3 mt-6">
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={() => showUnlikeDialog && confirmUnlike(showUnlikeDialog)}
+              variant="default"
+              className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-12"
+            >
+              Odebrat z oblíbených
+            </Button>
             <Button
               onClick={() => setShowUnlikeDialog(null)}
               variant="outline"
-              className="flex-1"
+              className="w-full rounded-xl h-12"
             >
-              Ne, ponechat lajk
-            </Button>
-            <Button
-              onClick={() => showUnlikeDialog && confirmUnlike(showUnlikeDialog)}
-              variant="destructive"
-              className="flex-1"
-            >
-              Ano, odebrat lajk
+              Zrušit
             </Button>
           </div>
         </DialogContent>
