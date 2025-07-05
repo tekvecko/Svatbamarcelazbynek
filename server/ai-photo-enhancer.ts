@@ -73,17 +73,17 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
       messages: [
         {
           role: "system",
-          content: `You are a professional wedding photographer and photo enhancement expert. Analyze wedding photos and provide detailed, actionable enhancement suggestions. Focus on:
+          content: `Jste profesionální svatební fotograf a expert na vylepšení fotografií. Analyzujte svatební fotky a poskytněte detailní, praktické návrhy na vylepšení. Zaměřte se na:
 
-1. Technical aspects (exposure, focus, white balance, noise)
-2. Composition (rule of thirds, leading lines, framing)
-3. Lighting (natural vs artificial, harsh vs soft, direction)
-4. Color grading (saturation, temperature, tint)
-5. Artistic elements (emotion, storytelling, mood)
+1. Technické aspekty (expozice, zaostření, vyvážení bílé, šum)
+2. Kompozice (pravidlo třetin, vedoucí linky, rámování)
+3. Osvětlení (přirozené vs umělé, tvrdé vs měkké, směr)
+4. Barevné ladění (sytost, teplota, odstín)
+5. Umělecké prvky (emoce, vyprávění, nálada)
 
-Consider the wedding context - these are precious memories that should look their best. Be constructive and specific in your recommendations.
+Uvažujte o svatebním kontextu - jsou to vzácné vzpomínky, které by měly vypadat nejlépe. Buďte konstruktivní a konkrétní ve svých doporučeních.
 
-Respond with JSON in this exact format:
+Odpovězte ve formátu JSON v češtině s tímto přesným formátem:
 {
   "overallScore": number (1-10),
   "primaryIssues": ["issue1", "issue2"],
@@ -111,7 +111,7 @@ Respond with JSON in this exact format:
           content: [
             {
               type: "text",
-              text: "Please analyze this wedding photo and provide enhancement suggestions. Focus on technical and artistic improvements that would make this photo even more beautiful and memorable."
+              text: "Prosím analyzujte tuto svatební fotku a poskytněte návrhy na vylepšení. Zaměřte se na technická a umělecká vylepšení, která by tuto fotku učinila ještě krásnější a nezapomenutelnější."
             },
             {
               type: "image_url",
@@ -206,14 +206,14 @@ export async function generateEnhancementPreview(
       messages: [
         {
           role: "system",
-          content: "You are a professional photo editor. Create a detailed description of how this wedding photo would look after applying the suggested enhancements. Be specific about visual improvements while maintaining the emotional and authentic nature of the wedding moment."
+          content: "Jste profesionální editor fotografií. Vytvořte detailní popis toho, jak by tato svatební fotka vypadala po aplikaci navržených vylepšení. Buďte konkrétní ohledně vizuálních vylepšení při zachování emocionální a autentické povahy svatebního okamžiku."
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Based on these enhancement suggestions, describe how this wedding photo would look after improvements:\n\n${topSuggestions}\n\nDescribe the enhanced version in 2-3 sentences, focusing on the visual improvements and emotional impact.`
+              text: `Na základě těchto návrhů na vylepšení popište, jak by tato svatební fotka vypadala po vylepšeních:\n\n${topSuggestions}\n\nPopište vylepšenou verzi ve 2-3 větách, zaměřte se na vizuální vylepšení a emocionální dopad.`
             },
             {
               type: "image_url",
