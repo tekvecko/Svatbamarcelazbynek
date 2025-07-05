@@ -482,7 +482,7 @@ export default function PhotoGallery() {
 
       {/* Photo Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[95vh] p-0 overflow-auto">
+        <DialogContent className="max-w-6xl max-h-[95vh] p-0 overflow-auto [&>button]:hidden">
           <DialogTitle className="sr-only">Detail fotky</DialogTitle>
           <DialogDescription className="sr-only">
             Detailní zobrazení fotky s možností lajkování, komentování a stahování
@@ -491,6 +491,15 @@ export default function PhotoGallery() {
           <div className="grid lg:grid-cols-3 min-h-[600px]">
             {/* Main image */}
             <div className="lg:col-span-2 relative bg-black">
+              {/* Close button with background like arrows */}
+              <Button
+                onClick={() => setIsDialogOpen(false)}
+                className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2"
+                size="sm"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              
               {/* Navigation arrows */}
               <Button
                 onClick={() => navigatePhoto('prev')}
@@ -575,6 +584,14 @@ export default function PhotoGallery() {
                     <Download className="h-4 w-4 mr-2" />
                     Stáhnout
                   </Button>
+                  
+                  {/* AI Enhancement in fullscreen */}
+                  {selectedPhoto && (
+                    <AIPhotoEnhancer 
+                      photoId={selectedPhoto.id} 
+                      photoUrl={selectedPhoto.url} 
+                    />
+                  )}
                 </div>
               </div>
 
