@@ -266,6 +266,37 @@ html {
   }
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive text sizes */
+@media (max-width: 640px) {
+  .hero-title {
+    font-size: 2rem;
+    line-height: 2.25rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+/* Improved touch targets on mobile */
+@media (max-width: 768px) {
+  .nav-button {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+
 /* Responsive utilities */
 @layer utilities {
   .container-responsive {
