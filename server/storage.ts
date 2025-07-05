@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, cloudinaryPhotos, photoEnhancements, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem, type CloudinaryPhoto, type InsertCloudinaryPhoto, type PhotoEnhancement, type InsertPhotoEnhancement, type UpdatePhotoEnhancement } from "@shared/schema";
+import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, cloudinaryPhotos, photoEnhancements, aiCaptions, aiPlaylistSuggestions, aiWeddingAdvice, aiGuestMessages, aiWeddingStories, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem, type CloudinaryPhoto, type InsertCloudinaryPhoto, type PhotoEnhancement, type InsertPhotoEnhancement, type UpdatePhotoEnhancement, type AiCaption, type InsertAiCaption, type AiPlaylistSuggestion, type InsertAiPlaylistSuggestion, type AiWeddingAdvice, type InsertAiWeddingAdvice, type AiGuestMessage, type InsertAiGuestMessage, type AiWeddingStory, type InsertAiWeddingStory } from "@shared/schema";
 import { eq, sql, desc, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -46,6 +46,32 @@ export interface IStorage {
   createPhotoEnhancement(enhancement: InsertPhotoEnhancement): Promise<PhotoEnhancement>;
   updatePhotoEnhancement(id: number, updates: UpdatePhotoEnhancement): Promise<PhotoEnhancement>;
   deletePhotoEnhancement(photoId: number): Promise<void>;
+
+  // AI Features
+  getAiCaptions(photoId: number): Promise<AiCaption[]>;
+  createAiCaption(caption: InsertAiCaption): Promise<AiCaption>;
+  approveAiCaption(captionId: number): Promise<void>;
+  deleteAiCaption(captionId: number): Promise<void>;
+
+  getAiPlaylistSuggestions(): Promise<AiPlaylistSuggestion[]>;
+  createAiPlaylistSuggestion(suggestion: InsertAiPlaylistSuggestion): Promise<AiPlaylistSuggestion>;
+  approveAiPlaylistSuggestion(suggestionId: number): Promise<void>;
+  deleteAiPlaylistSuggestion(suggestionId: number): Promise<void>;
+
+  getAiWeddingAdvice(): Promise<AiWeddingAdvice[]>;
+  createAiWeddingAdvice(advice: InsertAiWeddingAdvice): Promise<AiWeddingAdvice>;
+  updateAiWeddingAdvice(adviceId: number, isVisible: boolean): Promise<void>;
+  deleteAiWeddingAdvice(adviceId: number): Promise<void>;
+
+  getAiGuestMessages(): Promise<AiGuestMessage[]>;
+  createAiGuestMessage(message: InsertAiGuestMessage): Promise<AiGuestMessage>;
+  approveAiGuestMessage(messageId: number): Promise<void>;
+  deleteAiGuestMessage(messageId: number): Promise<void>;
+
+  getAiWeddingStories(): Promise<AiWeddingStory[]>;
+  createAiWeddingStory(story: InsertAiWeddingStory): Promise<AiWeddingStory>;
+  publishAiWeddingStory(storyId: number): Promise<void>;
+  deleteAiWeddingStory(storyId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -319,6 +345,104 @@ export class DatabaseStorage implements IStorage {
 
   async deletePhotoEnhancement(photoId: number): Promise<void> {
     await db.delete(photoEnhancements).where(eq(photoEnhancements.photoId, photoId));
+  }
+
+  // AI Features Implementation
+  async getAiCaptions(photoId: number): Promise<AiCaption[]> {
+    return await db.select().from(aiCaptions).where(eq(aiCaptions.photoId, photoId));
+  }
+
+  async createAiCaption(caption: InsertAiCaption): Promise<AiCaption> {
+    const [newCaption] = await db.insert(aiCaptions).values(caption).returning();
+    return newCaption;
+  }
+
+  async approveAiCaption(captionId: number): Promise<void> {
+    await db.update(aiCaptions)
+      .set({ isApproved: true })
+      .where(eq(aiCaptions.id, captionId));
+  }
+
+  async deleteAiCaption(captionId: number): Promise<void> {
+    await db.delete(aiCaptions).where(eq(aiCaptions.id, captionId));
+  }
+
+  async getAiPlaylistSuggestions(): Promise<AiPlaylistSuggestion[]> {
+    return await db.select().from(aiPlaylistSuggestions).orderBy(aiPlaylistSuggestions.popularity);
+  }
+
+  async createAiPlaylistSuggestion(suggestion: InsertAiPlaylistSuggestion): Promise<AiPlaylistSuggestion> {
+    const [newSuggestion] = await db.insert(aiPlaylistSuggestions).values(suggestion).returning();
+    return newSuggestion;
+  }
+
+  async approveAiPlaylistSuggestion(suggestionId: number): Promise<void> {
+    await db.update(aiPlaylistSuggestions)
+      .set({ isApproved: true })
+      .where(eq(aiPlaylistSuggestions.id, suggestionId));
+  }
+
+  async deleteAiPlaylistSuggestion(suggestionId: number): Promise<void> {
+    await db.delete(aiPlaylistSuggestions).where(eq(aiPlaylistSuggestions.id, suggestionId));
+  }
+
+  async getAiWeddingAdvice(): Promise<AiWeddingAdvice[]> {
+    return await db.select().from(aiWeddingAdvice)
+      .where(eq(aiWeddingAdvice.isVisible, true))
+      .orderBy(aiWeddingAdvice.priority);
+  }
+
+  async createAiWeddingAdvice(advice: InsertAiWeddingAdvice): Promise<AiWeddingAdvice> {
+    const [newAdvice] = await db.insert(aiWeddingAdvice).values(advice).returning();
+    return newAdvice;
+  }
+
+  async updateAiWeddingAdvice(adviceId: number, isVisible: boolean): Promise<void> {
+    await db.update(aiWeddingAdvice)
+      .set({ isVisible })
+      .where(eq(aiWeddingAdvice.id, adviceId));
+  }
+
+  async deleteAiWeddingAdvice(adviceId: number): Promise<void> {
+    await db.delete(aiWeddingAdvice).where(eq(aiWeddingAdvice.id, adviceId));
+  }
+
+  async getAiGuestMessages(): Promise<AiGuestMessage[]> {
+    return await db.select().from(aiGuestMessages).orderBy(aiGuestMessages.createdAt);
+  }
+
+  async createAiGuestMessage(message: InsertAiGuestMessage): Promise<AiGuestMessage> {
+    const [newMessage] = await db.insert(aiGuestMessages).values(message).returning();
+    return newMessage;
+  }
+
+  async approveAiGuestMessage(messageId: number): Promise<void> {
+    await db.update(aiGuestMessages)
+      .set({ isApproved: true })
+      .where(eq(aiGuestMessages.id, messageId));
+  }
+
+  async deleteAiGuestMessage(messageId: number): Promise<void> {
+    await db.delete(aiGuestMessages).where(eq(aiGuestMessages.id, messageId));
+  }
+
+  async getAiWeddingStories(): Promise<AiWeddingStory[]> {
+    return await db.select().from(aiWeddingStories).orderBy(aiWeddingStories.createdAt);
+  }
+
+  async createAiWeddingStory(story: InsertAiWeddingStory): Promise<AiWeddingStory> {
+    const [newStory] = await db.insert(aiWeddingStories).values(story).returning();
+    return newStory;
+  }
+
+  async publishAiWeddingStory(storyId: number): Promise<void> {
+    await db.update(aiWeddingStories)
+      .set({ isPublished: true })
+      .where(eq(aiWeddingStories.id, storyId));
+  }
+
+  async deleteAiWeddingStory(storyId: number): Promise<void> {
+    await db.delete(aiWeddingStories).where(eq(aiWeddingStories.id, storyId));
   }
 }
 

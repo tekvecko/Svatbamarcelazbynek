@@ -8,6 +8,7 @@ import fs from "fs";
 import cloudinary from "./cloudinary";
 import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema, insertSiteMetadataSchema, updateSiteMetadataSchema, insertWeddingScheduleSchema, updateWeddingScheduleSchema, insertPhotoEnhancementSchema } from "@shared/schema";
 import { analyzePhotoForEnhancement, generateEnhancementPreview } from "./ai-photo-enhancer";
+import { analyzeWeddingPhoto, generatePlaylistSuggestions, generateWeddingAdvice, analyzeGuestMessage, generateWeddingStory, generatePhotoCaption } from "./ai-services";
 import { z } from "zod";
 
 // Configure multer for memory storage (Cloudinary upload)
@@ -640,6 +641,253 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating enhancement visibility:", error);
       res.status(500).json({ message: "Failed to update enhancement visibility" });
+    }
+  });
+
+  // AI Photo Caption Generation
+  app.post('/api/photos/:id/ai-caption', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const photo = await storage.getPhoto(photoId);
+      
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+
+      const caption = await generatePhotoCaption(photo.filename);
+      
+      const aiCaption = await storage.createAiCaption({
+        photoId,
+        caption,
+        isApproved: false
+      });
+
+      res.json(aiCaption);
+    } catch (error) {
+      console.error("Error generating AI caption:", error);
+      res.status(500).json({ message: "Failed to generate AI caption" });
+    }
+  });
+
+  app.get('/api/photos/:id/ai-captions', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const captions = await storage.getAiCaptions(photoId);
+      res.json(captions);
+    } catch (error) {
+      console.error("Error fetching AI captions:", error);
+      res.status(500).json({ message: "Failed to fetch AI captions" });
+    }
+  });
+
+  app.patch('/api/ai-captions/:id/approve', async (req, res) => {
+    try {
+      const captionId = parseInt(req.params.id);
+      await storage.approveAiCaption(captionId);
+      res.json({ message: "Caption approved" });
+    } catch (error) {
+      console.error("Error approving AI caption:", error);
+      res.status(500).json({ message: "Failed to approve AI caption" });
+    }
+  });
+
+  // AI Playlist Suggestions
+  app.post('/api/ai-playlist-suggestions', async (req, res) => {
+    try {
+      const weddingDetails = await storage.getWeddingDetails();
+      const coupleNames = weddingDetails?.coupleNames || "Marcela & Zbyněk";
+      const preferences = req.body.preferences || [];
+      const weddingStyle = req.body.weddingStyle || "moderní";
+
+      const suggestions = await generatePlaylistSuggestions(coupleNames, weddingStyle, preferences);
+      
+      const savedSuggestions = await Promise.all(
+        suggestions.map(suggestion => 
+          storage.createAiPlaylistSuggestion({
+            title: suggestion.title,
+            artist: suggestion.artist,
+            genre: suggestion.genre,
+            mood: suggestion.mood,
+            weddingMoment: suggestion.weddingMoment,
+            reasoning: suggestion.reasoning,
+            popularity: suggestion.popularity,
+            isApproved: false
+          })
+        )
+      );
+
+      res.json(savedSuggestions);
+    } catch (error) {
+      console.error("Error generating AI playlist suggestions:", error);
+      res.status(500).json({ message: "Failed to generate AI playlist suggestions" });
+    }
+  });
+
+  app.get('/api/ai-playlist-suggestions', async (req, res) => {
+    try {
+      const suggestions = await storage.getAiPlaylistSuggestions();
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching AI playlist suggestions:", error);
+      res.status(500).json({ message: "Failed to fetch AI playlist suggestions" });
+    }
+  });
+
+  app.patch('/api/ai-playlist-suggestions/:id/approve', async (req, res) => {
+    try {
+      const suggestionId = parseInt(req.params.id);
+      await storage.approveAiPlaylistSuggestion(suggestionId);
+      res.json({ message: "Playlist suggestion approved" });
+    } catch (error) {
+      console.error("Error approving AI playlist suggestion:", error);
+      res.status(500).json({ message: "Failed to approve AI playlist suggestion" });
+    }
+  });
+
+  // AI Wedding Advice
+  app.post('/api/ai-wedding-advice', async (req, res) => {
+    try {
+      const weddingDetails = await storage.getWeddingDetails();
+      const weddingDate = weddingDetails?.weddingDate ? new Date(weddingDetails.weddingDate) : new Date("2025-10-11T14:00:00");
+      const venue = weddingDetails?.venue || "Stará pošta, Kovalovice";
+      const guestCount = req.body.guestCount || 50;
+
+      const adviceList = await generateWeddingAdvice(weddingDate, venue, guestCount);
+      
+      const savedAdvice = await Promise.all(
+        adviceList.map(advice => 
+          storage.createAiWeddingAdvice({
+            category: advice.category,
+            advice: advice.advice,
+            priority: advice.priority,
+            timeframe: advice.timeframe,
+            actionItems: advice.actionItems,
+            isVisible: true
+          })
+        )
+      );
+
+      res.json(savedAdvice);
+    } catch (error) {
+      console.error("Error generating AI wedding advice:", error);
+      res.status(500).json({ message: "Failed to generate AI wedding advice" });
+    }
+  });
+
+  app.get('/api/ai-wedding-advice', async (req, res) => {
+    try {
+      const advice = await storage.getAiWeddingAdvice();
+      res.json(advice);
+    } catch (error) {
+      console.error("Error fetching AI wedding advice:", error);
+      res.status(500).json({ message: "Failed to fetch AI wedding advice" });
+    }
+  });
+
+  // AI Guest Message Analysis
+  app.post('/api/ai-guest-messages', async (req, res) => {
+    try {
+      const { message, guestName } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const analysis = await analyzeGuestMessage(message);
+      
+      const savedMessage = await storage.createAiGuestMessage({
+        originalMessage: message,
+        analyzedMessage: analysis.message,
+        sentiment: analysis.sentiment,
+        tone: analysis.tone,
+        isAppropriate: analysis.isAppropriate,
+        suggestedResponse: analysis.suggestedResponse,
+        guestName: guestName || null,
+        isApproved: analysis.isAppropriate
+      });
+
+      res.json(savedMessage);
+    } catch (error) {
+      console.error("Error analyzing AI guest message:", error);
+      res.status(500).json({ message: "Failed to analyze AI guest message" });
+    }
+  });
+
+  app.get('/api/ai-guest-messages', async (req, res) => {
+    try {
+      const messages = await storage.getAiGuestMessages();
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching AI guest messages:", error);
+      res.status(500).json({ message: "Failed to fetch AI guest messages" });
+    }
+  });
+
+  // AI Wedding Story Generation
+  app.post('/api/ai-wedding-stories', async (req, res) => {
+    try {
+      const weddingDetails = await storage.getWeddingDetails();
+      const coupleNames = weddingDetails?.coupleNames || "Marcela & Zbyněk";
+      const photos = await storage.getPhotos(true);
+      const schedule = await storage.getWeddingSchedule();
+      
+      const photoUrls = photos.map(photo => photo.filename);
+      const timeline = schedule.map(item => `${item.time}: ${item.title}`);
+      
+      const story = await generateWeddingStory(coupleNames, photoUrls, timeline);
+      
+      const savedStory = await storage.createAiWeddingStory({
+        title: `Příběh svatby ${coupleNames}`,
+        story,
+        photoIds: photos.map(photo => photo.id.toString()),
+        timeline: timeline,
+        isPublished: false
+      });
+
+      res.json(savedStory);
+    } catch (error) {
+      console.error("Error generating AI wedding story:", error);
+      res.status(500).json({ message: "Failed to generate AI wedding story" });
+    }
+  });
+
+  app.get('/api/ai-wedding-stories', async (req, res) => {
+    try {
+      const stories = await storage.getAiWeddingStories();
+      res.json(stories);
+    } catch (error) {
+      console.error("Error fetching AI wedding stories:", error);
+      res.status(500).json({ message: "Failed to fetch AI wedding stories" });
+    }
+  });
+
+  app.patch('/api/ai-wedding-stories/:id/publish', async (req, res) => {
+    try {
+      const storyId = parseInt(req.params.id);
+      await storage.publishAiWeddingStory(storyId);
+      res.json({ message: "Wedding story published" });
+    } catch (error) {
+      console.error("Error publishing AI wedding story:", error);
+      res.status(500).json({ message: "Failed to publish AI wedding story" });
+    }
+  });
+
+  // AI Photo Analysis for Enhanced Gallery
+  app.post('/api/photos/:id/ai-analysis', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const photo = await storage.getPhoto(photoId);
+      
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+
+      const analysis = await analyzeWeddingPhoto(photo.filename);
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing photo with AI:", error);
+      res.status(500).json({ message: "Failed to analyze photo with AI" });
     }
   });
 

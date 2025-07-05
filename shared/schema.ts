@@ -108,6 +108,66 @@ export const photoEnhancements = pgTable("photo_enhancements", {
   isVisible: boolean("is_visible").default(true).notNull(),
 });
 
+// AI Generated Captions
+export const aiCaptions = pgTable("ai_captions", {
+  id: serial("id").primaryKey(),
+  photoId: integer("photo_id").references(() => photos.id, { onDelete: "cascade" }).notNull(),
+  caption: text("caption").notNull(),
+  isApproved: boolean("is_approved").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// AI Playlist Suggestions
+export const aiPlaylistSuggestions = pgTable("ai_playlist_suggestions", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  artist: varchar("artist", { length: 255 }).notNull(),
+  genre: varchar("genre", { length: 100 }),
+  mood: varchar("mood", { length: 100 }),
+  weddingMoment: varchar("wedding_moment", { length: 100 }),
+  reasoning: text("reasoning"),
+  popularity: integer("popularity").default(5).notNull(),
+  isApproved: boolean("is_approved").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// AI Wedding Advice
+export const aiWeddingAdvice = pgTable("ai_wedding_advice", {
+  id: serial("id").primaryKey(),
+  category: varchar("category", { length: 100 }).notNull(),
+  advice: text("advice").notNull(),
+  priority: varchar("priority", { length: 20 }).default("medium").notNull(),
+  timeframe: varchar("timeframe", { length: 100 }),
+  actionItems: text("action_items").array(),
+  isVisible: boolean("is_visible").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// AI Guest Messages Analysis
+export const aiGuestMessages = pgTable("ai_guest_messages", {
+  id: serial("id").primaryKey(),
+  originalMessage: text("original_message").notNull(),
+  analyzedMessage: text("analyzed_message"),
+  sentiment: varchar("sentiment", { length: 20 }).default("neutral").notNull(),
+  tone: varchar("tone", { length: 50 }),
+  isAppropriate: boolean("is_appropriate").default(true).notNull(),
+  suggestedResponse: text("suggested_response"),
+  guestName: varchar("guest_name", { length: 255 }),
+  isApproved: boolean("is_approved").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// AI Wedding Stories
+export const aiWeddingStories = pgTable("ai_wedding_stories", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  story: text("story").notNull(),
+  photoIds: text("photo_ids").array(),
+  timeline: text("timeline").array(),
+  isPublished: boolean("is_published").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const photosRelations = relations(photos, ({ many }) => ({
   likes: many(photoLikes),
@@ -150,6 +210,13 @@ export const songLikesRelations = relations(songLikes, ({ one }) => ({
 export const photoEnhancementsRelations = relations(photoEnhancements, ({ one }) => ({
   photo: one(photos, {
     fields: [photoEnhancements.photoId],
+    references: [photos.id],
+  }),
+}));
+
+export const aiCaptionsRelations = relations(aiCaptions, ({ one }) => ({
+  photo: one(photos, {
+    fields: [aiCaptions.photoId],
     references: [photos.id],
   }),
 }));
@@ -233,3 +300,19 @@ export const updatePhotoEnhancementSchema = insertPhotoEnhancementSchema.partial
 export type PhotoEnhancement = typeof photoEnhancements.$inferSelect;
 export type InsertPhotoEnhancement = z.infer<typeof insertPhotoEnhancementSchema>;
 export type UpdatePhotoEnhancement = z.infer<typeof updatePhotoEnhancementSchema>;
+
+// AI Types
+export type AiCaption = typeof aiCaptions.$inferSelect;
+export type InsertAiCaption = typeof aiCaptions.$inferInsert;
+
+export type AiPlaylistSuggestion = typeof aiPlaylistSuggestions.$inferSelect;
+export type InsertAiPlaylistSuggestion = typeof aiPlaylistSuggestions.$inferInsert;
+
+export type AiWeddingAdvice = typeof aiWeddingAdvice.$inferSelect;
+export type InsertAiWeddingAdvice = typeof aiWeddingAdvice.$inferInsert;
+
+export type AiGuestMessage = typeof aiGuestMessages.$inferSelect;
+export type InsertAiGuestMessage = typeof aiGuestMessages.$inferInsert;
+
+export type AiWeddingStory = typeof aiWeddingStories.$inferSelect;
+export type InsertAiWeddingStory = typeof aiWeddingStories.$inferInsert;
