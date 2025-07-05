@@ -44,6 +44,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
       await analyzePhoto.mutateAsync(photoId);
     } catch (error) {
       console.error('Analysis failed:', error);
+      // Error will be handled by React Query and shown in UI
     }
   };
 
@@ -159,6 +160,28 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {analyzePhoto.error && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <strong>Chyba při analýze:</strong>
+                <p className="mt-1">
+                  {analyzePhoto.error.message.includes('OPENAI_API_KEY') || analyzePhoto.error.message.includes('Failed to analyze') 
+                    ? 'AI analýza není momentálně dostupná. Kontaktujte správce.'
+                    : 'Nastala chyba při analýze fotky. Zkuste to prosím znovu.'}
+                </p>
+                <Button 
+                  onClick={() => analyzePhoto.reset()} 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                >
+                  Zkusit znovu
+                </Button>
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Enhancement Results */}

@@ -535,7 +535,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error analyzing photo:", error);
-      res.status(500).json({ message: "Failed to analyze photo for enhancement" });
+      
+      if (error.message && error.message.includes('OPENAI_API_KEY')) {
+        return res.status(503).json({ 
+          message: "AI analysis service is not available. Please configure OPENAI_API_KEY." 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to analyze photo for enhancement",
+        details: error.message 
+      });
     }
   });
 

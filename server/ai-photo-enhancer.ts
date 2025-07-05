@@ -26,6 +26,10 @@ export interface PhotoAnalysisResult {
 }
 
 export async function analyzePhotoForEnhancement(imageUrl: string): Promise<PhotoAnalysisResult> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not configured. AI analysis is not available.');
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
