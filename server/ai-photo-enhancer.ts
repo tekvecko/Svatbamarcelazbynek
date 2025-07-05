@@ -1,7 +1,9 @@
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize Groq client for free AI analysis
+const groq = new Groq({ 
+  apiKey: process.env.GROQ_API_KEY 
+});
 
 export interface PhotoEnhancementSuggestion {
   category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic';
@@ -26,8 +28,8 @@ export interface PhotoAnalysisResult {
 }
 
 export async function analyzePhotoForEnhancement(imageUrl: string): Promise<PhotoAnalysisResult> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is not configured. AI analysis is not available.');
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not configured. AI analysis is not available.');
   }
 
   // Mock mode for testing when quota is exceeded
@@ -151,7 +153,7 @@ Respond with JSON in this exact format:
 
     // If quota exceeded, return mock data instead of failing
     if (error.status === 429 || error.code === 'insufficient_quota') {
-      console.log('OpenAI quota exceeded, returning mock analysis data');
+      console.log('Groq quota exceeded, returning mock analysis data');
       return {
         overallScore: 8,
         primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena"],
