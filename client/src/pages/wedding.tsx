@@ -62,7 +62,7 @@ export default function WeddingPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Admin Toggle Button - Mobile */}
-      <div className="fixed top-4 right-4 z-50 md:hidden">
+      <div className="fixed top-20 right-4 z-40 md:hidden">
         <Button
           onClick={() => setShowAdmin(true)}
           size="icon"
@@ -123,7 +123,7 @@ export default function WeddingPage() {
       </header>
 
       {/* Navigation */}
-      <nav className="sticky top-0 z-20 backdrop-blur-wedding shadow-md">
+      <nav className="sticky top-0 z-50 backdrop-blur-wedding shadow-md">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center py-4">
             {/* Desktop Admin */}
