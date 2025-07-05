@@ -349,13 +349,13 @@ export default function PhotoGallery() {
                       }}
                     >
                       <div 
-                        className="bg-white/10 backdrop-blur-md rounded-2xl p-6 w-full max-w-sm space-y-4"
+                        className="bg-white/10 backdrop-blur-md rounded-2xl p-4 w-full max-w-xs space-y-3 max-h-[80vh] overflow-y-auto"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                         }}
                       >
-                        <h3 className="text-white font-medium text-center mb-4 truncate">
+                        <h3 className="text-white font-medium text-center mb-3 text-sm truncate">
                           {photo.originalName}
                         </h3>
                         
@@ -366,7 +366,7 @@ export default function PhotoGallery() {
                             e.stopPropagation();
                             handleLike(photo.id, e);
                           }}
-                          className={`w-full relative overflow-hidden flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                          className={`w-full relative overflow-hidden flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
                             userLikes.has(photo.id) 
                               ? 'bg-red-500/80 hover:bg-red-600/80 text-white' 
                               : 'bg-white/20 hover:bg-white/30 text-white'
@@ -408,9 +408,9 @@ export default function PhotoGallery() {
                             setActiveMenu(null);
                             openPhoto(index);
                           }}
-                          className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-3 px-4 py-3 rounded-xl"
+                          className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
                         >
-                          <Maximize className="h-5 w-5" />
+                          <Maximize className="h-4 w-4" />
                           <span className="flex-1 text-left">Celá obrazovka</span>
                         </Button>
 
@@ -421,11 +421,11 @@ export default function PhotoGallery() {
                             e.stopPropagation();
                             openCommentsDialog(photo.id);
                           }}
-                          className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-3 px-4 py-3 rounded-xl"
+                          className="w-full bg-white/20 hover:bg-white/30 text-white flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
                         >
-                          <MessageCircle className="h-5 w-5" />
+                          <MessageCircle className="h-4 w-4" />
                           <span className="flex-1 text-left">Komentáře</span>
-                          <span className="text-sm">{photo.commentCount || 0}</span>
+                          <span className="text-xs">{photo.commentCount || 0}</span>
                         </Button>
 
                         {/* AI Enhancement button */}
@@ -434,7 +434,7 @@ export default function PhotoGallery() {
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex gap-3">
+                        <div className="flex gap-2">
                           <Button
                             onClick={(e) => {
                               e.preventDefault();
@@ -442,9 +442,9 @@ export default function PhotoGallery() {
                               downloadImage(photo.url, photo.originalName, e);
                               setActiveMenu(null);
                             }}
-                            className="flex-1 bg-white/20 hover:bg-white/30 text-white flex items-center gap-2 px-4 py-3 rounded-xl"
+                            className="flex-1 bg-white/20 hover:bg-white/30 text-white flex items-center gap-1 px-2 py-2 rounded-lg text-xs"
                           >
-                            <Download className="h-4 w-4" />
+                            <Download className="h-3 w-3" />
                             <span>Stáhnout</span>
                           </Button>
                           <Button
@@ -454,9 +454,9 @@ export default function PhotoGallery() {
                               shareImage(photo.url, e);
                               setActiveMenu(null);
                             }}
-                            className="flex-1 bg-white/20 hover:bg-white/30 text-white flex items-center gap-2 px-4 py-3 rounded-xl"
+                            className="flex-1 bg-white/20 hover:bg-white/30 text-white flex items-center gap-1 px-2 py-2 rounded-lg text-xs"
                           >
-                            <Share2 className="h-4 w-4" />
+                            <Share2 className="h-3 w-3" />
                             <span>Sdílet</span>
                           </Button>
                         </div>

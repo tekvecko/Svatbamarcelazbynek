@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Sparkles, Lightbulb, Eye, EyeOff, Loader2, Star, AlertTriangle, CheckCircle, Camera, Palette, Focus, Sun } from "lucide-react";
@@ -130,15 +131,40 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
     
     if (hasEnhancement) {
       return (
-        <Button
-          size="sm"
-          variant="outline"
-          className="bg-green-500 text-white border-0 hover:bg-green-600 rounded-full"
-          disabled
-        >
-          <CheckCircle className="h-4 w-4 mr-2" />
-          Hotovo
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-green-500 text-white border-0 hover:bg-green-600 rounded-full"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Zobrazit
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-96 max-h-96 overflow-y-auto">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-yellow-500" />
+                <span className="font-medium">Skóre: {enhancement.overallScore}/10</span>
+              </div>
+              
+              {enhancement.suggestions.slice(0, 2).map((suggestion, index) => (
+                <div key={index} className="p-3 bg-blue-50 rounded-lg border-l-4 border-l-blue-400">
+                  <div className="font-medium text-sm">{suggestion.title}</div>
+                  <div className="text-xs text-gray-600 mt-1">{suggestion.suggestion}</div>
+                </div>
+              ))}
+              
+              <button 
+                onClick={() => setIsOpen(true)}
+                className="w-full text-xs text-blue-600 hover:text-blue-800"
+              >
+                Zobrazit kompletní analýzu
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
       );
     }
     
