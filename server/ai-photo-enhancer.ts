@@ -69,7 +69,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
   try {
     const response = await groq.chat.completions.create({
-      model: "llava-v1.5-7b-4096-preview", // Groq's vision model for image analysis
+      model: "llama-3.2-11b-vision-preview", // Groq's current vision model for image analysis
       messages: [
         {
           role: "system",
@@ -201,7 +201,7 @@ export async function generateEnhancementPreview(
       .join('\n');
 
     const response = await groq.chat.completions.create({
-      model: "llava-v1.5-7b-4096-preview", // Groq's vision model for preview generation
+      model: "llama-3.2-11b-vision-preview", // Groq's current vision model for preview generation
       messages: [
         {
           role: "system",
