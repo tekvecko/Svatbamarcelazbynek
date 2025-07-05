@@ -44,23 +44,31 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getPhotos(approved?: boolean): Promise<Photo[]> {
-    let query = db.select({
-      id: photos.id,
-      filename: photos.filename,
-      originalName: photos.originalName,
-      url: photos.url,
-      thumbnailUrl: photos.thumbnailUrl,
-      likes: photos.likes,
-      approved: photos.approved,
-      uploadedAt: photos.uploadedAt,
-      commentCount: sql<number>`(SELECT COUNT(*) FROM photo_comments WHERE photo_id = ${photos.id})`
-    }).from(photos).orderBy(desc(photos.uploadedAt));
-
+    // First get photos
+    let photosQuery = db.select().from(photos).orderBy(desc(photos.uploadedAt));
+    
     if (approved !== undefined) {
-      query = query.where(eq(photos.approved, approved)) as any;
+      photosQuery = photosQuery.where(eq(photos.approved, approved)) as any;
     }
 
-    return await query;
+    const photoResults = await photosQuery;
+    
+    // Then add comment counts
+    const photosWithCounts = await Promise.all(
+      photoResults.map(async (photo) => {
+        const commentCountResult = await db
+          .select({ count: sql<number>`COUNT(*)::int` })
+          .from(photoComments)
+          .where(eq(photoComments.photoId, photo.id));
+        
+        return {
+          ...photo,
+          commentCount: commentCountResult[0]?.count || 0
+        };
+      })
+    );
+
+    return photosWithCounts;
   }
 
   async getPhoto(id: number): Promise<Photo | undefined> {
