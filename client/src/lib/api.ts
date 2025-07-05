@@ -2,7 +2,21 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://your-repl-name.your-username.repl.co' : "";
-const IS_STATIC = false; // Use database for all operations
+const IS_STATIC = import.meta.env.VITE_STATIC_BUILD === 'true'; // Use static data when enabled
+
+// Static data loader
+let staticData: any = null;
+const loadStaticData = async () => {
+  if (staticData) return staticData;
+  try {
+    const response = await fetch('/src/data/static-data.json');
+    staticData = await response.json();
+    return staticData;
+  } catch (error) {
+    console.warn('Static data not available, falling back to API calls');
+    return null;
+  }
+};
 
 export interface Photo {
   id: number;
@@ -140,7 +154,8 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export const api = {
   async getWeddingDetails(): Promise<WeddingDetails> {
     if (IS_STATIC) {
-      return STATIC_WEDDING_DETAILS;
+      const data = await loadStaticData();
+      return data?.weddingDetails || STATIC_WEDDING_DETAILS;
     }
     const response = await fetch(`${API_BASE_URL}/api/wedding-details`);
     return handleResponse<WeddingDetails>(response);
@@ -160,13 +175,14 @@ export const api = {
 
   async getPhotos(approved?: boolean): Promise<Photo[]> {
     if (IS_STATIC) {
-      const storedPhotos = getLocalStorageData('wedding-photos', STATIC_PHOTOS);
+      const data = await loadStaticData();
+      const photos = data?.photos || STATIC_PHOTOS;
       const storedLikes = getLocalStorageData('photo-likes', {} as Record<number, number>);
       const storedComments = getLocalStorageData('photo-comments', {} as Record<number, any[]>);
 
-      return storedPhotos.map(photo => ({
+      return photos.map(photo => ({
         ...photo,
-        likes: storedLikes[photo.id] || 0,
+        likes: storedLikes[photo.id] || photo.likes || 0,
         commentCount: (storedComments[photo.id] || []).length
       }));
     }
