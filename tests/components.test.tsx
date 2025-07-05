@@ -289,3 +289,119 @@ describe('AdminPanel', () => {
     expect(moderateUploadsSwitch).toBeChecked()
   })
 })
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import '@testing-library/jest-dom'
+
+import CountdownTimer from '../client/src/components/countdown-timer'
+import PhotoUpload from '../client/src/components/photo-upload'
+import Playlist from '../client/src/components/playlist'
+import AdminPanel from '../client/src/components/admin-panel'
+
+// Mock API
+vi.mock('../client/src/lib/api', () => ({
+  api: {
+    getWeddingDetails: vi.fn().mockResolvedValue({
+      id: 1,
+      weddingDate: new Date('2025-06-15T14:00:00Z').toISOString(),
+      allowUploads: true
+    }),
+    uploadPhotos: vi.fn().mockResolvedValue([]),
+    getPlaylistSongs: vi.fn().mockResolvedValue([]),
+    addPlaylistSong: vi.fn().mockResolvedValue({ id: 1, suggestion: 'Test Song' }),
+    updateWeddingDetails: vi.fn().mockResolvedValue({})
+  }
+}))
+
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false }
+    }
+  })
+
+const renderWithQueryClient = (component: React.ReactElement) => {
+  const queryClient = createTestQueryClient()
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {component}
+    </QueryClientProvider>
+  )
+}
+
+describe('CountdownTimer', () => {
+  it('should render countdown to wedding date', async () => {
+    renderWithQueryClient(<CountdownTimer />)
+    
+    await waitFor(() => {
+      expect(screen.getByText(/days/i)).toBeInTheDocument()
+    })
+  })
+
+  it('should show loading state initially', () => {
+    renderWithQueryClient(<CountdownTimer />)
+    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+  })
+})
+
+describe('PhotoUpload', () => {
+  it('should render upload interface when uploads are allowed', async () => {
+    renderWithQueryClient(<PhotoUpload />)
+    
+    await waitFor(() => {
+      expect(screen.getByText(/upload/i)).toBeInTheDocument()
+    })
+  })
+
+  it('should handle file selection', async () => {
+    renderWithQueryClient(<PhotoUpload />)
+    
+    const fileInput = await screen.findByRole('button', { name: /upload/i })
+    expect(fileInput).toBeInTheDocument()
+  })
+})
+
+describe('Playlist', () => {
+  it('should render playlist interface', async () => {
+    renderWithQueryClient(<Playlist />)
+    
+    await waitFor(() => {
+      expect(screen.getByText(/playlist/i)).toBeInTheDocument()
+    })
+  })
+
+  it('should allow adding new songs', async () => {
+    renderWithQueryClient(<Playlist />)
+    
+    const addButton = await screen.findByRole('button', { name: /add/i })
+    if (addButton) {
+      fireEvent.click(addButton)
+    }
+  })
+})
+
+describe('AdminPanel', () => {
+  it('should require authentication', () => {
+    renderWithQueryClient(<AdminPanel />)
+    expect(screen.getByText(/password/i)).toBeInTheDocument()
+  })
+
+  it('should validate admin password', () => {
+    renderWithQueryClient(<AdminPanel />)
+    
+    const passwordInput = screen.getByRole('textbox', { name: /password/i }) || 
+                         screen.getByDisplayValue('') ||
+                         screen.getByPlaceholderText(/password/i)
+    
+    if (passwordInput) {
+      fireEvent.change(passwordInput, { target: { value: 'wrong' } })
+      
+      const loginButton = screen.getByRole('button', { name: /login/i })
+      fireEvent.click(loginButton)
+      
+      expect(screen.getByText(/incorrect/i)).toBeInTheDocument()
+    }
+  })
+})

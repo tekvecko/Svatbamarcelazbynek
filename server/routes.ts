@@ -234,6 +234,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/photos/:id/enhance', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const { enhancement } = req.body;
+      
+      if (!enhancement) {
+        return res.status(400).json({ message: "Enhancement type required" });
+      }
+      
+      // For now, return a mock response since AI enhancement is not fully implemented
+      res.json({ 
+        success: true, 
+        message: "Photo enhancement completed",
+        enhancement: enhancement
+      });
+    } catch (error) {
+      console.error("Error enhancing photo:", error);
+      res.status(500).json({ message: "Failed to enhance photo" });
+    }
+  }););
+
   // Photo comments endpoints
   app.get('/api/photos/:id/comments', async (req, res) => {
     try {

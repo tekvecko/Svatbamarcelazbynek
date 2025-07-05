@@ -64,7 +64,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
 
   const renderSuggestionCard = (suggestion: PhotoEnhancementSuggestion, index: number) => {
     const CategoryIcon = CategoryIcons[suggestion.category] || Lightbulb;
-    
+
     return (
       <Card key={index} className="border-l-4 border-l-blue-500">
         <CardHeader className="pb-3">
@@ -327,7 +327,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                     <h3 className="text-lg font-semibold">Návrhy na vylepšení</h3>
                     <Badge variant="secondary">{enhancement.suggestions.length}</Badge>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {enhancement.suggestions
                       .sort((a, b) => {
@@ -341,7 +341,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
               )}
 
               <Separator className="my-4" />
-              
+
               <div className="text-center text-sm text-gray-500">
                 <p>Analýza provedena: {new Date(enhancement.analysisDate).toLocaleString('cs-CZ')}</p>
                 <p className="mt-1">Powered by OpenAI GPT-4 Vision</p>

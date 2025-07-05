@@ -188,7 +188,7 @@ export const api = {
     const shouldAutoApprove = !weddingDetails.moderateUploads;
 
     const uploadedPhotos = [];
-    
+
     for (const file of Array.from(files)) {
       try {
         // Get signed upload parameters
@@ -196,13 +196,13 @@ export const api = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
-        
+
         if (!signatureResponse.ok) {
           throw new Error('Failed to get upload signature');
         }
-        
+
         const { signature, timestamp, cloudName, apiKey, folder } = await signatureResponse.json();
-        
+
         // Upload directly to Cloudinary
         const formData = new FormData();
         formData.append('file', file);
@@ -210,20 +210,20 @@ export const api = {
         formData.append('timestamp', timestamp.toString());
         formData.append('signature', signature);
         formData.append('folder', folder);
-        
+
         const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
           method: 'POST',
           body: formData,
         });
-        
+
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
           console.error('Cloudinary upload error:', errorText);
           throw new Error(`Failed to upload to Cloudinary: ${uploadResponse.status} ${errorText}`);
         }
-        
+
         const uploadResult = await uploadResponse.json();
-        
+
         // Save photo metadata to database
         const photoData = {
           filename: uploadResult.public_id,
@@ -232,26 +232,26 @@ export const api = {
           thumbnailUrl: uploadResult.secure_url.replace('/upload/', '/upload/c_thumb,w_300,h_300/'),
           approved: shouldAutoApprove, // Auto-approve based on settings
         };
-        
+
         const saveResponse = await fetch(`${API_BASE_URL}/api/photos/save`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(photoData),
         });
-        
+
         if (!saveResponse.ok) {
           throw new Error('Failed to save photo metadata');
         }
-        
+
         const savedPhoto = await saveResponse.json();
         uploadedPhotos.push(savedPhoto);
-        
+
       } catch (error) {
         console.error('Error uploading file:', file.name, error);
         throw error;
       }
     }
-    
+
     return uploadedPhotos;
   },
 
@@ -473,5 +473,24 @@ export const api = {
       method: "DELETE",
     });
     await handleResponse<void>(response);
+  },
+
+  async enhancePhoto(photoId: number, enhancement: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/photos/${photoId}/enhance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enhancement })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Enhancement failed: ${response.status} ${response.statusText}`);
+      }
+
+      return handleResponse<any>(response);
+    } catch (error) {
+      console.error('Photo enhancement API error:', error);
+      throw error;
+    }
   },
 };
