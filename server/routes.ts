@@ -557,9 +557,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error analyzing photo:", error);
       
-      if (error.message && error.message.includes('OPENAI_API_KEY')) {
+      if (error.message && error.message.includes('GROQ_API_KEY')) {
         return res.status(503).json({ 
-          message: "AI analysis service is not available. Please configure OPENAI_API_KEY." 
+          message: "AI analysis service is not available. Please configure GROQ_API_KEY." 
         });
       }
       
@@ -612,9 +612,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error reanalyzing photo:", error);
       
-      if (error.message && error.message.includes('OPENAI_API_KEY')) {
+      if (error.message && error.message.includes('GROQ_API_KEY')) {
         return res.status(503).json({ 
-          message: "AI analysis service is not available. Please configure OPENAI_API_KEY." 
+          message: "AI analysis service is not available. Please configure GROQ_API_KEY." 
         });
       }
       

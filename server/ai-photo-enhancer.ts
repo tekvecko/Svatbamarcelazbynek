@@ -41,31 +41,48 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
   if (useMockData) {
     return {
       overallScore: 8,
-      primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena"],
+      primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena", "Nerovnoměrné osvětlení"],
       suggestions: [
         {
           category: 'lighting',
           severity: 'medium',
-          title: 'Zvýšit jas',
-          description: 'Fotka je mírně tmavá',
-          suggestion: 'Zvyšte expozici o +0.7 EV a stíny o +30',
-          confidence: 0.85
+          title: 'Zvýšit jas a vyrovnat expozici',
+          description: 'Fotka je mírně tmavá a obsahuje oblasti s nerovnoměrným osvětlením',
+          suggestion: 'Zvyšte expozici o +0.7 EV, stíny o +30 a upravte lokální kontrast pro vyrovnání světel',
+          technicalDetails: 'Histogram ukazuje nahromadění dat v levé třetině, což indikuje podexpozici. Světla jsou v bezpečné zóně.',
+          specificValues: 'Expozice: +0.7 EV, Stíny: +30, Světla: -15, Lokální kontrast: +20',
+          confidence: 0.85,
+          priority: 1
         },
         {
           category: 'composition',
           severity: 'low',
-          title: 'Upravit ořez',
-          description: 'Subjekt není ideálně umístěn',
-          suggestion: 'Použijte pravidlo třetin pro lepší kompozici',
-          confidence: 0.75
+          title: 'Upravit ořez pro lepší kompozici',
+          description: 'Subjekt není ideálně umístěn podle pravidla třetin',
+          suggestion: 'Použijte pravidlo třetin - umístěte hlavní subjekt na průsečíky třetinových linií',
+          technicalDetails: 'Aktuální kompozice má subjekt příliš centrovaný, což snižuje dynamiku snímku',
+          specificValues: 'Ořez: posun subjektu o 15% doleva, aspect ratio zachovat',
+          confidence: 0.75,
+          priority: 2
+        },
+        {
+          category: 'color',
+          severity: 'low',
+          title: 'Vyladit barevné tóny',
+          description: 'Pleťové tóny jsou mírně načervenalé',
+          suggestion: 'Snižte sytost červené v pleťových tónech a upravte vyvážení bílé',
+          technicalDetails: 'Analýza RGB kanálů ukazuje převahu červené v oblasti pleti',
+          specificValues: 'Červená sytost: -15 v rozsahu 15-50 luminance, Teplota: -200K',
+          confidence: 0.70,
+          priority: 3
         }
       ],
-      strengths: ["Krásné svatební okamžiky", "Dobré emoční zachycení"],
+      strengths: ["Krásné zachycení emocí", "Přirozené výrazy tváří", "Dobrá hloubka ostrosti"],
       weddingContext: {
-        photoType: "candid",
-        subjects: ["bride", "groom"],
-        setting: "outdoor",
-        lighting: "natural"
+        photoType: "portrét",
+        subjects: ["nevěsta", "ženich"],
+        setting: "venkovní",
+        lighting: "přírodní"
       }
     };
   }
@@ -211,31 +228,37 @@ Všechny texty (title, description, suggestion, strengths, primaryIssues) pište
       console.log('Groq quota exceeded, returning mock analysis data');
       return {
         overallScore: 8,
-        primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena"],
+        primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena", "Nerovnoměrné osvětlení"],
         suggestions: [
           {
             category: 'lighting',
             severity: 'medium',
-            title: 'Zvýšit jas',
-            description: 'Fotka je mírně tmavá',
-            suggestion: 'Zvyšte expozici o +0.7 EV a stíny o +30',
-            confidence: 0.85
+            title: 'Zvýšit jas a vyrovnat expozici',
+            description: 'Fotka je mírně tmavá a obsahuje oblasti s nerovnoměrným osvětlením',
+            suggestion: 'Zvyšte expozici o +0.7 EV, stíny o +30 a upravte lokální kontrast pro vyrovnání světel',
+            technicalDetails: 'Histogram ukazuje nahromadění dat v levé třetině, což indikuje podexpozici. Světla jsou v bezpečné zóně.',
+            specificValues: 'Expozice: +0.7 EV, Stíny: +30, Světla: -15, Lokální kontrast: +20',
+            confidence: 0.85,
+            priority: 1
           },
           {
             category: 'composition',
             severity: 'low',
-            title: 'Upravit ořez',
-            description: 'Subjekt není ideálně umístěn',
-            suggestion: 'Použijte pravidlo třetin pro lepší kompozici',
-            confidence: 0.75
+            title: 'Upravit ořez pro lepší kompozici',
+            description: 'Subjekt není ideálně umístěn podle pravidla třetin',
+            suggestion: 'Použijte pravidlo třetin - umístěte hlavní subjekt na průsečíky třetinových linií',
+            technicalDetails: 'Aktuální kompozice má subjekt příliš centrovaný, což snižuje dynamiku snímku',
+            specificValues: 'Ořez: posun subjektu o 15% doleva, aspect ratio zachovat',
+            confidence: 0.75,
+            priority: 2
           }
         ],
-        strengths: ["Krásné svatební okamžiky", "Dobré emoční zachycení"],
+        strengths: ["Krásné zachycení emocí", "Přirozené výrazy tváří", "Dobrá hloubka ostrosti"],
         weddingContext: {
-          photoType: "candid",
-          subjects: ["bride", "groom"],
-          setting: "outdoor",
-          lighting: "natural"
+          photoType: "portrét",
+          subjects: ["nevěsta", "ženich"],
+          setting: "venkovní",
+          lighting: "přírodní"
         }
       };
     }

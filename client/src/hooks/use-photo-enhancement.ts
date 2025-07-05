@@ -115,8 +115,8 @@ export function useAnalyzePhoto() {
       // Provide more user-friendly error messages
       if (error.message.includes('quota') || error.message.includes('503')) {
         description = "AI analýza je dočasně nedostupná kvůli překročení limitu. Zkuste to prosím později.";
-      } else if (error.message.includes('OPENAI_API_KEY')) {
-        description = "AI analýza není momentálně nakonfigurována.";
+      } else if (error.message.includes('GROQ_API_KEY')) {
+        description = "AI analýza není momentálně nakonfigurována. Je potřeba nastavit GROQ_API_KEY.";
       }
 
       toast({
@@ -146,8 +146,8 @@ export function useReanalyzePhoto() {
 
       if (error.message.includes('quota') || error.message.includes('503')) {
         description = "AI analýza je dočasně nedostupná kvůli překročení limitu. Zkuste to prosím později.";
-      } else if (error.message.includes('OPENAI_API_KEY')) {
-        description = "AI analýza není momentálně nakonfigurována.";
+      } else if (error.message.includes('GROQ_API_KEY')) {
+        description = "AI analýza není momentálně nakonfigurována. Je potřeba nastavit GROQ_API_KEY.";
       }
 
       toast({
@@ -185,24 +185,3 @@ export function useUpdateEnhancementVisibility() {
     },
   });
 }
-
-const enhancePhoto = async (photoId: number, enhancement: string) => {
-    if (!photoId || !enhancement) {
-      throw new Error('Photo ID and enhancement type are required');
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await api.enhancePhoto(photoId, enhancement);
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Enhancement failed';
-      setError(message);
-      console.error('Photo enhancement error:', err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
