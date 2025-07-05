@@ -253,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error enhancing photo:", error);
       res.status(500).json({ message: "Failed to enhance photo" });
     }
-  }););
+  });
 
   // Photo comments endpoints
   app.get('/api/photos/:id/comments', async (req, res) => {
