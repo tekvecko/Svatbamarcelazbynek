@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, cloudinaryPhotos, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem, type CloudinaryPhoto, type InsertCloudinaryPhoto } from "@shared/schema";
+import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, cloudinaryPhotos, photoEnhancements, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem, type CloudinaryPhoto, type InsertCloudinaryPhoto, type PhotoEnhancement, type InsertPhotoEnhancement, type UpdatePhotoEnhancement } from "@shared/schema";
 import { eq, sql, desc, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -40,6 +40,12 @@ export interface IStorage {
   createWeddingScheduleItem(item: InsertWeddingScheduleItem): Promise<WeddingScheduleItem>;
   updateWeddingScheduleItem(id: number, updates: UpdateWeddingScheduleItem): Promise<WeddingScheduleItem>;
   deleteWeddingScheduleItem(id: number): Promise<void>;
+
+  // Photo enhancements
+  getPhotoEnhancement(photoId: number): Promise<PhotoEnhancement | undefined>;
+  createPhotoEnhancement(enhancement: InsertPhotoEnhancement): Promise<PhotoEnhancement>;
+  updatePhotoEnhancement(id: number, updates: UpdatePhotoEnhancement): Promise<PhotoEnhancement>;
+  deletePhotoEnhancement(photoId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -287,6 +293,32 @@ export class DatabaseStorage implements IStorage {
 
   async deleteWeddingScheduleItem(id: number): Promise<void> {
     await db.delete(weddingSchedule).where(eq(weddingSchedule.id, id));
+  }
+
+  // Photo enhancement methods
+  async getPhotoEnhancement(photoId: number): Promise<PhotoEnhancement | undefined> {
+    const [enhancement] = await db.select().from(photoEnhancements)
+      .where(eq(photoEnhancements.photoId, photoId));
+    return enhancement;
+  }
+
+  async createPhotoEnhancement(enhancement: InsertPhotoEnhancement): Promise<PhotoEnhancement> {
+    const [newEnhancement] = await db.insert(photoEnhancements)
+      .values(enhancement)
+      .returning();
+    return newEnhancement;
+  }
+
+  async updatePhotoEnhancement(id: number, updates: UpdatePhotoEnhancement): Promise<PhotoEnhancement> {
+    const [updatedEnhancement] = await db.update(photoEnhancements)
+      .set(updates)
+      .where(eq(photoEnhancements.id, id))
+      .returning();
+    return updatedEnhancement;
+  }
+
+  async deletePhotoEnhancement(photoId: number): Promise<void> {
+    await db.delete(photoEnhancements).where(eq(photoEnhancements.photoId, photoId));
   }
 }
 

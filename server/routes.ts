@@ -6,7 +6,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import cloudinary from "./cloudinary";
-import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema, insertSiteMetadataSchema, updateSiteMetadataSchema, insertWeddingScheduleSchema, updateWeddingScheduleSchema } from "@shared/schema";
+import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema, insertSiteMetadataSchema, updateSiteMetadataSchema, insertWeddingScheduleSchema, updateWeddingScheduleSchema, insertPhotoEnhancementSchema } from "@shared/schema";
+import { analyzePhotoForEnhancement, generateEnhancementPreview } from "./ai-photo-enhancer";
 import { z } from "zod";
 
 // Configure multer for memory storage (Cloudinary upload)
@@ -465,6 +466,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting schedule item:", error);
       res.status(500).json({ message: "Failed to delete schedule item" });
+    }
+  });
+
+  // AI Photo Enhancement endpoints
+  app.get('/api/photos/:id/enhancement', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const enhancement = await storage.getPhotoEnhancement(photoId);
+      
+      if (!enhancement) {
+        return res.status(404).json({ message: "Enhancement analysis not found" });
+      }
+      
+      res.json({
+        ...enhancement,
+        suggestions: JSON.parse(enhancement.suggestions),
+        weddingContext: JSON.parse(enhancement.weddingContext)
+      });
+    } catch (error) {
+      console.error("Error fetching photo enhancement:", error);
+      res.status(500).json({ message: "Failed to fetch photo enhancement" });
+    }
+  });
+
+  app.post('/api/photos/:id/analyze', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      
+      // Get photo details
+      const photo = await storage.getPhoto(photoId);
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+
+      // Check if enhancement already exists
+      const existingEnhancement = await storage.getPhotoEnhancement(photoId);
+      if (existingEnhancement) {
+        return res.json({
+          ...existingEnhancement,
+          suggestions: JSON.parse(existingEnhancement.suggestions),
+          weddingContext: JSON.parse(existingEnhancement.weddingContext)
+        });
+      }
+
+      // Analyze photo with AI
+      const analysisResult = await analyzePhotoForEnhancement(photo.url);
+      
+      // Generate enhancement preview
+      const enhancementPreview = await generateEnhancementPreview(photo.url, analysisResult.suggestions);
+
+      // Save to database
+      const enhancement = await storage.createPhotoEnhancement({
+        photoId,
+        overallScore: analysisResult.overallScore,
+        primaryIssues: analysisResult.primaryIssues,
+        suggestions: JSON.stringify(analysisResult.suggestions),
+        strengths: analysisResult.strengths,
+        weddingContext: JSON.stringify(analysisResult.weddingContext),
+        enhancementPreview,
+        isVisible: true
+      });
+
+      res.json({
+        ...enhancement,
+        suggestions: analysisResult.suggestions,
+        weddingContext: analysisResult.weddingContext
+      });
+    } catch (error) {
+      console.error("Error analyzing photo:", error);
+      res.status(500).json({ message: "Failed to analyze photo for enhancement" });
+    }
+  });
+
+  app.patch('/api/photos/:id/enhancement/visibility', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      const { isVisible } = req.body;
+
+      const enhancement = await storage.getPhotoEnhancement(photoId);
+      if (!enhancement) {
+        return res.status(404).json({ message: "Enhancement not found" });
+      }
+
+      const updated = await storage.updatePhotoEnhancement(enhancement.id, { isVisible });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating enhancement visibility:", error);
+      res.status(500).json({ message: "Failed to update enhancement visibility" });
     }
   });
 

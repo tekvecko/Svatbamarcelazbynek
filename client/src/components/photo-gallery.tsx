@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, MoreVertical, Maximize } from "lucide-react";
+import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, MoreVertical, Maximize, Sparkles } from "lucide-react";
+import AIPhotoEnhancer from "@/components/ai-photo-enhancer";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useToast } from "@/hooks/use-toast";
 
@@ -427,6 +428,11 @@ export default function PhotoGallery() {
                           <span className="text-sm">{photo.commentCount || 0}</span>
                         </Button>
 
+                        {/* AI Enhancement button */}
+                        <div className="w-full" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenu(null); }}>
+                          <AIPhotoEnhancer photoId={photo.id} photoUrl={photo.url} />
+                        </div>
+
                         {/* Action buttons */}
                         <div className="flex gap-3">
                           <Button
@@ -577,6 +583,14 @@ export default function PhotoGallery() {
                     <Download className="h-4 w-4 mr-2" />
                     Stáhnout
                   </Button>
+                  
+                  {/* AI Enhancement in fullscreen */}
+                  {selectedPhoto && (
+                    <AIPhotoEnhancer 
+                      photoId={selectedPhoto.id} 
+                      photoUrl={selectedPhoto.url} 
+                    />
+                  )}
                 </div>
               </div>
 

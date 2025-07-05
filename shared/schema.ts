@@ -94,6 +94,20 @@ export const weddingSchedule = pgTable("wedding_schedule", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// AI Photo Enhancement Analysis
+export const photoEnhancements = pgTable("photo_enhancements", {
+  id: serial("id").primaryKey(),
+  photoId: integer("photo_id").references(() => photos.id, { onDelete: "cascade" }).notNull(),
+  overallScore: integer("overall_score").notNull(),
+  primaryIssues: text("primary_issues").array(),
+  suggestions: text("suggestions").notNull(), // JSON string
+  strengths: text("strengths").array(),
+  weddingContext: text("wedding_context").notNull(), // JSON string
+  enhancementPreview: text("enhancement_preview"),
+  analysisDate: timestamp("analysis_date").defaultNow().notNull(),
+  isVisible: boolean("is_visible").default(true).notNull(),
+});
+
 // Relations
 export const photosRelations = relations(photos, ({ many }) => ({
   likes: many(photoLikes),
@@ -130,6 +144,13 @@ export const songLikesRelations = relations(songLikes, ({ one }) => ({
   song: one(playlistSongs, {
     fields: [songLikes.songId],
     references: [playlistSongs.id],
+  }),
+}));
+
+export const photoEnhancementsRelations = relations(photoEnhancements, ({ one }) => ({
+  photo: one(photos, {
+    fields: [photoEnhancements.photoId],
+    references: [photos.id],
   }),
 }));
 
@@ -200,3 +221,15 @@ export const insertCloudinaryPhotoSchema = createInsertSchema(cloudinaryPhotos).
   uploadedAt: true,
 });
 export type InsertCloudinaryPhoto = z.infer<typeof insertCloudinaryPhotoSchema>;
+
+// Photo Enhancement schemas
+export const insertPhotoEnhancementSchema = createInsertSchema(photoEnhancements).omit({
+  id: true,
+  analysisDate: true,
+});
+
+export const updatePhotoEnhancementSchema = insertPhotoEnhancementSchema.partial();
+
+export type PhotoEnhancement = typeof photoEnhancements.$inferSelect;
+export type InsertPhotoEnhancement = z.infer<typeof insertPhotoEnhancementSchema>;
+export type UpdatePhotoEnhancement = z.infer<typeof updatePhotoEnhancementSchema>;
