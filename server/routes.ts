@@ -570,6 +570,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/photos/:id/reanalyze', async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      
+      // Get photo details
+      const photo = await storage.getPhoto(photoId);
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+
+      // Delete existing enhancement if it exists
+      const existingEnhancement = await storage.getPhotoEnhancement(photoId);
+      if (existingEnhancement) {
+        await storage.deletePhotoEnhancement(existingEnhancement.id);
+      }
+
+      // Re-analyze photo with AI
+      const analysisResult = await analyzePhotoForEnhancement(photo.url);
+      
+      // Generate new enhancement preview
+      const enhancementPreview = await generateEnhancementPreview(photo.url, analysisResult.suggestions);
+
+      // Save new analysis to database
+      const enhancement = await storage.createPhotoEnhancement({
+        photoId,
+        overallScore: analysisResult.overallScore,
+        primaryIssues: analysisResult.primaryIssues,
+        suggestions: JSON.stringify(analysisResult.suggestions),
+        strengths: analysisResult.strengths,
+        weddingContext: JSON.stringify(analysisResult.weddingContext),
+        enhancementPreview,
+        isVisible: true
+      });
+
+      res.json({
+        ...enhancement,
+        suggestions: analysisResult.suggestions,
+        weddingContext: analysisResult.weddingContext
+      });
+    } catch (error) {
+      console.error("Error reanalyzing photo:", error);
+      
+      if (error.message && error.message.includes('OPENAI_API_KEY')) {
+        return res.status(503).json({ 
+          message: "AI analysis service is not available. Please configure OPENAI_API_KEY." 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to reanalyze photo",
+        details: error.message 
+      });
+    }
+  });
+
   app.patch('/api/photos/:id/enhancement/visibility', async (req, res) => {
     try {
       const photoId = parseInt(req.params.id);

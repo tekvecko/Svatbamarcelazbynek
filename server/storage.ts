@@ -52,13 +52,13 @@ export class DatabaseStorage implements IStorage {
   async getPhotos(approved?: boolean): Promise<Photo[]> {
     // First get photos
     let photosQuery = db.select().from(photos).orderBy(desc(photos.uploadedAt));
-    
+
     if (approved !== undefined) {
       photosQuery = photosQuery.where(eq(photos.approved, approved)) as any;
     }
 
     const photoResults = await photosQuery;
-    
+
     // Then add comment counts
     const photosWithCounts = await Promise.all(
       photoResults.map(async (photo) => {
@@ -66,7 +66,7 @@ export class DatabaseStorage implements IStorage {
           .select({ count: sql<number>`COUNT(*)::int` })
           .from(photoComments)
           .where(eq(photoComments.photoId, photo.id));
-        
+
         return {
           ...photo,
           commentCount: commentCountResult[0]?.count || 0

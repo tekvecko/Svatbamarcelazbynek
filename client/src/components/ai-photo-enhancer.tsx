@@ -45,6 +45,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
   const { data: enhancement, isLoading: isLoadingEnhancement, error } = usePhotoEnhancement(photoId);
   const analyzePhoto = useAnalyzePhoto();
   const updateVisibility = useUpdateEnhancementVisibility();
+  const reanalyzePhoto = useReanalyzePhoto();
 
   const hasEnhancement = enhancement && !error;
   const needsAnalysis = error?.message === 'ENHANCEMENT_NOT_FOUND';
@@ -54,6 +55,14 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
       await analyzePhoto.mutateAsync(photoId);
     } catch (error) {
       console.error('Analysis failed:', error);
+    }
+  };
+
+  const handleReanalyze = async () => {
+    try {
+      await reanalyzePhoto.mutateAsync(photoId);
+    } catch (error) {
+      console.error('Reanalysis failed:', error);
     }
   };
 
@@ -231,10 +240,10 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                   <CardHeader>
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Eye className="h-4 w-4" />
-                      Nastavení viditelnosti
+                      Admin nastavení
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={enhancement.isVisible}
@@ -242,6 +251,30 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                       />
                       <span className="text-sm">
                         {enhancement.isVisible ? "Návrhy jsou viditelné pro hosty" : "Návrhy jsou skryty před hosty"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={handleReanalyze}
+                        disabled={reanalyzePhoto.isPending}
+                        size="sm"
+                        variant="outline"
+                        className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                      >
+                        {reanalyzePhoto.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Znovu analyzuji...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Znovu analyzovat
+                          </>
+                        )}
+                      </Button>
+                      <span className="text-xs text-gray-500">
+                        Aktualizuje analýzu s nejnovějšími AI modely
                       </span>
                     </div>
                   </CardContent>

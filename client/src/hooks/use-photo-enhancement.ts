@@ -55,6 +55,19 @@ async function analyzePhoto(photoId: number): Promise<PhotoEnhancementAnalysis> 
   return response.json();
 }
 
+async function reanalyzePhoto(photoId: number): Promise<PhotoEnhancementAnalysis> {
+  const response = await fetch(`/api/photos/${photoId}/reanalyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to reanalyze photo');
+  }
+  return response.json();
+}
+
 async function updateEnhancementVisibility(photoId: number, isVisible: boolean): Promise<void> {
   const response = await fetch(`/api/photos/${photoId}/enhancement/visibility`, {
     method: 'PATCH',
@@ -108,6 +121,37 @@ export function useAnalyzePhoto() {
 
       toast({
         title: "Chyba při analýze",
+        description,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useReanalyzePhoto() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (photoId: number) => reanalyzePhoto(photoId),
+    onSuccess: (data, photoId) => {
+      queryClient.setQueryData(["/api/photos", photoId, "enhancement"], data);
+      toast({
+        title: "Znovuanalýza dokončena",
+        description: `Aktualizované skóre: ${data.overallScore}/10. Nalezeno ${data.suggestions.length} návrhů na vylepšení.`,
+      });
+    },
+    onError: (error) => {
+      let description = error.message;
+
+      if (error.message.includes('quota') || error.message.includes('503')) {
+        description = "AI analýza je dočasně nedostupná kvůli překročení limitu. Zkuste to prosím později.";
+      } else if (error.message.includes('OPENAI_API_KEY')) {
+        description = "AI analýza není momentálně nakonfigurována.";
+      }
+
+      toast({
+        title: "Chyba při znovuanalýze",
         description,
         variant: "destructive",
       });
