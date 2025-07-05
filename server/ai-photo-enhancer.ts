@@ -83,28 +83,32 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
 Uvažujte o svatebním kontextu - jsou to vzácné vzpomínky, které by měly vypadat nejlépe. Buďte konstruktivní a konkrétní ve svých doporučeních.
 
-Odpovězte ve formátu JSON v češtině s tímto přesným formátem:
+Odpovězte POUZE validním JSON objektem v češtině. Dodržte přesně tento formát bez dalšího textu:
 {
-  "overallScore": number (1-10),
-  "primaryIssues": ["issue1", "issue2"],
+  "overallScore": 7,
+  "primaryIssues": ["problém1", "problém2"],
   "suggestions": [
     {
-      "category": "lighting|composition|color|technical|artistic",
-      "severity": "low|medium|high",
-      "title": "Short title",
-      "description": "What's the issue",
-      "suggestion": "How to fix it",
-      "confidence": number (0-1)
+      "category": "lighting",
+      "severity": "medium",
+      "title": "Krátký český název",
+      "description": "Popis problému v češtině",
+      "suggestion": "Návrh řešení v češtině",
+      "confidence": 0.8
     }
   ],
-  "strengths": ["strength1", "strength2"],
+  "strengths": ["silná stránka1", "silná stránka2"],
   "weddingContext": {
-    "photoType": "ceremony|reception|portraits|candid|group",
-    "subjects": ["bride", "groom", "guests"],
-    "setting": "indoor|outdoor|church|venue",
-    "lighting": "natural|artificial|mixed|golden hour"
+    "photoType": "ceremony",
+    "subjects": ["nevěsta", "ženich"],
+    "setting": "outdoor",
+    "lighting": "natural"
   }
-}`
+}
+
+DŮLEŽITÉ: Použijte pouze tyto hodnoty pro category: "lighting", "composition", "color", "technical", "artistic"
+Použijte pouze tyto hodnoty pro severity: "low", "medium", "high"
+Všechny texty (title, description, suggestion, strengths, primaryIssues) pište v češtině.`
         },
         {
           role: "user",

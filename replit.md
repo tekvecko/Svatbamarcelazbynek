@@ -128,6 +128,11 @@ This is a full-stack wedding website application built with React, Express.js, a
   - **Parameter Updates**: Updated API parameters from `max_tokens` to `max_completion_tokens` for Llama 4 compatibility
   - **Error Handling**: Improved TypeScript error handling and fallback mechanisms
   - **Performance**: Enhanced analysis speed and accuracy with the newer Llama 4 Scout model (460+ tokens/second)
+- July 05, 2025. **Czech Language Support**: Implemented complete Czech localization for AI photo analysis:
+  - **System Prompts**: Updated all AI prompts to request responses in Czech language
+  - **JSON Schema**: Fixed and improved JSON format validation for Czech text content
+  - **Error Handling**: Resolved JSON parsing issues with Czech characters and format validation
+  - **User Experience**: All AI analysis results now display in Czech including suggestions, strengths, and enhancement previews
 
 ## Testing Infrastructure
 
