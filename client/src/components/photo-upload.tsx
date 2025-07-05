@@ -2,15 +2,56 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useUploadPhotos } from "@/hooks/use-photos";
 import { Card } from "@/components/ui/card";
-import { Upload, Plus, CloudUpload } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Upload, Plus, CloudUpload, Camera, X, CheckCircle, AlertCircle, Image, FileImage, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PhotoUpload() {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadPhotos = useUploadPhotos();
+  const { toast } = useToast();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedFiles(e.target.files);
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files) return;
+    
+    setSelectedFiles(files);
+    
+    // Create preview URLs
+    const urls: string[] = [];
+    Array.from(files).forEach(file => {
+      if (file.type.startsWith('image/')) {
+        urls.push(URL.createObjectURL(file));
+      }
+    });
+    setPreviewUrls(urls);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileSelect(e.target.files);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files);
+    }
   };
 
   const handleUpload = async () => {
@@ -21,72 +62,337 @@ export default function PhotoUpload() {
     try {
       await uploadPhotos.mutateAsync(selectedFiles);
       setSelectedFiles(null);
+      setPreviewUrls([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      
+      toast({
+        title: "Fotky nahrány!",
+        description: `${selectedFiles.length} fotek bylo úspěšně nahráno`,
+        duration: 3000,
+      });
     } catch (error) {
       console.error('Upload failed:', error);
+      toast({
+        title: "Chyba při nahrávání",
+        description: "Nepodařilo se nahrát fotky. Zkuste to znovu.",
+        variant: "destructive",
+        duration: 5000,
+      });
     }
+  };
+
+  const removeFile = (index: number) => {
+    if (!selectedFiles) return;
+    
+    const newFiles = Array.from(selectedFiles);
+    newFiles.splice(index, 1);
+    
+    const newPreviewUrls = [...previewUrls];
+    URL.revokeObjectURL(newPreviewUrls[index]);
+    newPreviewUrls.splice(index, 1);
+    
+    setPreviewUrls(newPreviewUrls);
+    
+    // Create new FileList
+    const dt = new DataTransfer();
+    newFiles.forEach(file => dt.items.add(file));
+    setSelectedFiles(dt.files);
   };
 
   const selectFiles = () => {
     fileInputRef.current?.click();
   };
 
+  const clearAll = () => {
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    setSelectedFiles(null);
+    setPreviewUrls([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <Card className="mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-600 border-0">
-      <div className="p-6 text-center">
-        <CloudUpload className="h-12 w-12 text-primary mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Sdílejte své fotky!</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Nahrajte své nejlepší snímky ze svatby
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <div className="space-y-4">
+      {/* Android-style Header */}
+      <div className="flex items-center gap-3 px-4">
+        <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center">
+          <Upload className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Nahrát fotky</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Sdílejte své svatební vzpomínky</p>
+        </div>
+      </div>
+
+      {/* Upload Area */}
+      <Card className="mx-4 overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
+        <div
+          className={`relative p-8 text-center transition-all duration-300 ${
+            dragActive 
+              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600' 
+              : 'bg-gray-50 dark:bg-gray-700/50'
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             multiple
-            onChange={handleFileSelect}
+            onChange={handleInputChange}
             className="hidden"
           />
           
-          <Button
-            onClick={selectFiles}
-            className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg"
+          <motion.div
+            initial={{ scale: 1 }}
+            animate={{ scale: dragActive ? 1.05 : 1 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Vybrat fotky
-          </Button>
-          
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFiles || selectedFiles.length === 0 || uploadPhotos.isPending}
-            className="bg-secondary hover:bg-secondary/90 text-white px-6 py-3 rounded-lg disabled:opacity-50"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {uploadPhotos.isPending ? "Nahrávám..." : "Nahrát"}
-          </Button>
-        </div>
-
-        {selectedFiles && selectedFiles.length > 0 && (
-          <p className="text-sm mt-3 text-gray-600 dark:text-gray-400">
-            Vybráno {selectedFiles.length} {selectedFiles.length === 1 ? 'soubor' : 'souborů'}
-          </p>
-        )}
-
-        {uploadPhotos.isPending && (
-          <div className="mt-4">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full animate-pulse w-1/2"></div>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
+              dragActive 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
+            }`}>
+              {dragActive ? (
+                <Upload className="h-8 w-8" />
+              ) : (
+                <Camera className="h-8 w-8" />
+              )}
             </div>
-            <p className="text-sm mt-2 text-gray-600 dark:text-gray-400">
-              Nahrávám fotky...
+            
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+              {dragActive ? 'Pusťte zde pro nahrání' : 'Přidejte fotky'}
+            </h4>
+            
+            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm">
+              {dragActive 
+                ? 'Pusťte soubory pro rychlé nahrání'
+                : 'Přetáhněte fotky sem nebo klikněte pro výběr souborů'
+              }
             </p>
-          </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={selectFiles}
+                className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 py-2 font-medium shadow-lg"
+              >
+                <Image className="h-4 w-4 mr-2" />
+                Vybrat fotky
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={selectFiles}
+                className="rounded-full px-6 py-2 font-medium border-gray-300 dark:border-gray-600"
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Z kamery
+              </Button>
+            </div>
+            
+            <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+              Podporované formáty: JPG, PNG, GIF • Max. 10MB na soubor
+            </div>
+          </motion.div>
+        </div>
+      </Card>
+
+      {/* File Previews */}
+      <AnimatePresence>
+        {selectedFiles && selectedFiles.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mx-4"
+          >
+            <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                      <FileImage className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white">
+                        Vybrané fotky ({selectedFiles.length})
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Připravené k nahrání
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAll}
+                    className="w-8 h-8 p-0 rounded-full text-gray-500 hover:text-red-500"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {previewUrls.map((url, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative group"
+                    >
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full aspect-square object-cover rounded-xl border border-gray-200 dark:border-gray-600"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                      
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <Badge variant="secondary" className="text-xs bg-black/70 text-white border-0">
+                          {Array.from(selectedFiles)[index]?.name.slice(0, 12)}...
+                        </Badge>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploadPhotos.isPending}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-full py-3 font-medium shadow-lg"
+                  >
+                    {uploadPhotos.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Nahrávám...
+                      </>
+                    ) : (
+                      <>
+                        <CloudUpload className="h-4 w-4 mr-2" />
+                        Nahrát fotky ({selectedFiles.length})
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={selectFiles}
+                    className="rounded-full px-6 py-3 font-medium border-gray-300 dark:border-gray-600"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Přidat další
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
         )}
-      </div>
-    </Card>
+      </AnimatePresence>
+
+      {/* Upload Status */}
+      <AnimatePresence>
+        {uploadPhotos.isPending && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mx-4"
+          >
+            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 rounded-2xl">
+              <div className="p-4 flex items-center gap-3">
+                <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                <div className="flex-1">
+                  <p className="font-medium text-blue-800 dark:text-blue-200">
+                    Nahrávám fotky...
+                  </p>
+                  <p className="text-sm text-blue-600 dark:text-blue-300">
+                    Prosím počkejte, fotky se zpracovávají
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Message */}
+      <AnimatePresence>
+        {uploadPhotos.isSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mx-4"
+          >
+            <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 rounded-2xl">
+              <div className="p-4 flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-green-800 dark:text-green-200">
+                    Fotky úspěšně nahrány!
+                  </p>
+                  <p className="text-sm text-green-600 dark:text-green-300">
+                    Vaše fotky byly přidány do galerie
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error Message */}
+      <AnimatePresence>
+        {uploadPhotos.isError && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mx-4"
+          >
+            <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 rounded-2xl">
+              <div className="p-4 flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-red-800 dark:text-red-200">
+                    Chyba při nahrávání
+                  </p>
+                  <p className="text-sm text-red-600 dark:text-red-300">
+                    Něco se pokazilo. Zkuste to prosím znovu.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => uploadPhotos.reset()}
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  Zkusit znovu
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

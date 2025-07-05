@@ -7,12 +7,25 @@ import PhotoGallery from "@/components/photo-gallery";
 import PhotoUpload from "@/components/photo-upload";
 import AdminPanel from "@/components/admin-panel";
 import Playlist from "@/components/playlist";
+import HighlightReel from "@/components/highlight-reel";
 import { Button } from "@/components/ui/button";
-import { Heart, Calendar, MapPin, Camera, Music, Phone, Settings } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Heart, Calendar, MapPin, Camera, Music, Phone, Settings, Clock, Users, Bell, Share2, MoreVertical, X, ChevronRight, Info, Upload, Star, Home, ArrowLeft, Wifi, Battery, Signal } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 export default function WeddingPage() {
   const [showAdmin, setShowAdmin] = useState(false);
-  const [activeSection, setActiveSection] = useState('');
+  const [activeTab, setActiveTab] = useState('info');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+  const { toast } = useToast();
   
   const { data: weddingDetails } = useQuery({
     queryKey: ["/api/wedding-details"],
@@ -23,10 +36,18 @@ export default function WeddingPage() {
 
   const weddingDate = weddingDetails?.weddingDate ? new Date(weddingDetails.weddingDate) : new Date("2025-10-11T14:00:00");
   
+  const tabs = [
+    { id: "info", label: "Info", icon: Info, color: "bg-blue-600" },
+    { id: "gallery", label: "Fotky", icon: Camera, color: "bg-green-600" },
+    { id: "playlist", label: "Hudba", icon: Music, color: "bg-purple-600" },
+    { id: "upload", label: "Nahrát", icon: Upload, color: "bg-orange-600" },
+    { id: "highlights", label: "Video", icon: Star, color: "bg-yellow-600" },
+  ];
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      const headerHeight = 80; // Navigation bar height
+      const headerHeight = 140; // Android-style headers
       const elementPosition = element.offsetTop - headerHeight;
       window.scrollTo({
         top: elementPosition,
@@ -35,288 +56,380 @@ export default function WeddingPage() {
     }
   };
 
-  // Track active section during scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['odpocet', 'program', 'mapa', 'galerie', 'playlist', 'kontakt'];
-      const headerHeight = 80;
-      
-      for (const sectionId of sections) {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= headerHeight && rect.bottom >= headerHeight) {
-            setActiveSection(sectionId);
-            break;
-          }
-        }
-      }
-    };
+  const handleTabClick = (tabId: string) => {
+    setActiveTab(tabId);
+    scrollToSection(tabId);
+  };
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Check initial section
+  const shareWedding = async () => {
+    const url = window.location.href;
+    const text = `Podívejte se na naši svatební galerii! ${weddingDetails?.coupleNames || 'Naše svatba'}`;
     
-    return () => window.removeEventListener('scroll', handleScroll);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: text,
+          url: url,
+        });
+      } catch (error) {
+        console.log('Sharing failed:', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "Odkaz zkopírován",
+          description: "Odkaz na svatbu byl zkopírován do schránky",
+          duration: 3000,
+        });
+      } catch (error) {
+        console.log('Copy failed:', error);
+      }
+    }
+  };
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('dark');
+  };
+
+  const getCurrentTime = () => {
+    return new Date().toLocaleTimeString('cs-CZ', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const [currentTime, setCurrentTime] = useState(getCurrentTime());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(getCurrentTime());
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Admin Toggle Button - Mobile */}
-      <div className="fixed top-20 right-4 z-40 md:hidden">
-        <Button
-          onClick={() => setShowAdmin(true)}
-          size="icon"
-          className="bg-primary hover:bg-primary/90 rounded-full shadow-lg"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
+      {/* Android Status Bar */}
+      <div className="h-6 bg-black text-white text-xs flex items-center justify-between px-4 font-medium">
+        <div className="flex items-center gap-2">
+          <span>{currentTime}</span>
+          <div className="flex gap-1">
+            <Wifi className="w-3 h-3" />
+            <Signal className="w-3 h-3" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Battery className="w-4 h-4" />
+          <span>87%</span>
+        </div>
+      </div>
+
+      {/* Android App Bar */}
+      <div className="sticky top-6 z-50 bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+              <Heart className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
+                {weddingDetails?.coupleNames || 'Naše Svatba'}
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {weddingDate.toLocaleDateString('cs-CZ', { 
+                  day: 'numeric', 
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="w-10 h-10 p-0 rounded-full relative"
+            >
+              <Bell className="h-5 w-5" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center">
+                3
+              </div>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={shareWedding}
+              className="w-10 h-10 p-0 rounded-full"
+            >
+              <Share2 className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdmin(true)}
+              className="w-10 h-10 p-0 rounded-full"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Material Design Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
+        <div className="flex justify-around items-center py-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 relative ${
+                  isActive 
+                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+                }`}
+              >
+                <div className={`p-1 rounded-full ${isActive ? tab.color : ''}`}>
+                  <Icon className={`h-5 w-5 ${isActive ? 'text-white' : ''}`} />
+                </div>
+                <span className="text-xs font-medium">{tab.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Notification Dropdown */}
+      <AnimatePresence>
+        {showNotifications && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-20 right-4 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 z-40"
+          >
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-800 dark:text-white">Oznámení</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowNotifications(false)}
+                  className="w-8 h-8 p-0 rounded-full"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="p-2 space-y-1">
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-white">Nová fotka přidána</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">před 2 minutami</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-white">Nová hudba navržena</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">před 5 minutami</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-white">Nový komentář</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">před 10 minutami</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content with bottom padding for navigation */}
+      <div className="pb-20">
+        {/* Hero Section - Wedding Info */}
+        <section id="info" className="px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-8"
+          >
+            <div className="w-32 h-32 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+              <Heart className="h-16 w-16 text-white" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+              {weddingDetails?.coupleNames || 'Naše svatba'}
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+              {weddingDate.toLocaleDateString('cs-CZ', { 
+                weekday: 'long',
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </p>
+            <CountdownTimer targetDate={weddingDate} />
+          </motion.div>
+
+          {/* Android Material Cards */}
+          <div className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
+                <div className="flex items-center p-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
+                    <MapPin className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800 dark:text-white">Místo konání</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {weddingDetails?.venue || 'Krásné místo'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      {weddingDetails?.venueAddress || 'Adresa bude upřesněna'}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-10 h-10 p-0 rounded-full">
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
+                <div className="flex items-center p-4">
+                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mr-4">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800 dark:text-white">Čas začátku</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {weddingDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Doporučujeme příchod o 15 minut dříve
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-10 h-10 p-0 rounded-full">
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
+                <div className="flex items-center p-4">
+                  <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mr-4">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800 dark:text-white">Dress code</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Elegantní oblečení
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Prosíme, vyhněte se bílé barvě
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-10 h-10 p-0 rounded-full">
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Wedding Schedule */}
+            {schedule && schedule.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+              >
+                <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
+                        <Calendar className="h-4 w-4 text-white" />
+                      </div>
+                      <h3 className="font-semibold text-gray-800 dark:text-white">Program svatby</h3>
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {schedule.map((item, index) => (
+                      <div key={item.id} className="flex items-center gap-3">
+                        <div className="w-12 text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {item.time}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-800 dark:text-white">{item.title}</p>
+                          {item.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </div>
+        </section>
+
+        {/* Photo Gallery Section */}
+        <section id="gallery" className="px-0 py-8">
+          <PhotoGallery />
+        </section>
+
+        {/* Playlist Section */}
+        <section id="playlist" className="px-4 py-8">
+          <Playlist />
+        </section>
+
+        {/* Upload Section */}
+        <section id="upload" className="px-4 py-8">
+          <PhotoUpload />
+        </section>
+
+        {/* Highlights Section */}
+        <section id="highlights" className="px-4 py-8">
+          <HighlightReel />
+        </section>
       </div>
 
       {/* Admin Panel */}
       <AdminPanel isOpen={showAdmin} onClose={() => setShowAdmin(false)} />
-
-      {/* Hero Section */}
-      <header 
-        className="relative h-screen bg-cover bg-center flex flex-col justify-center items-center text-white"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')`
-        }}
-      >
-        <div className="text-center px-4 sm:px-6 lg:px-8 max-w-4xl w-full">
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
-            {weddingDetails?.coupleNames || "Marcela & Zbyněk"}
-          </h1>
-          <div className="mb-6 sm:mb-8">
-            <p className="text-base sm:text-lg md:text-xl mb-2">
-              {weddingDate.toLocaleDateString('cs-CZ', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-              })}
-            </p>
-            <p className="text-lg sm:text-xl md:text-2xl font-semibold mb-2 text-yellow-300">
-              12:00
-            </p>
-            <p className="text-base sm:text-lg md:text-xl">
-              {weddingDetails?.venue || "Stará pošta, Kovalovice"}
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
-            <Button 
-              onClick={() => scrollToSection('program')}
-              className="bg-primary hover:bg-primary/90 text-white px-6 sm:px-8 py-3 rounded-full transition-colors w-full sm:w-auto text-sm sm:text-base"
-            >
-              Zobrazit program
-            </Button>
-            <Button 
-              onClick={() => scrollToSection('galerie')}
-              variant="outline"
-              className="border-2 border-white hover:bg-white hover:text-gray-900 text-white px-6 sm:px-8 py-3 rounded-full transition-colors w-full sm:w-auto text-sm sm:text-base"
-            >
-              Prohlédnout galerii
-            </Button>
-          </div>
-        </div>
-        <div className="absolute bottom-4 sm:bottom-8 animate-bounce">
-          <div className="text-xl sm:text-2xl">⬇️</div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 backdrop-blur-wedding shadow-md">
-        <div className="max-w-6xl mx-auto px-2 sm:px-4">
-          <div className="flex justify-between items-center py-3 sm:py-4">
-            {/* Desktop Admin */}
-            <div className="hidden md:block">
-              <Button
-                onClick={() => setShowAdmin(true)}
-                variant="ghost"
-                size="icon"
-                className="text-gray-600 hover:text-primary"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            {/* Navigation Links */}
-            <div className="flex gap-1 sm:gap-2 md:gap-4 mx-auto md:mx-0 text-xs sm:text-sm overflow-x-auto scrollbar-hide">
-              {[
-                { id: 'odpocet', label: 'Odpočet' },
-                { id: 'program', label: 'Program' },
-                { id: 'mapa', label: 'Mapa' },
-                { id: 'galerie', label: 'Galerie' },
-                { id: 'playlist', label: 'Playlist' },
-                { id: 'kontakt', label: 'Kontakt' }
-              ].map((section) => (
-                <button 
-                  key={section.id}
-                  onClick={() => scrollToSection(section.id)} 
-                  className={`transition-all duration-300 px-2 sm:px-3 py-1 sm:py-2 rounded-full whitespace-nowrap min-w-max ${
-                    activeSection === section.id 
-                      ? 'text-white bg-primary shadow-lg' 
-                      : 'text-primary hover:text-primary/80 hover:bg-primary/10'
-                  }`}
-                >
-                  {section.label}
-                </button>
-              ))}
-            </div>
-            
-            <div className="hidden md:block w-6"></div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Countdown Section */}
-      <section id="odpocet" className="py-12 sm:py-16 gradient-accent">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold mb-6 sm:mb-8 text-gray-800 dark:text-white">
-            <Heart className="inline-block text-secondary mr-2 sm:mr-3 h-6 w-6 sm:h-8 sm:w-8" />
-            Do svatby zbývá
-          </h2>
-          <CountdownTimer targetDate={weddingDate} />
-        </div>
-      </section>
-
-      {/* Program Section */}
-      <section id="program" className="py-12 sm:py-16 bg-white dark:bg-gray-800">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12">
-            <Calendar className="inline-block text-primary mr-2 sm:mr-3 h-6 w-6 sm:h-8 sm:w-8" />
-            Program svatby
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-            {schedule && schedule.length > 0 ? (
-              schedule.map((item, index) => {
-                const colorClasses = [
-                  'bg-primary',
-                  'bg-secondary', 
-                  'bg-accent',
-                  'bg-success'
-                ];
-                return (
-                  <div key={item.id} className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                    <div className={`${colorClasses[index % colorClasses.length]} text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0`}>
-                      {item.time.substring(0, 2)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-base sm:text-lg mb-1">{item.title}</h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">{item.description}</p>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="col-span-full text-center text-gray-500">
-                Načítám harmonogram...
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Map Section */}
-      <section id="mapa" className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12">
-            <MapPin className="inline-block text-primary mr-2 sm:mr-3 h-6 w-6 sm:h-8 sm:w-8" />
-            Místo konání
-          </h2>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-            <div className="p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">
-                {weddingDetails?.venue || "Stará pošta, Kovalovice"}
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">
-                {weddingDetails?.venueAddress || "Kovalovice 109, 664 07 Kovalovice"}
-              </p>
-            </div>
-            <iframe 
-              className="w-full h-64 sm:h-80" 
-              src="https://maps.google.com/maps?q=Kovalovice%20109&t=&z=15&ie=UTF8&iwloc=&output=embed" 
-              loading="lazy"
-              style={{ border: 0 }}
-              title="Mapa místa konání"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Gallery Section */}
-      <section id="galerie" className="py-12 sm:py-16 bg-white dark:bg-gray-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12">
-            <Camera className="inline-block text-primary mr-2 sm:mr-3 h-6 w-6 sm:h-8 sm:w-8" />
-            Svatební galerie
-          </h2>
-          
-          {weddingDetails?.allowUploads && <PhotoUpload />}
-          <PhotoGallery />
-        </div>
-      </section>
-
-      {/* Playlist Section */}
-      <section id="playlist" className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12">
-            <Music className="inline-block text-primary mr-2 sm:mr-3 h-6 w-6 sm:h-8 sm:w-8" />
-            Party Playlist
-          </h2>
-          <Playlist />
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="kontakt" className="py-12 sm:py-16 bg-white dark:bg-gray-800">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-12">
-            <Phone className="inline-block text-primary mr-2 sm:mr-3 h-6 w-6 sm:h-8 sm:w-8" />
-            Kontakt
-          </h2>
-          <div className="gradient-accent rounded-xl p-6 sm:p-8">
-            <h3 className="text-lg sm:text-xl font-semibold mb-4">Máte dotazy nebo chcete potvrdit účast?</h3>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6">
-              Neváhejte nás kontaktovat. Těšíme se na oslavu s vámi!
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
-              <Button asChild className="bg-primary hover:bg-primary/90 text-white px-6 sm:px-8 py-3 rounded-lg w-full sm:w-auto text-sm sm:text-base">
-                <a href="mailto:svatba2025@example.com" className="block truncate">
-                  📧 svatba2025@example.com
-                </a>
-              </Button>
-              <Button asChild variant="outline" className="border-2 border-primary text-primary hover:bg-primary hover:text-white px-6 sm:px-8 py-3 rounded-lg w-full sm:w-auto text-sm sm:text-base">
-                <a href="tel:+420123456789">
-                  📞 +420 123 456 789
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <div className="mb-4">
-            <h3 className="font-serif text-2xl font-bold text-primary">
-              {weddingDetails?.coupleNames || "Marcela & Zbyněk"}
-            </h3>
-            <p className="text-gray-400">
-              {weddingDate.toLocaleDateString('cs-CZ', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-              })}
-            </p>
-          </div>
-          <div className="border-t border-gray-700 pt-4">
-            <p className="text-gray-400 text-sm">
-              &copy; 2025 Svatební web s láskou vytvořený pro naše nejbližší
-              <Heart className="inline-block text-secondary mx-2 h-4 w-4" />
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
