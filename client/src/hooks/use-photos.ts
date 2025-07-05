@@ -113,7 +113,20 @@ export function useAddPhotoComment() {
     mutationFn: ({ photoId, author, text }: { photoId: number; author: string; text: string }) =>
       api.addPhotoComment(photoId, author, text),
     onSuccess: (data, { photoId }) => {
+      // Invalidate both comments and photos queries to update comment count
       queryClient.invalidateQueries({ queryKey: ["/api/photos", photoId, "comments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      
+      // Update the specific photo's comment count in cache if possible
+      queryClient.setQueryData(["/api/photos"], (oldData: any) => {
+        if (!oldData || !Array.isArray(oldData)) return oldData;
+        return oldData.map((photo: any) => 
+          photo.id === photoId 
+            ? { ...photo, commentCount: (photo.commentCount || 0) + 1 }
+            : photo
+        );
+      });
+      
       toast({
         title: "Komentář přidán",
         description: "Váš komentář byl úspěšně přidán",

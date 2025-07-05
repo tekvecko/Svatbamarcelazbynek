@@ -476,13 +476,13 @@ export default function PhotoGallery() {
 
       {/* Photo Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[95vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-6xl max-h-[95vh] p-0 overflow-auto">
           <DialogTitle className="sr-only">Detail fotky</DialogTitle>
           <DialogDescription className="sr-only">
             Detailní zobrazení fotky s možností lajkování, komentování a stahování
           </DialogDescription>
           
-          <div className="grid lg:grid-cols-3 h-full">
+          <div className="grid lg:grid-cols-3 min-h-[600px]">
             {/* Main image */}
             <div className="lg:col-span-2 relative bg-black">
               <Button
