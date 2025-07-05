@@ -32,7 +32,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
   // Mock mode for testing when quota is exceeded
   const useMockData = process.env.USE_MOCK_AI === 'true';
-  
+
   if (useMockData) {
     return {
       overallScore: 8,
@@ -66,8 +66,8 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
   }
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    const response = await groq.chat.completions.create({
+      model: "llama-3.2-90b-vision-preview", // Groq's vision model for image analysis
       messages: [
         {
           role: "system",
@@ -125,7 +125,7 @@ Respond with JSON in this exact format:
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     // Validate and sanitize the response
     return {
       overallScore: Math.max(1, Math.min(10, result.overallScore || 7)),
@@ -148,7 +148,7 @@ Respond with JSON in this exact format:
     };
   } catch (error) {
     console.error('Error analyzing photo:', error);
-    
+
     // If quota exceeded, return mock data instead of failing
     if (error.status === 429 || error.code === 'insufficient_quota') {
       console.log('OpenAI quota exceeded, returning mock analysis data');
@@ -182,7 +182,7 @@ Respond with JSON in this exact format:
         }
       };
     }
-    
+
     throw new Error('Failed to analyze photo for enhancement suggestions');
   }
 }
@@ -198,8 +198,8 @@ export async function generateEnhancementPreview(
       .map(s => `- ${s.title}: ${s.suggestion}`)
       .join('\n');
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    const response = await groq.chat.completions.create({
+      model: "llama-3.2-11b-vision-preview", // Faster Groq model for preview generation
       messages: [
         {
           role: "system",
@@ -227,7 +227,7 @@ export async function generateEnhancementPreview(
     return response.choices[0].message.content || 'Enhanced version would show improved lighting, composition, and overall visual appeal.';
   } catch (error) {
     console.error('Error generating enhancement preview:', error);
-    
+
     // Return a localized fallback message
     return 'Vylepšená verze by ukázala zlepšené osvětlení, kompozici a celkový vizuální dojem fotografie.';
   }
