@@ -14,6 +14,7 @@ interface AIPhotoEnhancerProps {
   photoId: number;
   photoUrl: string;
   isAdminMode?: boolean;
+  inlineMode?: boolean;
 }
 
 const CategoryIcons = {
@@ -30,7 +31,7 @@ const SeverityColors = {
   high: "bg-red-100 text-red-800 border-red-200",
 };
 
-export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false }: AIPhotoEnhancerProps) {
+export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false, inlineMode = false }: AIPhotoEnhancerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: enhancement, isLoading: isLoadingEnhancement, error } = usePhotoEnhancement(photoId);
   const analyzePhoto = useAnalyzePhoto();
@@ -96,6 +97,53 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
       </Card>
     );
   };
+
+  // For inline mode (inside other dialogs), just show a button
+  if (inlineMode) {
+    if (needsAnalysis && !analyzePhoto.isPending) {
+      return (
+        <Button
+          onClick={handleAnalyze}
+          size="sm"
+          variant="outline"
+          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 shadow-lg rounded-full"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          AI Analýza
+        </Button>
+      );
+    }
+    
+    if (analyzePhoto.isPending) {
+      return (
+        <Button
+          disabled
+          size="sm"
+          variant="outline"
+          className="bg-blue-500 text-white border-0 rounded-full"
+        >
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          Analýza...
+        </Button>
+      );
+    }
+    
+    if (hasEnhancement) {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-green-500 text-white border-0 hover:bg-green-600 rounded-full"
+          disabled
+        >
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Hotovo
+        </Button>
+      );
+    }
+    
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

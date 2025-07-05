@@ -589,7 +589,8 @@ export default function PhotoGallery() {
                   {selectedPhoto && (
                     <AIPhotoEnhancer 
                       photoId={selectedPhoto.id} 
-                      photoUrl={selectedPhoto.url} 
+                      photoUrl={selectedPhoto.url}
+                      inlineMode={true}
                     />
                   )}
                 </div>
