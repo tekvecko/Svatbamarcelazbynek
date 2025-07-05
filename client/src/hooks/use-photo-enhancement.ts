@@ -94,9 +94,18 @@ export function useAnalyzePhoto() {
       });
     },
     onError: (error) => {
+      let description = error.message;
+      
+      // Provide more user-friendly error messages
+      if (error.message.includes('quota') || error.message.includes('503')) {
+        description = "AI analýza je dočasně nedostupná kvůli překročení limitu. Zkuste to prosím později.";
+      } else if (error.message.includes('OPENAI_API_KEY')) {
+        description = "AI analýza není momentálně nakonfigurována.";
+      }
+      
       toast({
         title: "Chyba při analýze",
-        description: error.message,
+        description,
         variant: "destructive",
       });
     },
