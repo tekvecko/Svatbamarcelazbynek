@@ -30,6 +30,41 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
     throw new Error('OPENAI_API_KEY is not configured. AI analysis is not available.');
   }
 
+  // Mock mode for testing when quota is exceeded
+  const useMockData = process.env.USE_MOCK_AI === 'true';
+  
+  if (useMockData) {
+    return {
+      overallScore: 8,
+      primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena"],
+      suggestions: [
+        {
+          category: 'lighting',
+          severity: 'medium',
+          title: 'Zvýšit jas',
+          description: 'Fotka je mírně tmavá',
+          suggestion: 'Zvyšte expozici o +0.7 EV a stíny o +30',
+          confidence: 0.85
+        },
+        {
+          category: 'composition',
+          severity: 'low',
+          title: 'Upravit ořez',
+          description: 'Subjekt není ideálně umístěn',
+          suggestion: 'Použijte pravidlo třetin pro lepší kompozici',
+          confidence: 0.75
+        }
+      ],
+      strengths: ["Krásné svatební okamžiky", "Dobré emoční zachycení"],
+      weddingContext: {
+        photoType: "candid",
+        subjects: ["bride", "groom"],
+        setting: "outdoor",
+        lighting: "natural"
+      }
+    };
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
