@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { usePhotoEnhancement, useAnalyzePhoto, useUpdateEnhancementVisibility, type PhotoEnhancementSuggestion } from "@/hooks/use-photo-enhancement";
 import { Button } from "@/components/ui/button";
@@ -66,33 +67,37 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
 
   const renderSuggestionCard = (suggestion: PhotoEnhancementSuggestion, index: number) => {
     const CategoryIcon = CategoryIcons[suggestion.category] || Lightbulb;
-
+    
     return (
-      <Card key={index} className="border-l-4 border-l-blue-500">
+      <Card key={index} className={`border-l-4 ${suggestion.severity === 'high' ? 'border-l-red-500' : suggestion.severity === 'medium' ? 'border-l-yellow-500' : 'border-l-green-500'}`}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CategoryIcon className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-lg">{suggestion.title}</CardTitle>
+              <CategoryIcon className="h-4 w-4 text-gray-600" />
+              <CardTitle className="text-base">{suggestion.title}</CardTitle>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className={`${SeverityColors[suggestion.severity]} border`}>
+              <Badge className={SeverityColors[suggestion.severity]} variant="outline">
                 {getSeverityIcon(suggestion.severity)}
                 <span className="ml-1 capitalize">{suggestion.severity}</span>
               </Badge>
-              <Badge variant="outline">
+              <Badge variant="secondary" className="text-xs">
                 {Math.round(suggestion.confidence * 100)}%
               </Badge>
             </div>
           </div>
-          <CardDescription className="text-gray-600">
-            {suggestion.description}
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-l-blue-400">
-            <p className="text-blue-800 font-medium">💡 Doporučení:</p>
-            <p className="text-blue-700 mt-1">{suggestion.suggestion}</p>
+          <CardDescription className="mb-3">
+            {suggestion.description}
+          </CardDescription>
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+              💡 Doporučení:
+            </p>
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              {suggestion.suggestion}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -273,7 +278,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Zobrazit návř hosťa</p>
+                        <p className="font-medium">Zobrazit návrhy hostům</p>
                         <p className="text-sm text-gray-600">Hosté uvidí AI návrhy na vylepšení této fotky</p>
                       </div>
                       <Switch
@@ -287,7 +292,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
               )}
 
               {/* Overall Score */}
-              <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+              <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Star className="h-5 w-5 text-yellow-500" />
@@ -296,46 +301,16 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4">
-                    <div className="text-3xl font-bold text-green-600">
+                    <div className="text-3xl font-bold text-emerald-600">
                       {enhancement.overallScore}/10
                     </div>
                     <div className="flex-1">
                       <Progress value={enhancement.overallScore * 10} className="h-3" />
                       <p className="text-sm text-gray-600 mt-1">
                         {enhancement.overallScore >= 8 ? 'Výborná fotka!' : 
-                         enhancement.overallScore >= 6 ? 'Dobrá fotka s prostorem pro vylepšení' : 
-                         'Fotka má potenciál pro významná vylepšení'}
+                         enhancement.overallScore >= 6 ? 'Dobrá fotka s potenciálem pro vylepšení' : 
+                         'Fotka by mohla být výrazně vylepšena'}
                       </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Wedding Context */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Camera className="h-5 w-5 text-blue-600" />
-                    Kontext fotky
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Typ fotky</p>
-                      <p className="capitalize">{enhancement.weddingContext.photoType}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Prostředí</p>
-                      <p className="capitalize">{enhancement.weddingContext.setting}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Osvětlení</p>
-                      <p className="capitalize">{enhancement.weddingContext.lighting}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Objekty</p>
-                      <p>{enhancement.weddingContext.subjects.join(', ')}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -343,19 +318,19 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
 
               {/* Strengths */}
               {enhancement.strengths.length > 0 && (
-                <Card className="border-green-200 bg-green-50">
+                <Card className="bg-green-50 border-green-200">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-green-800">
                       <CheckCircle className="h-5 w-5" />
-                      Silné stránky fotky
+                      Silné stránky
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
                       {enhancement.strengths.map((strength, index) => (
-                        <li key={index} className="flex items-center gap-2 text-green-700">
-                          <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                          {strength}
+                        <li key={index} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-green-800">{strength}</span>
                         </li>
                       ))}
                     </ul>
@@ -365,30 +340,37 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
 
               {/* Primary Issues */}
               {enhancement.primaryIssues.length > 0 && (
-                <Alert className="border-orange-200 bg-orange-50">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                  <AlertDescription className="text-orange-800">
-                    <strong>Hlavní problémy k řešení:</strong>
-                    <ul className="mt-2 space-y-1">
+                <Card className="bg-amber-50 border-amber-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-amber-800">
+                      <AlertTriangle className="h-5 w-5" />
+                      Hlavní problémy
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
                       {enhancement.primaryIssues.map((issue, index) => (
-                        <li key={index}>• {issue}</li>
+                        <li key={index} className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-amber-800">{issue}</span>
+                        </li>
                       ))}
                     </ul>
-                  </AlertDescription>
-                </Alert>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Enhancement Preview */}
               {enhancement.enhancementPreview && (
-                <Card className="bg-purple-50 border-purple-200">
+                <Card className="bg-blue-50 border-blue-200">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-purple-800">
+                    <CardTitle className="flex items-center gap-2 text-blue-800">
                       <Eye className="h-5 w-5" />
-                      Náhled vylepšené verze
+                      Náhled vylepšení
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-purple-700 italic">"{enhancement.enhancementPreview}"</p>
+                    <p className="text-blue-800 italic">"{enhancement.enhancementPreview}"</p>
                   </CardContent>
                 </Card>
               )}
@@ -418,7 +400,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
 
               <div className="text-center text-sm text-gray-500">
                 <p>Analýza provedena: {new Date(enhancement.analysisDate).toLocaleString('cs-CZ')}</p>
-                <p className="mt-1">Powered by OpenAI GPT-4 Vision</p>
+                <p className="mt-1">Powered by AI</p>
               </div>
             </>
           )}
