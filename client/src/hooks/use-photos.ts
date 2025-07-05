@@ -113,19 +113,28 @@ export function useAddPhotoComment() {
     mutationFn: ({ photoId, author, text }: { photoId: number; author: string; text: string }) =>
       api.addPhotoComment(photoId, author, text),
     onSuccess: (data, { photoId }) => {
-      // Invalidate both comments and photos queries to update comment count
-      queryClient.invalidateQueries({ queryKey: ["/api/photos", photoId, "comments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
+      // First, add the comment to the comments cache
+      queryClient.setQueryData(["/api/photos", photoId, "comments"], (oldComments: any) => {
+        if (!oldComments) return [data];
+        return [...oldComments, data];
+      });
       
-      // Update the specific photo's comment count in cache if possible
-      queryClient.setQueryData(["/api/photos"], (oldData: any) => {
+      // Then update the photo's comment count in all photos caches
+      const updatePhotoCount = (oldData: any) => {
         if (!oldData || !Array.isArray(oldData)) return oldData;
         return oldData.map((photo: any) => 
           photo.id === photoId 
             ? { ...photo, commentCount: (photo.commentCount || 0) + 1 }
             : photo
         );
-      });
+      };
+      
+      queryClient.setQueryData(["/api/photos"], updatePhotoCount);
+      queryClient.setQueryData(["/api/photos", true], updatePhotoCount);
+      queryClient.setQueryData(["/api/photos", false], updatePhotoCount);
+      
+      // Also invalidate to ensure fresh data on next fetch
+      queryClient.invalidateQueries({ queryKey: ["/api/photos"] });
       
       toast({
         title: "Komentář přidán",
