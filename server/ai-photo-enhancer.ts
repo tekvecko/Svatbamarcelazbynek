@@ -69,7 +69,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
   try {
     const response = await groq.chat.completions.create({
-      model: "llama-3.2-11b-vision-preview", // Groq's current vision model for image analysis
+      model: "meta-llama/llama-4-scout-17b-16e-instruct", // Groq's current Llama 4 Scout vision model
       messages: [
         {
           role: "system",
@@ -123,7 +123,8 @@ Respond with JSON in this exact format:
         }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 1000
+      max_completion_tokens: 1000,
+      temperature: 0.7
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -148,7 +149,7 @@ Respond with JSON in this exact format:
         lighting: result.weddingContext?.lighting || 'natural'
       }
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error analyzing photo:', error);
 
     // If quota exceeded, return mock data instead of failing
@@ -201,7 +202,7 @@ export async function generateEnhancementPreview(
       .join('\n');
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.2-11b-vision-preview", // Groq's current vision model for preview generation
+      model: "meta-llama/llama-4-scout-17b-16e-instruct", // Groq's current Llama 4 Scout vision model
       messages: [
         {
           role: "system",
@@ -223,11 +224,12 @@ export async function generateEnhancementPreview(
           ]
         }
       ],
-      max_tokens: 200
+      max_completion_tokens: 200,
+      temperature: 0.7
     });
 
     return response.choices[0].message.content || 'Enhanced version would show improved lighting, composition, and overall visual appeal.';
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating enhancement preview:', error);
 
     // Return a localized fallback message
