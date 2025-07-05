@@ -37,6 +37,68 @@
   animation: heart-pulse 0.6s ease-in-out;
 }
 
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom backdrop blur for wedding theme */
+.backdrop-blur-wedding {
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.dark .backdrop-blur-wedding {
+  background-color: rgba(31, 41, 55, 0.8);
+}
+
+/* Gradient background for accent sections */
+.gradient-accent {
+  background: linear-gradient(135deg, #fdf2f8 0%, #f8fafc 50%, #fef3c7 100%);
+}
+
+.dark .gradient-accent {
+  background: linear-gradient(135deg, #374151 0%, #1f2937 50%, #111827 100%);
+}
+
+/* Wedding-themed transitions */
+.transition-wedding {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Photo masonry improvements */
+.photo-masonry-item {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+/* Enhanced hover effects */
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Progress indicator for sections */
+.section-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f59e0b, #ec4899, #8b5cf6);
+  z-index: 100;
+  transition: width 0.3s ease;
+}
+
+/* Floating action button animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(20, 14.3%, 4.1%);

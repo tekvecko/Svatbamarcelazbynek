@@ -4,24 +4,66 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Heart, Music, Plus, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Playlist() {
   const [songInput, setSongInput] = useState("");
   const { data: songs, isLoading } = usePlaylist();
   const addSong = useAddSong();
   const toggleLike = useToggleSongLike();
+  const { toast } = useToast();
 
   const handleAddSong = async () => {
     if (!songInput.trim()) return;
 
-    // Parse the input to extract title and artist
-    const parts = songInput.split(' - ');
-    const title = parts.length > 1 ? parts[1].trim() : songInput.trim();
-    const artist = parts.length > 1 ? parts[0].trim() : undefined;
+    // Enhanced parsing logic with multiple patterns
+    const input = songInput.trim();
+    let title = input;
+    let artist = undefined;
+
+    // Pattern 1: "Artist - Title"
+    if (input.includes(' - ')) {
+      const parts = input.split(' - ');
+      if (parts.length === 2) {
+        artist = parts[0].trim();
+        title = parts[1].trim();
+      }
+    }
+    // Pattern 2: "Artist: Title"
+    else if (input.includes(': ')) {
+      const parts = input.split(': ');
+      if (parts.length === 2) {
+        artist = parts[0].trim();
+        title = parts[1].trim();
+      }
+    }
+    // Pattern 3: "Title by Artist"
+    else if (input.toLowerCase().includes(' by ')) {
+      const parts = input.toLowerCase().split(' by ');
+      if (parts.length === 2) {
+        title = input.substring(0, input.toLowerCase().indexOf(' by ')).trim();
+        artist = input.substring(input.toLowerCase().indexOf(' by ') + 4).trim();
+      }
+    }
+
+    // Check for duplicates
+    const existingSong = songs && Array.isArray(songs) ? songs.find((song: any) => 
+      song.title?.toLowerCase() === title.toLowerCase() && 
+      song.artist?.toLowerCase() === artist?.toLowerCase()
+    ) : null;
+
+    if (existingSong) {
+      toast({
+        title: "Skladba už je v playlistu",
+        description: `"${title}" ${artist ? `od ${artist}` : ''} už byla přidána`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       await addSong.mutateAsync({
-        suggestion: songInput.trim(),
+        suggestion: input,
         title,
         artist,
       });

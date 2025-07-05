@@ -12,6 +12,7 @@ import { Heart, Calendar, MapPin, Camera, Music, Phone, Settings } from "lucide-
 
 export default function WeddingPage() {
   const [showAdmin, setShowAdmin] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
   
   const { data: weddingDetails } = useQuery({
     queryKey: ["/api/wedding-details"],
@@ -25,9 +26,38 @@ export default function WeddingPage() {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      const headerHeight = 80; // Navigation bar height
+      const elementPosition = element.offsetTop - headerHeight;
+      window.scrollTo({
+        top: elementPosition,
+        behavior: 'smooth'
+      });
     }
   };
+
+  // Track active section during scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['odpocet', 'program', 'mapa', 'galerie', 'playlist', 'kontakt'];
+      const headerHeight = 80;
+      
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= headerHeight && rect.bottom >= headerHeight) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check initial section
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -110,24 +140,26 @@ export default function WeddingPage() {
             
             {/* Navigation Links */}
             <div className="flex gap-4 mx-auto md:mx-0 text-sm">
-              <button onClick={() => scrollToSection('odpocet')} className="text-primary hover:text-primary/80 transition-colors">
-                Odpočet
-              </button>
-              <button onClick={() => scrollToSection('program')} className="text-primary hover:text-primary/80 transition-colors">
-                Program
-              </button>
-              <button onClick={() => scrollToSection('mapa')} className="text-primary hover:text-primary/80 transition-colors">
-                Mapa
-              </button>
-              <button onClick={() => scrollToSection('galerie')} className="text-primary hover:text-primary/80 transition-colors">
-                Galerie
-              </button>
-              <button onClick={() => scrollToSection('playlist')} className="text-primary hover:text-primary/80 transition-colors">
-                Playlist
-              </button>
-              <button onClick={() => scrollToSection('kontakt')} className="text-primary hover:text-primary/80 transition-colors">
-                Kontakt
-              </button>
+              {[
+                { id: 'odpocet', label: 'Odpočet' },
+                { id: 'program', label: 'Program' },
+                { id: 'mapa', label: 'Mapa' },
+                { id: 'galerie', label: 'Galerie' },
+                { id: 'playlist', label: 'Playlist' },
+                { id: 'kontakt', label: 'Kontakt' }
+              ].map((section) => (
+                <button 
+                  key={section.id}
+                  onClick={() => scrollToSection(section.id)} 
+                  className={`transition-all duration-300 px-3 py-1 rounded-full ${
+                    activeSection === section.id 
+                      ? 'text-white bg-primary shadow-lg' 
+                      : 'text-primary hover:text-primary/80 hover:bg-primary/10'
+                  }`}
+                >
+                  {section.label}
+                </button>
+              ))}
             </div>
             
             <div className="hidden md:block w-6"></div>

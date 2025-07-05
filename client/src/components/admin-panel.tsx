@@ -339,35 +339,69 @@ function AdminPanelContent({
               </DialogHeader>
               <div className="space-y-4">
                 {pendingPhotos && pendingPhotos.length > 0 ? (
-                  pendingPhotos.map((photo) => (
-                    <div key={photo.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                      <img src={photo.thumbnailUrl} alt={photo.originalName} className="w-16 h-16 object-cover rounded" />
-                      <div className="flex-1">
-                        <h4 className="font-medium">{photo.originalName}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Nahráno: {new Date(photo.uploadedAt).toLocaleDateString('cs-CZ')}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleApprovePhoto(photo.id)}
-                          size="sm"
-                          className="bg-success hover:bg-success/90 text-white"
-                          disabled={IS_STATIC}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDeletePhoto(photo.id)}
-                          size="sm"
-                          variant="destructive"
-                          disabled={IS_STATIC}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                  <>
+                    {/* Bulk Actions */}
+                    <div className="flex gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <Button
+                        onClick={() => {
+                          pendingPhotos.forEach(photo => handleApprovePhoto(photo.id));
+                        }}
+                        size="sm"
+                        className="bg-success hover:bg-success/90 text-white"
+                        disabled={IS_STATIC}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Schválit vše ({pendingPhotos.length})
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (confirm(`Opravdu chcete smazat všech ${pendingPhotos.length} fotek?`)) {
+                            pendingPhotos.forEach(photo => handleDeletePhoto(photo.id));
+                          }
+                        }}
+                        size="sm"
+                        variant="destructive"
+                        disabled={IS_STATIC}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Smazat vše
+                      </Button>
                     </div>
-                  ))
+                    
+                    {/* Individual Photos */}
+                    {pendingPhotos.map((photo) => (
+                      <div key={photo.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <img src={photo.thumbnailUrl} alt={photo.originalName} className="w-16 h-16 object-cover rounded" />
+                        <div className="flex-1">
+                          <h4 className="font-medium">{photo.originalName}</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Nahráno: {new Date(photo.uploadedAt).toLocaleDateString('cs-CZ')}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Lajky: {photo.likes || 0} | Velikost: {((photo.fileSize || 0) / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleApprovePhoto(photo.id)}
+                            size="sm"
+                            className="bg-success hover:bg-success/90 text-white"
+                            disabled={IS_STATIC}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeletePhoto(photo.id)}
+                            size="sm"
+                            variant="destructive"
+                            disabled={IS_STATIC}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
                 ) : (
                   <p className="text-center text-gray-500 py-4">Žádné fotky k moderaci</p>
                 )}
