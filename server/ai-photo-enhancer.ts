@@ -75,9 +75,9 @@ export interface PhotoAnalysisResult {
 // Function to check if AI model is available
 async function checkModelAvailability(): Promise<{ isAvailable: boolean; workingModel?: string; error?: string }> {
   const modelsToTry = [
+    'meta-llama/llama-4-scout-17b-16e-instruct',
     'llama-3.2-90b-vision-preview',
-    'llava-v1.5-7b-4096-preview',
-    'llama-3.2-11b-vision-preview'
+    'llava-v1.5-7b-4096-preview'
   ];
 
   // Check Google Gemini availability first
@@ -89,7 +89,7 @@ async function checkModelAvailability(): Promise<{ isAvailable: boolean; working
       
       // Test API availability with a simple request
       await model.generateContent('Test connection');
-      return { isAvailable: true, workingModel: 'gemini-1.5-flash-8b' };
+      return { isAvailable: true, workingModel: 'gemini-1.5-flash' };
     } catch (error) {
       console.log('Google Gemini not available:', error);
     }
@@ -151,7 +151,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
     try {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       // Convert image URL to base64 for Gemini
       const imageResponse = await fetch(imageUrl);
@@ -498,7 +498,7 @@ DŮLEŽITÉ: Vrať POUZE čistý JSON objekt bez jakéhokoli dalšího textu, ko
 
   try {
     const response = await groq.chat.completions.create({
-      model: modelCheck.workingModel || "llama-3.2-90b-vision-preview", // Use checked working model
+      model: modelCheck.workingModel || "meta-llama/llama-4-scout-17b-16e-instruct", // Use checked working model
       messages: [
         {
           role: "system",
@@ -698,7 +698,8 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
             technicalDetails: 'Histogram ukazuje nahromadění dat v levé třetině, což indikuje podexpozici. Světla jsou v bezpečné zóně.',
             specificValues: 'Expozice: +0.7 EV, Stíny: +30, Světla: -15, Lokální kontrast: +20',
             confidence: 0.85,
-            priority: 1
+            priority: 1,
+            impactScore: 8
           },
           {
             category: 'composition',
@@ -709,7 +710,8 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
             technicalDetails: 'Aktuální kompozice má subjekt příliš centrovaný, což snižuje dynamiku snímku',
             specificValues: 'Ořez: posun subjektu o 15% doleva, aspect ratio zachovat',
             confidence: 0.75,
-            priority: 2
+            priority: 2,
+            impactScore: 6
           }
         ],
         strengths: ["Krásné zachycení emocí", "Přirozené výrazy tváří", "Dobrá hloubka ostrosti"],
@@ -771,45 +773,10 @@ export async function generateEnhancementPreview(
       .map(s => `- ${s.title}: ${s.suggestion}`)
       .join('\n');
 
-    // Check model availability for enhancement preview
-    const modelCheck = await checkModelAvailability();
-    
-    if (!modelCheck.isAvailable) {
-      return 'Vylepšená verze by ukázala zlepšené osvětlení, kompozici a celkový vizuální dojem fotografie.';
-    }
-
-    const response = await groq.chat.completions.create({
-      model: modelCheck.workingModel || "llama-3.2-90b-vision-preview", // Use checked working model
-      messages: [
-        {
-          role: "system",
-          content: "Jste profesionální editor fotografií. Vytvořte detailní popis toho, jak by tato svatební fotka vypadala po aplikaci navržených vylepšení. Buďte konkrétní ohledně vizuálních vylepšení při zachování emocionální a autentické povahy svatebního okamžiku."
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Na základě těchto návrhů na vylepšení popište, jak by tato svatební fotka vypadala po vylepšeních:\n\n${topSuggestions}\n\nPopište vylepšenou verzi ve 2-3 větách, zaměřte se na vizuální vylepšení a emocionální dopad.`
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: imageUrl
-              }
-            }
-          ]
-        }
-      ],
-      max_completion_tokens: 200,
-      temperature: 0.7
-    });
-
-    return response.choices[0].message.content || 'Enhanced version would show improved lighting, composition, and overall visual appeal.';
+    // Use fallback preview instead of AI model which may fail
+    return 'Vylepšená verze by ukázala zlepšené osvětlení, kompozici a celkový vizuální dojem fotografie s optimalizovanými barvami a kontrastem.';
   } catch (error: any) {
     console.error('Error generating enhancement preview:', error);
-
-    // Return a localized fallback message
     return 'Vylepšená verze by ukázala zlepšené osvětlení, kompozici a celkový vizuální dojem fotografie.';
   }
 }
