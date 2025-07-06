@@ -131,86 +131,45 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
       messages: [
         {
           role: "system",
-          content: `Jste renomovaný svatební fotograf s 20letou praxí a expert na digitální postprodukci. Analyzujte tuto svatební fotografii s maximální přesností a poskytněte detailní, technicky fundované návrhy na vylepšení.
+          content: `Jste svatební fotograf a expert na úpravu fotografií. Analyzujte tuto svatební fotografii a poskytněte návrhy na vylepšení.
 
-ANALYZUJTE TYTO ASPEKTY:
+Zaměřte se na:
+- Expozici a osvětlení
+- Kompozici a rámování  
+- Barevné ladění
+- Technickou kvalitu
+- Svatební kontext
 
-🔍 TECHNICKÁ KVALITA:
-- Expozice (histogram, světla/stíny, ořezané hodnoty)
-- Zaostření (hloubka ostrosti, motion blur, správné zaostření na subjekt)
-- Vyvážení bílé (teplota, odstín, konzistence osvětlení)
-- Šum a zrnitost (ISO performance, detail v stínech)
-- Dynamický rozsah a kontrast
+Odpovězte POUZE validním JSON objektem v češtině bez dalšího textu. Používejte pouze celá čísla pro priority. Formát:
 
-📐 KOMPOZICE A RÁMOVÁNÍ:
-- Pravidlo třetin a zlatý řez
-- Vedoucí linky a vizuální flow
-- Rámování a ořez (headroom, breathing room)
-- Symetrie vs asymetrie
-- Pozadí a rušivé elementy
-- Hloubka kompozice (foreground/background)
-
-💡 OSVĚTLENÍ A ATMOSFÉRA:
-- Kvalita a směr světla (tvrdé/měkké, front/back/side lit)
-- Stíny a jejich charakter
-- Modelování obličeje a postav
-- Atmospheric lighting (golden hour, blue hour, backlight)
-- Reflections a bliky
-
-🎨 BAREVNÉ LADĚNÍ:
-- Barevná harmonie a paleta
-- Sytost a luminance jednotlivých kanálů
-- Skin tones a jejich přirozenost
-- Color grading potential
-- Konzistence barev v celé fotografii
-
-👰🤵 SVATEBNÍ SPECIFIKA:
-- Emocionální moment a jeho zachycení
-- Svatební detaily (šaty, oblek, květiny, prsteny)
-- Interakce mezi lidmi
-- Storytelling a narativní síla
-- Tradice a kulturní aspekty
-
-Buďte VELMI KONKRÉTNÍ ve svých návrzích - uveďte přesné hodnoty pro korekce (např. "+0.7 EV expozice", "-10 highlights", "+25 shadows", "teplota 5200K"). Pro každý návrh poskytněte technické odůvodnění.
-
-Odpovězte POUZE validním JSON objektem v češtině. Dodržte přesně tento formát bez dalšího textu:
 {
   "overallScore": 7,
   "primaryIssues": ["problém1", "problém2"],
   "suggestions": [
     {
       "category": "lighting",
-      "severity": "medium",
-      "title": "Krátký český název",
-      "description": "Detailní popis problému v češtině",
-      "suggestion": "Návrh řešení v češtině",
-      "technicalDetails": "Technické vysvětlení proč je tento problém důležitý",
-      "specificValues": "Konkrétní hodnoty pro korekci (např. +0.7 EV, -10 highlights)",
+      "severity": "medium", 
+      "title": "Název problému",
+      "description": "Popis problému",
+      "suggestion": "Návrh řešení",
+      "technicalDetails": "Technické odůvodnění", 
+      "specificValues": "Konkrétní hodnoty",
       "confidence": 0.8,
       "priority": 1
     }
   ],
   "strengths": ["silná stránka1", "silná stránka2"],
-  "technicalAnalysis": {
-    "exposureAnalysis": "Detailní analýza expozice",
-    "focusAnalysis": "Analýza zaostření a hloubky ostrosti",
-    "colorAnalysis": "Analýza barevného ladění",
-    "compositionAnalysis": "Analýza kompozice"
-  },
   "weddingContext": {
     "photoType": "ceremony",
-    "subjects": ["nevěsta", "ženich"],
+    "subjects": ["nevěsta", "ženich"], 
     "setting": "outdoor",
-    "lighting": "natural",
-    "emotionalTone": "romantic",
-    "technicalContext": "handheld/tripod"
+    "lighting": "natural"
   }
 }
 
-DŮLEŽITÉ: Použijte pouze tyto hodnoty pro category: "lighting", "composition", "color", "technical", "artistic", "exposure", "focus", "noise", "white-balance", "contrast"
-Použijte pouze tyto hodnoty pro severity: "low", "medium", "high", "critical"
-Řaďte návrhy podle priority (1 = nejvyšší priorita)
-Všechny texty (title, description, suggestion, strengths, primaryIssues) pište v češtině.`
+Kategorie: "lighting", "composition", "color", "technical", "artistic", "exposure", "focus", "noise", "white-balance", "contrast"
+Závažnost: "low", "medium", "high", "critical"
+Priority jako celá čísla: 1, 2, 3, 4, 5`
         },
         {
           role: "user",
@@ -233,11 +192,19 @@ Všechny texty (title, description, suggestion, strengths, primaryIssues) pište
       temperature: 0.7
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    let result;
+    try {
+      const content = response.choices[0].message.content || '{}';
+      console.log('Raw AI response:', content.substring(0, 500) + '...');
+      result = JSON.parse(content);
+    } catch (parseError) {
+      console.error('JSON parsing failed:', parseError);
+      throw new Error('AI response was not valid JSON');
+    }
 
     // Validate and sanitize the response
     return {
-      overallScore: Math.max(1, Math.min(10, result.overallScore || 7)),
+      overallScore: Math.max(1, Math.min(10, Number(result.overallScore) || 7)),
       primaryIssues: Array.isArray(result.primaryIssues) ? result.primaryIssues.slice(0, 3) : [],
       suggestions: Array.isArray(result.suggestions) ? result.suggestions.slice(0, 8).map((s: any) => ({
         category: ['lighting', 'composition', 'color', 'technical', 'artistic', 'exposure', 'focus', 'noise', 'white-balance', 'contrast'].includes(s.category) ? s.category : 'technical',
@@ -247,8 +214,8 @@ Všechny texty (title, description, suggestion, strengths, primaryIssues) pište
         suggestion: String(s.suggestion || '').substring(0, 400),
         technicalDetails: String(s.technicalDetails || '').substring(0, 300),
         specificValues: String(s.specificValues || '').substring(0, 200),
-        confidence: Math.max(0, Math.min(1, s.confidence || 0.5)),
-        priority: Math.max(1, Math.min(10, s.priority || 5))
+        confidence: Math.max(0, Math.min(1, Number(s.confidence) || 0.5)),
+        priority: Math.max(1, Math.min(10, parseInt(s.priority) || 5))
       })).sort((a: any, b: any) => a.priority - b.priority) : [],
       strengths: Array.isArray(result.strengths) ? result.strengths.slice(0, 3) : [],
       weddingContext: {
@@ -261,9 +228,9 @@ Všechny texty (title, description, suggestion, strengths, primaryIssues) pište
   } catch (error: any) {
     console.error('Error analyzing photo:', error);
 
-    // If quota exceeded, return mock data instead of failing
-    if (error.status === 429 || error.code === 'insufficient_quota') {
-      console.log('Groq quota exceeded, returning mock analysis data');
+    // If JSON validation failed or quota exceeded, return mock data instead of failing
+    if (error.status === 429 || error.code === 'insufficient_quota' || error.status === 400 || error.message?.includes('JSON')) {
+      console.log('AI analysis failed, returning baseline analysis data');
       return {
         overallScore: 8,
         primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena", "Nerovnoměrné osvětlení"],

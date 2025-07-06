@@ -1,4 +1,7 @@
+The code modification addresses a missing aria-describedby attribute in the DialogContent component for accessibility.
+```
 
+```replit_final_file
 import { useState } from "react";
 import { usePhotoEnhancement, useAnalyzePhoto, useReanalyzePhoto, useUpdateEnhancementVisibility, type PhotoEnhancementSuggestion } from "@/hooks/use-photo-enhancement";
 import { Button } from "@/components/ui/button";
@@ -95,7 +98,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
         </Button>
       );
     }
-    
+
     if (analyzePhoto.isPending) {
       return (
         <Button
@@ -109,7 +112,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
         </Button>
       );
     }
-    
+
     if (hasEnhancement) {
       return (
         <Popover>
@@ -129,7 +132,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                 <Star className="h-4 w-4 text-yellow-500" />
                 <span className="font-semibold">Skóre: {enhancement.overallScore}/10</span>
               </div>
-              
+
               {enhancement.suggestions.slice(0, 2).map((suggestion, index) => (
                 <div key={index} className="p-3 border rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
@@ -142,7 +145,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                   <p className="text-xs text-gray-600 mt-1">{suggestion.suggestion}</p>
                 </div>
               ))}
-              
+
               <Button 
                 onClick={() => setIsOpen(true)}
                 variant="outline" 
@@ -173,16 +176,16 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
-            AI Návrhy na vylepšení fotky
-          </DialogTitle>
-          <DialogDescription>
-            Umělá inteligence analyzuje vaši svatební fotku a navrhuje vylepšení pro dosažení nejlepších výsledků.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="ai-analysis-description">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              AI Návrhy na vylepšení fotky
+            </DialogTitle>
+            <div id="ai-analysis-description" className="sr-only">
+              Dialog pro zobrazení AI analýzy fotografie s návrhy na vylepšení
+            </div>
+          </DialogHeader>
 
         <div className="space-y-6">
           {/* Analysis Status */}
@@ -339,7 +342,7 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                           );
                         })}
                       </div>
-                      
+
                       {enhancement.suggestions.length > 3 && (
                         <Button 
                           onClick={() => setShowFullAnalysis(true)}
