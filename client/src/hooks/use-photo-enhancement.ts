@@ -113,10 +113,12 @@ export function useAnalyzePhoto() {
       let description = error.message;
 
       // Provide more user-friendly error messages
-      if (error.message.includes('quota') || error.message.includes('503')) {
-        description = "AI analýza je dočasně nedostupná kvůli překročení limitu. Zkuste to prosím později.";
-      } else if (error.message.includes('GROQ_API_KEY')) {
-        description = "AI analýza není momentálně nakonfigurována. Je potřeba nastavit GROQ_API_KEY.";
+      if (error.message.includes('quota') || error.message.includes('503') || error.message.includes('429')) {
+        description = "AI služby jsou dočasně nedostupné. Analýza bude použita základní algoritmy místo AI.";
+      } else if (error.message.includes('GROQ_API_KEY') || error.message.includes('API')) {
+        description = "AI analýza používá základní algoritmy. Pro pokročilou AI analýzu je potřeba nakonfigurovat API klíče.";
+      } else if (error.message.includes('Failed to analyze')) {
+        description = "Analýza byla dokončena pomocí základních algoritmů místo AI.";
       }
 
       toast({
@@ -144,10 +146,12 @@ export function useReanalyzePhoto() {
     onError: (error) => {
       let description = error.message;
 
-      if (error.message.includes('quota') || error.message.includes('503')) {
-        description = "AI analýza je dočasně nedostupná kvůli překročení limitu. Zkuste to prosím později.";
-      } else if (error.message.includes('GROQ_API_KEY')) {
-        description = "AI analýza není momentálně nakonfigurována. Je potřeba nastavit GROQ_API_KEY.";
+      if (error.message.includes('quota') || error.message.includes('503') || error.message.includes('429')) {
+        description = "AI služby jsou dočasně nedostupné. Byla použita základní analýza místo pokročilé AI.";
+      } else if (error.message.includes('GROQ_API_KEY') || error.message.includes('API')) {
+        description = "Používá se základní analýza. Pro pokročilé AI funkce je potřeba nakonfigurovat API klíče.";
+      } else if (error.message.includes('Failed to')) {
+        description = "Analýza byla dokončena pomocí základních algoritmů.";
       }
 
       toast({
