@@ -38,15 +38,20 @@ export function useTogglePhotoLike() {
   return useMutation({
     mutationFn: api.togglePhotoLike,
     onSuccess: (data, photoId) => {
-      // Update the photo in cache
-      queryClient.setQueryData(["/api/photos"], (oldData: Photo[] | undefined) => {
+      // Update the photo in all related caches
+      const updatePhotoLikes = (oldData: Photo[] | undefined) => {
         if (!oldData) return oldData;
         return oldData.map(photo => 
           photo.id === photoId 
             ? { ...photo, likes: data.likes }
             : photo
         );
-      });
+      };
+      
+      // Update all photo query caches to maintain consistency
+      queryClient.setQueryData(["/api/photos"], updatePhotoLikes);
+      queryClient.setQueryData(["/api/photos", true], updatePhotoLikes);
+      queryClient.setQueryData(["/api/photos", false], updatePhotoLikes);
     },
   });
 }

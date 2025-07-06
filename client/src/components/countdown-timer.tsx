@@ -18,6 +18,13 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
 
   useEffect(() => {
     const updateCountdown = () => {
+      // Safety check: ensure targetDate is valid
+      if (!targetDate || !(targetDate instanceof Date) || isNaN(targetDate.getTime())) {
+        console.warn('CountdownTimer: Invalid targetDate provided', targetDate);
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
       const now = new Date().getTime();
       const target = targetDate.getTime();
       const difference = target - now;

@@ -334,7 +334,7 @@ export default function WeddingPage() {
                 {weddingDetails?.weddingDate} • {weddingDetails?.venue}
               </p>
               <div className="text-lg text-white/90 mb-8">
-                <CountdownTimer targetDate={weddingDetails?.weddingDate} />
+                <CountdownTimer targetDate={weddingDate} />
               </div>
             </motion.div>
           </div>

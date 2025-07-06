@@ -41,6 +41,11 @@ export interface IStorage {
   updateWeddingScheduleItem(id: number, updates: UpdateWeddingScheduleItem): Promise<WeddingScheduleItem>;
   deleteWeddingScheduleItem(id: number): Promise<void>;
 
+  // Cloudinary photos operations
+  getCloudinaryPhotos(): Promise<CloudinaryPhoto[]>;
+  syncCloudinaryPhotos(photos: any[]): Promise<CloudinaryPhoto[]>;
+  toggleCloudinaryPhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }>;
+
   // Photo enhancements
   getPhotoEnhancement(photoId: number): Promise<PhotoEnhancement | undefined>;
   createPhotoEnhancement(enhancement: InsertPhotoEnhancement): Promise<PhotoEnhancement>;
@@ -321,6 +326,74 @@ export class DatabaseStorage implements IStorage {
     await db.delete(weddingSchedule).where(eq(weddingSchedule.id, id));
   }
 
+  // Cloudinary photos implementation
+  async getCloudinaryPhotos(): Promise<CloudinaryPhoto[]> {
+    return await db.select().from(cloudinaryPhotos).orderBy(desc(cloudinaryPhotos.uploadedAt));
+  }
+
+  async syncCloudinaryPhotos(cloudinaryData: any[]): Promise<CloudinaryPhoto[]> {
+    const syncedPhotos: CloudinaryPhoto[] = [];
+    
+    for (const cloudPhoto of cloudinaryData) {
+      try {
+        // Check if photo already exists
+        const [existing] = await db.select().from(cloudinaryPhotos)
+          .where(eq(cloudinaryPhotos.cloudinaryId, cloudPhoto.public_id));
+        
+        if (!existing) {
+          const [newPhoto] = await db.insert(cloudinaryPhotos).values({
+            cloudinaryId: cloudPhoto.public_id,
+            cloudinaryUrl: cloudPhoto.secure_url,
+            thumbnailUrl: cloudPhoto.secure_url.replace('/upload/', '/upload/c_thumb,w_300,h_300/'),
+            originalName: cloudPhoto.filename || cloudPhoto.public_id,
+            approved: true,
+          }).returning();
+          syncedPhotos.push(newPhoto);
+        } else {
+          syncedPhotos.push(existing);
+        }
+      } catch (error) {
+        console.error('Error syncing photo:', cloudPhoto.public_id, error);
+      }
+    }
+    
+    return syncedPhotos;
+  }
+
+  async toggleCloudinaryPhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }> {
+    // Check if user has already liked this photo
+    const [existingLike] = await db.select().from(photoLikes)
+      .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.userSession, userSession)));
+
+    if (existingLike) {
+      // Unlike - remove the like
+      await db.delete(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.userSession, userSession)));
+      
+      // Decrement like count
+      await db.update(cloudinaryPhotos)
+        .set({ likes: sql`${cloudinaryPhotos.likes} - 1` })
+        .where(eq(cloudinaryPhotos.id, photoId));
+
+      const [photo] = await db.select().from(cloudinaryPhotos).where(eq(cloudinaryPhotos.id, photoId));
+      return { liked: false, likes: photo?.likes || 0 };
+    } else {
+      // Like - add the like
+      await db.insert(photoLikes).values({
+        photoId,
+        userSession,
+      });
+      
+      // Increment like count
+      await db.update(cloudinaryPhotos)
+        .set({ likes: sql`${cloudinaryPhotos.likes} + 1` })
+        .where(eq(cloudinaryPhotos.id, photoId));
+
+      const [photo] = await db.select().from(cloudinaryPhotos).where(eq(cloudinaryPhotos.id, photoId));
+      return { liked: true, likes: photo?.likes || 1 };
+    }
+  }
+
   // Photo enhancement methods
   async getPhotoEnhancement(photoId: number): Promise<PhotoEnhancement | undefined> {
     const [enhancement] = await db.select().from(photoEnhancements)
@@ -445,20 +518,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(aiWeddingStories).where(eq(aiWeddingStories.id, storyId));
   }
 
-  async createPhotoEnhancement(data: {
-    photoId: number;
-    overallScore: number;
-    primaryIssues: string[];
-    suggestions: string;
-    strengths: string[];
-    weddingContext: string;
-    enhancementPreview?: string;
-    isVisible: boolean;
-    analysisMetadata?: string;
-  }) {
-    const [enhancement] = await db.insert(photoEnhancements).values(data).returning();
-    return enhancement;
-  }
+
 }
 
 export const storage = new DatabaseStorage();
