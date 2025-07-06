@@ -350,7 +350,7 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
                                       <span className="ml-1 capitalize">{suggestion.severity}</span>
                                     </Badge>
                                   </div>
-                                  
+
                                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-3">
                                     <div className="flex items-center gap-1 text-sm text-gray-600">
                                       <Target className="h-4 w-4" />
@@ -390,7 +390,7 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
                                       </code>
                                     </div>
                                   </div>
-                                  
+
                                   {/* Enhanced Preview Section */}
                                   {suggestion.beforeAfterPreview && (
                                     <div className="mt-4 bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
@@ -419,7 +419,7 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
                                       </div>
                                     </div>
                                   )}
-                                  
+
                                   {/* Related Adjustments */}
                                   {suggestion.relatedAdjustments && suggestion.relatedAdjustments.length > 0 && (
                                     <div className="mt-4 bg-orange-50 p-4 rounded-lg border border-orange-200">
