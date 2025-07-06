@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { useWeddingSchedule } from "@/hooks/use-schedule";
+import { useWeddingSchedule, WeddingScheduleItem } from "@/hooks/use-schedule";
 import CountdownTimer from "@/components/countdown-timer";
 import PhotoGallery from "@/components/photo-gallery";
 import PhotoUpload from "@/components/photo-upload";
@@ -22,6 +22,7 @@ export default function WeddingPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const scheduleQuery = useWeddingSchedule();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return document.documentElement.classList.contains('dark');
@@ -425,41 +426,149 @@ export default function WeddingPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-16 right-4 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-40"
+            className="absolute top-16 right-2 sm:right-4 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
           >
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-pink-500 to-purple-600 p-4 text-white">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-800 dark:text-white">Oznámení</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <h3 className="font-bold text-lg">🔔 Události svatby</h3>
+                <button
                   onClick={() => setShowNotifications(false)}
-                  className="w-8 h-8 p-0"
+                  className="text-white/80 hover:text-white transition-colors"
                 >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <X className="h-5 w-5" />
+                </button>
               </div>
+              <p className="text-pink-100 text-sm mt-1">Klikněte na událost pro přechod</p>
             </div>
-            <div className="p-2 space-y-1">
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800 dark:text-white">Nová fotka přidána</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">před 2 minutami</p>
-                </div>
+            {/* Events List */}
+            <div className="p-4 max-h-96 overflow-y-auto">
+              <div className="space-y-3">
+                {scheduleQuery.data?.map((event: WeddingScheduleItem, index: number) => {
+                  const now = new Date();
+                  const eventTime = new Date();
+                  const [hours, minutes] = event.time.split(':');
+                  eventTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                  
+                  const isUpcoming = eventTime > now;
+                  const timeDiff = eventTime.getTime() - now.getTime();
+                  const hoursUntil = Math.floor(timeDiff / (1000 * 60 * 60));
+                  const minutesUntil = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                  
+                  let timeUntilText = '';
+                  if (isUpcoming) {
+                    if (hoursUntil > 0) {
+                      timeUntilText = `za ${hoursUntil}h ${minutesUntil}min`;
+                    } else if (minutesUntil > 0) {
+                      timeUntilText = `za ${minutesUntil} minut`;
+                    } else {
+                      timeUntilText = 'právě teď!';
+                    }
+                  } else {
+                    timeUntilText = 'proběhlo';
+                  }
+
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => {
+                        scrollToSection('schedule');
+                        setShowNotifications(false);
+                        // Highlight specific event
+                        setTimeout(() => {
+                          const eventElement = document.querySelector(`[data-event-time="${event.time}"]`);
+                          if (eventElement) {
+                            eventElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            eventElement.classList.add('animate-pulse', 'bg-pink-100', 'dark:bg-pink-900/30');
+                            setTimeout(() => {
+                              eventElement.classList.remove('animate-pulse', 'bg-pink-100', 'dark:bg-pink-900/30');
+                            }, 3000);
+                          }
+                        }, 500);
+                      }}
+                      className={`group p-4 rounded-xl border cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-[1.02] ${
+                        isUpcoming 
+                          ? 'bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 border-pink-200 dark:border-pink-800' 
+                          : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              isUpcoming 
+                                ? 'bg-gradient-to-r from-pink-500 to-purple-600' 
+                                : 'bg-gray-400'
+                            }`}></div>
+                            <span className={`font-semibold transition-colors ${
+                              isUpcoming 
+                                ? 'text-gray-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400' 
+                                : 'text-gray-600 dark:text-gray-400'
+                            }`}>
+                              {event.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-3 text-sm">
+                            <span className={`flex items-center ${
+                              isUpcoming 
+                                ? 'text-pink-600 dark:text-pink-400' 
+                                : 'text-gray-500 dark:text-gray-500'
+                            }`}>
+                              <Clock className="h-4 w-4 mr-1" />
+                              {event.time}
+                            </span>
+                            <span className={isUpcoming ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500 dark:text-gray-500'}>
+                              {timeUntilText}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className={`h-5 w-5 transition-colors ${
+                          isUpcoming 
+                            ? 'text-gray-400 group-hover:text-pink-500' 
+                            : 'text-gray-300'
+                        }`} />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                
+                {(!scheduleQuery.data || scheduleQuery.data.length === 0) && (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                      <Calendar className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400">Žádné události v harmonogramu</p>
+                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Harmonogram bude brzy dostupný</p>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800 dark:text-white">Nová hudba navržena</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">před 5 minutami</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800 dark:text-white">Nový komentář</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">před 10 minutami</p>
+
+              {/* Quick Actions */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      scrollToSection('schedule');
+                      setShowNotifications(false);
+                    }}
+                    className="flex items-center justify-center space-x-2 p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-sm font-medium">Harmonogram</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      scrollToSection('home');
+                      setShowNotifications(false);
+                    }}
+                    className="flex items-center justify-center space-x-2 p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-300"
+                  >
+                    <Heart className="h-4 w-4" />
+                    <span className="text-sm font-medium">Odpočet</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -638,7 +747,7 @@ export default function WeddingPage() {
                   </div>
                   <div className="p-4 space-y-3">
                     {schedule.map((item, index) => (
-                      <div key={item.id} className="flex items-center gap-3">
+                      <div key={item.id} data-event-time={item.time} className="flex items-center gap-3 p-2 rounded-lg transition-all duration-300">
                         <div className="w-12 text-sm font-medium text-gray-600 dark:text-gray-400">
                           {item.time}
                         </div>
@@ -683,36 +792,129 @@ export default function WeddingPage() {
         </section>
       </main>
 
-      {/* Floating Back to Top Button */}
+      {/* Enhanced Floating Navigation Panel */}
       <AnimatePresence>
-        {scrollProgress > 0.2 && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              setActiveTab('info');
-            }}
-            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full shadow-lg shadow-pink-500/25 flex items-center justify-center hover:shadow-xl transition-shadow"
+        {scrollProgress > 0.1 && (
+          <motion.div
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col space-y-2"
           >
-            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 rotate-[-90deg]" />
-          </motion.button>
+            {/* Main Navigation Circle */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setActiveTab('home');
+              }}
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full shadow-lg shadow-pink-500/25 flex items-center justify-center hover:shadow-xl transition-all duration-300 group"
+            >
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 rotate-[-90deg] group-hover:rotate-[-180deg] transition-transform duration-300" />
+            </motion.button>
+
+            {/* Section Quick Navigation */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="flex flex-col space-y-1"
+            >
+              {tabs.slice(1).map((tab, index) => {
+                const isCompleted = tabs.findIndex(t => t.id === activeTab) > tabs.findIndex(t => t.id === tab.id);
+                return (
+                  <motion.button
+                    key={tab.id}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => scrollToSection(tab.id)}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full shadow-md flex items-center justify-center transition-all duration-300 ${
+                      activeTab === tab.id
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-pink-500/25'
+                        : isCompleted
+                        ? 'bg-green-500 text-white shadow-green-500/25'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-pink-900/20'
+                    }`}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    {isCompleted && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+
+            {/* Progress Ring */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="relative w-12 h-12 sm:w-14 sm:h-14"
+            >
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray="100, 100"
+                  className="text-gray-200 dark:text-gray-700"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray={`${scrollProgress * 100}, 100`}
+                  className="text-pink-500 transition-all duration-300"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                  {Math.round(scrollProgress * 100)}%
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Navigation Helper Toast - Hidden on mobile */}
+      {/* Smart Navigation Helper */}
       <AnimatePresence>
         {scrollProgress === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 bg-black/80 text-white px-3 py-2 sm:px-4 rounded-lg text-xs sm:text-sm backdrop-blur-sm hidden sm:block"
+            className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-2 sm:px-4 rounded-lg text-xs sm:text-sm backdrop-blur-sm shadow-lg hidden sm:block"
           >
-            💡 Tip: Use Alt + arrows for keyboard navigation
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              <span>💡 Tip: Use Alt + arrows or click 🔔 for quick navigation</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Event Navigation Toast */}
+      <AnimatePresence>
+        {showNotifications && scheduleQuery.data && scheduleQuery.data.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, x: -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            className="fixed bottom-20 left-4 z-40 bg-green-600 text-white px-4 py-2 rounded-lg text-sm shadow-lg"
+          >
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4" />
+              <span>📅 Klikněte na událost pro rychlý přechod!</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
