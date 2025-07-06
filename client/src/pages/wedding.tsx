@@ -116,107 +116,121 @@ export default function WeddingPage() {
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
-      {/* Android Status Bar */}
-      <div className="h-6 bg-black text-white text-xs flex items-center justify-between px-4 font-medium">
-        <div className="flex items-center gap-2">
-          <span>{currentTime}</span>
-          <div className="flex gap-1">
-            <Wifi className="w-3 h-3" />
-            <Signal className="w-3 h-3" />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Battery className="w-4 h-4" />
-          <span>87%</span>
-        </div>
-      </div>
-
-      {/* Android App Bar */}
-      <div className="sticky top-6 z-50 bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
-              <Heart className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
-                {weddingDetails?.coupleNames || 'Naše Svatba'}
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {weddingDate.toLocaleDateString('cs-CZ', { 
-                  day: 'numeric', 
-                  month: 'short',
-                  year: 'numeric'
-                })}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="w-10 h-10 p-0 rounded-full relative"
-            >
-              <Bell className="h-5 w-5" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center">
-                3
+      {/* Main Navigation Header */}
+      <header className="sticky top-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo and Title */}
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                <Heart className="h-5 w-5 text-white" />
               </div>
-            </Button>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {weddingDetails?.coupleNames || 'Naše Svatba'}
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {weddingDate.toLocaleDateString('cs-CZ', { 
+                    day: 'numeric', 
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+            </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={shareWedding}
-              className="w-10 h-10 p-0 rounded-full"
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabClick(tab.id)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      isActive 
+                        ? 'text-pink-600 bg-pink-50 dark:bg-pink-900/20' 
+                        : 'text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdmin(true)}
-              className="w-10 h-10 p-0 rounded-full"
-            >
-              <MoreVertical className="h-5 w-5" />
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative"
+              >
+                <Bell className="h-4 w-4" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={shareWedding}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+
+              {isAdmin && (
+                <Button
+                  onClick={() => setShowAdmin(true)}
+                  variant="outline"
+                  size="sm"
+                  className="bg-purple-600 text-white border-purple-600 hover:bg-purple-700"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+              )}
+
+              {/* Mobile Menu Button */}
+              <div className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Material Design Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
-        <div className="flex justify-around items-center py-2">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab.id)}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 relative ${
-                  isActive 
-                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
-                }`}
-              >
-                <div className={`p-1 rounded-full ${isActive ? tab.color : ''}`}>
-                  <Icon className={`h-5 w-5 ${isActive ? 'text-white' : ''}`} />
-                </div>
-                <span className="text-xs font-medium">{tab.label}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"
-                  />
-                )}
-              </button>
-            );
-          })}
+        {/* Mobile Navigation Menu */}
+        <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div className="px-4 py-2 space-y-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabClick(tab.id)}
+                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive 
+                      ? 'text-pink-600 bg-pink-50 dark:bg-pink-900/20' 
+                      : 'text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Notification Dropdown */}
       <AnimatePresence>
@@ -225,7 +239,7 @@ export default function WeddingPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-20 right-4 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 z-40"
+            className="absolute top-16 right-4 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-40"
           >
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
@@ -234,28 +248,28 @@ export default function WeddingPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowNotifications(false)}
-                  className="w-8 h-8 p-0 rounded-full"
+                  className="w-8 h-8 p-0"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
             <div className="p-2 space-y-1">
-              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                 <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800 dark:text-white">Nová fotka přidána</p>
                   <p className="text-xs text-gray-600 dark:text-gray-400">před 2 minutami</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                 <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800 dark:text-white">Nová hudba navržena</p>
                   <p className="text-xs text-gray-600 dark:text-gray-400">před 5 minutami</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800 dark:text-white">Nový komentář</p>
@@ -267,51 +281,8 @@ export default function WeddingPage() {
         )}
       </AnimatePresence>
 
-      {/* Main Content with bottom padding for navigation */}
-      <div className="pb-20">
-        {/* Navigation Menu */}
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-pink-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <Heart className="h-8 w-8 text-pink-600 mr-2" />
-                <span className="text-xl font-bold text-gray-900">
-                  {weddingDetails?.coupleNames?.split(' & ')[0] || "Marcela"} & {weddingDetails?.coupleNames?.split(' & ')[1] || "Zbyněk"}
-                </span>
-              </div>
-
-              <div className="hidden md:flex items-center space-x-8">
-                <a href="#home" className="text-gray-700 hover:text-pink-600 transition-colors">Domů</a>
-                <a href="#gallery" className="text-gray-700 hover:text-pink-600 transition-colors">Galerie</a>
-                <a href="#playlist" className="text-gray-700 hover:text-pink-600 transition-colors">Playlist</a>
-                <a href="#upload" className="text-gray-700 hover:text-pink-600 transition-colors">Nahrát foto</a>
-                <a href="#ai" className="text-gray-700 hover:text-pink-600 transition-colors">AI Asistent</a>
-                {isAdmin && (
-                  <Button
-                    onClick={() => setShowAdmin(true)}
-                    variant="outline"
-                    size="sm"
-                    className="bg-purple-600 text-white border-purple-600 hover:bg-purple-700"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Admin
-                  </Button>
-                )}
-              </div>
-
-              {/* Mobile menu button */}
-              <div className="md:hidden">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAdmin(!showAdmin)}
-                >
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </nav>
+      {/* Main Content */}
+      <main>
 
         {/* Hero Section */}
         <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden pt-16">
@@ -517,7 +488,7 @@ export default function WeddingPage() {
         <section id="ai" className="px-4 py-8">
           <AiFeatures />
         </section>
-      </div>
+      </main>
 
       {/* Admin Panel */}
       <AdminPanel isOpen={showAdmin} onClose={() => setShowAdmin(false)} />
