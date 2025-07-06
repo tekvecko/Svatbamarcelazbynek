@@ -9,10 +9,11 @@ import AdminPanel from "@/components/admin-panel";
 import Playlist from "@/components/playlist";
 import HighlightReel from "@/components/highlight-reel";
 import AiFeatures from "@/components/ai-features";
+import PhotoBooth from "@/components/photo-booth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Calendar, MapPin, Camera, Music, Phone, Settings, Clock, Users, Bell, Share2, MoreVertical, X, ChevronRight, Info, Upload, Star, Home, ArrowLeft, Wifi, Battery, Signal, Brain, Menu } from "lucide-react";
+import { Heart, Calendar, MapPin, Camera, Music, Phone, Settings, Clock, Users, Bell, Share2, MoreVertical, X, ChevronRight, Info, Upload, Star, Home, ArrowLeft, Wifi, Battery, Signal, Brain, Menu, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
@@ -45,6 +46,7 @@ export default function WeddingPage() {
     { id: "gallery", label: "Fotky", icon: Camera, color: "bg-green-600" },
     { id: "playlist", label: "Hudba", icon: Music, color: "bg-purple-600" },
     { id: "upload", label: "Nahrát", icon: Upload, color: "bg-orange-600" },
+    { id: "photobooth", label: "Foto Koutek", icon: Sparkles, color: "bg-gradient-to-r from-pink-600 to-red-600" },
     { id: "ai", label: "AI", icon: Brain, color: "bg-gradient-to-r from-purple-600 to-pink-600" },
     { id: "highlights", label: "Video", icon: Star, color: "bg-yellow-600" },
   ];
@@ -779,6 +781,11 @@ export default function WeddingPage() {
         {/* Upload Section */}
         <section id="upload" className="px-3 sm:px-4 py-6 sm:py-8">
           <PhotoUpload />
+        </section>
+
+        {/* Photo Booth Section */}
+        <section id="photobooth" className="px-3 sm:px-4 py-6 sm:py-8">
+          <PhotoBooth weddingDetails={weddingDetails} />
         </section>
 
         {/* Highlights Section */}

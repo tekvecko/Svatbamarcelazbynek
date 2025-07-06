@@ -11,6 +11,8 @@ export const photos = pgTable("photos", {
   thumbnailUrl: text("thumbnail_url").notNull(),
   likes: integer("likes").default(0).notNull(),
   approved: boolean("approved").default(false).notNull(),
+  authorName: varchar("author_name", { length: 255 }),
+  isPhotoBooth: boolean("is_photo_booth").default(false).notNull(),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
 });
 

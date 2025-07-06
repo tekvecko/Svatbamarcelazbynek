@@ -189,6 +189,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ).end(file.buffer);
           }) as any;
         
+        // Extract additional metadata for photo booth
+        const isPhotoBooth = req.body.isPhotoBooth === 'true';
+        const guestName = req.body.guestName || null;
+        
         const photo = await storage.createPhoto({
             filename: uploadResult.public_id,
             originalName: file.originalname,
@@ -201,6 +205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fetch_format: 'auto'
             }),
             approved: true, // Auto-approve for now
+            authorName: guestName,
+            isPhotoBooth: isPhotoBooth,
           });
           
           uploadedPhotos.push(photo);
