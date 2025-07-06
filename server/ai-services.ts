@@ -62,13 +62,13 @@ export async function analyzeWeddingPhoto(imageUrl: string): Promise<PhotoAnalys
     console.log('Fetching image from URL:', imageUrl);
 
     // Verify image URL is accessible
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      console.error(`Image fetch failed: ${response.status} ${response.statusText}`);
-      throw new Error(`Image not accessible: ${response.status} ${response.statusText}`);
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      console.error(`Image fetch failed: ${imageResponse.status} ${imageResponse.statusText}`);
+      throw new Error(`Image not accessible: ${imageResponse.status} ${imageResponse.statusText}`);
     }
 
-    const contentType = response.headers.get('content-type');
+    const contentType = imageResponse.headers.get('content-type');
     if (!contentType || !contentType.startsWith('image/')) {
       console.error('Invalid content type:', contentType);
       throw new Error(`Invalid content type: ${contentType}`);
