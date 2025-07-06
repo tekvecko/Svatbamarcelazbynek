@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 export interface PhotoEnhancementSuggestion {
-  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast' | 'saturation' | 'sharpness' | 'highlights' | 'shadows' | 'clarity' | 'vibrance';
+  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast' | 'saturation' | 'sharpness' | 'highlights' | 'shadows' | 'clarity' | 'vibrance' | 'cropping' | 'perspective' | 'skin-tones' | 'background' | 'motion-blur' | 'depth-of-field';
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;

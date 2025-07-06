@@ -49,6 +49,12 @@ const CategoryIcons = {
   shadows: Sun,
   clarity: Focus,
   vibrance: Palette,
+  cropping: Settings,
+  perspective: Camera,
+  'skin-tones': Palette,
+  background: Camera,
+  'motion-blur': Focus,
+  'depth-of-field': Focus,
 };
 
 const getSeverityIcon = (severity: string) => {

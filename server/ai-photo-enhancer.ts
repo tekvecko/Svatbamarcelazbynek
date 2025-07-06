@@ -74,7 +74,7 @@ export interface PhotoAnalysisResult {
 
 export async function analyzePhotoForEnhancement(imageUrl: string): Promise<PhotoAnalysisResult> {
   const startTime = Date.now();
-  
+
   if (!process.env.GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY is not configured. AI analysis is not available.');
   }
@@ -217,7 +217,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
   try {
     const response = await groq.chat.completions.create({
-      model: "meta-llama/llama-4-scout-17b-16e-instruct", // Groq's current Llama 4 Scout vision model
+      model: "meta-llama/llama-3.2-90b-vision-preview", // Enhanced Llama 3.2 Vision model for better analysis
       messages: [
         {
           role: "system",
@@ -320,11 +320,11 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
 
     let result;
     const analysisTime = Date.now() - startTime;
-    
+
     try {
       const content = response.choices[0].message.content || '{}';
       console.log('Raw AI response:', content.substring(0, 500) + '...');
-      
+
       // Clean the JSON string to prevent common parsing errors
       const cleanedContent = content
         .replace(/\\n/g, ' ')  // Remove escaped newlines
@@ -332,7 +332,7 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
         .replace(/\\"/g, '"')  // Fix escaped quotes
         .replace(/"\s*"/g, '""') // Fix double quotes
         .trim();
-      
+
       result = JSON.parse(cleanedContent);
     } catch (parseError) {
       console.error('JSON parsing failed:', parseError);
@@ -388,7 +388,7 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
         emotionalResonance: result.professionalInsights?.emotionalResonance || 'Vysoká emotivní hodnota pro rodinu a přátele'
       },
       analysisMetadata: {
-        aiModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        aiModel: 'meta-llama/llama-3.2-90b-vision-preview',
         analysisTime,
         confidence: 0.9,
         usedFallback: false,
@@ -403,7 +403,7 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
     if (error.status === 429 || error.code === 'insufficient_quota' || error.status === 400 || error.message?.includes('JSON')) {
       console.log('AI analysis failed, returning baseline analysis data');
       const analysisTime = Date.now() - startTime;
-      
+
       return {
         overallScore: 8,
         primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena", "Nerovnoměrné osvětlení"],
@@ -491,7 +491,7 @@ export async function generateEnhancementPreview(
       .join('\n');
 
     const response = await groq.chat.completions.create({
-      model: "meta-llama/llama-4-scout-17b-16e-instruct", // Groq's current Llama 4 Scout vision model
+      model: "meta-llama/llama-3.2-90b-vision-preview", // Enhanced Llama 3.2 Vision model for better analysis
       messages: [
         {
           role: "system",
