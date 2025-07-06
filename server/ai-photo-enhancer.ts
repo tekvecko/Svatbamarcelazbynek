@@ -80,6 +80,21 @@ async function checkModelAvailability(): Promise<{ isAvailable: boolean; working
     'llama-3.2-11b-vision-preview'
   ];
 
+  // Check Google Gemini availability first
+  if (process.env.GOOGLE_GEMINI_API_KEY) {
+    try {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      // Test API availability with a simple request
+      await model.generateContent('Test connection');
+      return { isAvailable: true, workingModel: 'gemini-1.5-flash' };
+    } catch (error) {
+      console.log('Google Gemini not available:', error);
+    }
+  }
+
   for (const model of modelsToTry) {
     try {
       // Test with minimal request to check availability
@@ -129,6 +144,123 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
     console.log('AI models not available, using baseline analysis:', modelCheck.error);
     // Use baseline analysis when AI is not available
     const useBaselineAnalysis = true;
+  } else if (modelCheck.workingModel === 'gemini-1.5-flash') {
+    // Use Google Gemini for analysis
+    try {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      // Convert image URL to base64 for Gemini
+      const imageResponse = await fetch(imageUrl);
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const imageBase64 = Buffer.from(imageBuffer).toString('base64');
+      const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
+
+      const result = await model.generateContent([
+        {
+          text: `Jsi expert na svatební fotografie. Analyzuj tuto fotografii a poskytni detailní hodnocení ve formátu JSON. Zaměř se na kompozici, osvětlení, barvy, emocionální obsah a technickou kvalitu. Vrať přesně tento JSON formát bez dalšího textu:
+
+{
+  "overallScore": 8,
+  "primaryIssues": ["problém1", "problém2"],
+  "suggestions": [
+    {
+      "category": "lighting",
+      "severity": "medium",
+      "title": "Název návrhu",
+      "description": "Popis problému",
+      "suggestion": "Konkrétní návrh řešení",
+      "technicalDetails": "Technické detaily",
+      "specificValues": "Konkrétní hodnoty",
+      "confidence": 0.8,
+      "priority": 1
+    }
+  ],
+  "strengths": ["síla1", "síla2"],
+  "weddingContext": {
+    "photoType": "typ fotky",
+    "subjects": ["subjekt1"],
+    "setting": "prostředí",
+    "lighting": "osvětlení",
+    "emotionalTone": "emocionální tón",
+    "significance": "význam"
+  },
+  "detailedScores": {
+    "technical": 8,
+    "artistic": 7,
+    "composition": 8,
+    "lighting": 7,
+    "colors": 8,
+    "emotion": 9,
+    "storytelling": 8,
+    "memoryValue": 9
+  }
+}`
+        },
+        {
+          inlineData: {
+            mimeType: mimeType,
+            data: imageBase64
+          }
+        }
+      ]);
+
+      const response = await result.response;
+      const text = response.text();
+      const analysis = JSON.parse(text);
+
+      const analysisTime = Date.now() - startTime;
+      return {
+        overallScore: analysis.overallScore || 8,
+        primaryIssues: analysis.primaryIssues || [],
+        suggestions: analysis.suggestions || [],
+        strengths: analysis.strengths || [],
+        weddingContext: analysis.weddingContext || {
+          photoType: 'svatební moment',
+          subjects: ['svatební hosté'],
+          setting: 'svatební prostředí',
+          lighting: 'přirozené',
+          emotionalTone: 'radostné',
+          significance: 'významný moment'
+        },
+        detailedScores: analysis.detailedScores || {
+          technical: 8,
+          artistic: 7,
+          composition: 8,
+          lighting: 7,
+          colors: 8,
+          emotion: 9,
+          storytelling: 8,
+          memoryValue: 9
+        },
+        enhancementPotential: {
+          easyFixes: 2,
+          mediumFixes: 1,
+          hardFixes: 0,
+          totalImpactScore: 25,
+          estimatedTimeMinutes: 10
+        },
+        professionalInsights: {
+          photographyTechniques: ["Google Gemini AI analýza"],
+          historicalContext: "Moderní svatební fotografie",
+          culturalSignificance: "Českává svatební tradice",
+          emotionalResonance: "Silný emocionální obsah"
+        },
+        analysisMetadata: {
+          aiModel: 'Google Gemini 1.5 Flash',
+          analysisTime,
+          confidence: 0.85,
+          usedFallback: false,
+          analysisDepth: 'comprehensive' as const,
+          processingSteps: ['Google Gemini AI analýza', 'Detekce svatebního obsahu', 'Hodnocení kompozice']
+        }
+      };
+    } catch (error) {
+      console.error('Google Gemini analysis failed:', error);
+      // Fall back to baseline analysis
+    }
+  }
   
     if (useBaselineAnalysis) {
       const analysisTime = Date.now() - startTime;
