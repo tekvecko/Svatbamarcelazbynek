@@ -20,6 +20,8 @@ export default function WeddingPage() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return document.documentElement.classList.contains('dark');
@@ -46,16 +48,45 @@ export default function WeddingPage() {
     { id: "highlights", label: "Video", icon: Star, color: "bg-yellow-600" },
   ];
 
+  // Smart scroll tracking and active section detection
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollTop / docHeight;
+      setScrollProgress(progress);
+
+      // Find active section based on scroll position
+      const sections = tabs.map(tab => tab.id);
+      const headerHeight = 80;
+      
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const element = document.getElementById(sections[i]);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= headerHeight + 100) {
+            setActiveTab(sections[i]);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [tabs]);
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      const headerHeight = 140; // Android-style headers
+      const headerHeight = 80;
       const elementPosition = element.offsetTop - headerHeight;
       window.scrollTo({
         top: elementPosition,
         behavior: 'smooth'
       });
     }
+    setShowMobileMenu(false); // Close mobile menu after navigation
   };
 
   const handleTabClick = (tabId: string) => {
@@ -112,51 +143,120 @@ export default function WeddingPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey) {
+        const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+        
+        switch (e.key) {
+          case 'ArrowRight':
+          case 'ArrowDown':
+            e.preventDefault();
+            const nextIndex = (currentIndex + 1) % tabs.length;
+            handleTabClick(tabs[nextIndex].id);
+            break;
+          case 'ArrowLeft':
+          case 'ArrowUp':
+            e.preventDefault();
+            const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
+            handleTabClick(tabs[prevIndex].id);
+            break;
+          case 'Home':
+            e.preventDefault();
+            scrollToSection('home');
+            break;
+        }
+      }
+      
+      // Escape to close mobile menu
+      if (e.key === 'Escape' && showMobileMenu) {
+        setShowMobileMenu(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, tabs, showMobileMenu]);
+
   const isAdmin = true;
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
       {/* Main Navigation Header */}
       <header className="sticky top-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        {/* Progress Bar */}
+        <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 transition-all duration-300 ease-out" 
+             style={{ width: `${scrollProgress * 100}%` }}></div>
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Title */}
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg cursor-pointer"
+                onClick={() => scrollToSection('home')}
+              >
                 <Heart className="h-5 w-5 text-white" />
-              </div>
+              </motion.div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                   {weddingDetails?.coupleNames || 'Naše Svatba'}
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {weddingDate.toLocaleDateString('cs-CZ', { 
-                    day: 'numeric', 
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </p>
+                <div className="flex items-center space-x-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {weddingDate.toLocaleDateString('cs-CZ', { 
+                      day: 'numeric', 
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                  {/* Current Section Breadcrumb */}
+                  <span className="text-gray-400">•</span>
+                  <span className="text-sm text-pink-600 dark:text-pink-400 font-medium">
+                    {tabs.find(tab => tab.id === activeTab)?.label}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
-              {tabs.map((tab) => {
+            <nav className="hidden md:flex items-center space-x-2">
+              {tabs.map((tab, index) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (
-                  <button
+                  <motion.button
                     key={tab.id}
                     onClick={() => handleTabClick(tab.id)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
                       isActive 
-                        ? 'text-pink-600 bg-pink-50 dark:bg-pink-900/20' 
-                        : 'text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ? 'text-white bg-gradient-to-r from-pink-500 to-purple-600 shadow-lg shadow-pink-500/25' 
+                        : 'text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className={`h-4 w-4 ${isActive ? 'animate-pulse' : ''}`} />
                     <span>{tab.label}</span>
-                  </button>
+                    
+                    {/* Active indicator dot */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeIndicator"
+                        className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+
+                    {/* Section completion indicator */}
+                    {index < tabs.findIndex(t => t.id === activeTab) && (
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                    )}
+                  </motion.button>
                 );
               })}
             </nav>
@@ -195,41 +295,126 @@ export default function WeddingPage() {
 
               {/* Mobile Menu Button */}
               <div className="md:hidden">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowNotifications(!showNotifications)}
+                <motion.button
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className="relative w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex flex-col items-center justify-center space-y-1 transition-colors"
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <Menu className="h-5 w-5" />
-                </Button>
+                  <motion.span 
+                    className="w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded"
+                    animate={{
+                      rotate: showMobileMenu ? 45 : 0,
+                      y: showMobileMenu ? 4 : 0
+                    }}
+                    transition={{ duration: 0.2 }}
+                  />
+                  <motion.span 
+                    className="w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded"
+                    animate={{
+                      opacity: showMobileMenu ? 0 : 1
+                    }}
+                    transition={{ duration: 0.2 }}
+                  />
+                  <motion.span 
+                    className="w-5 h-0.5 bg-gray-600 dark:bg-gray-300 rounded"
+                    animate={{
+                      rotate: showMobileMenu ? -45 : 0,
+                      y: showMobileMenu ? -4 : 0
+                    }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </motion.button>
               </div>
             </div>
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="px-4 py-2 space-y-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(tab.id)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive 
-                      ? 'text-pink-600 bg-pink-50 dark:bg-pink-900/20' 
-                      : 'text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <AnimatePresence>
+          {showMobileMenu && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg"
+            >
+              <div className="px-4 py-4 space-y-2">
+                {tabs.map((tab, index) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  const isCompleted = index < tabs.findIndex(t => t.id === activeTab);
+                  
+                  return (
+                    <motion.button
+                      key={tab.id}
+                      onClick={() => handleTabClick(tab.id)}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`group w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                        isActive 
+                          ? 'text-white bg-gradient-to-r from-pink-500 to-purple-600 shadow-lg shadow-pink-500/25' 
+                          : 'text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Icon className={`h-5 w-5 ${isActive ? 'animate-pulse' : ''}`} />
+                        <span>{tab.label}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {isCompleted && (
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        )}
+                        {isActive && (
+                          <ChevronRight className="h-4 w-4 animate-pulse" />
+                        )}
+                      </div>
+                    </motion.button>
+                  );
+                })}
+                
+                {/* Quick Actions in Mobile Menu */}
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+                  <div className="flex items-center justify-around">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowNotifications(!showNotifications)}
+                      className="flex flex-col items-center space-y-1 p-2"
+                    >
+                      <Bell className="h-4 w-4" />
+                      <span className="text-xs">Oznámení</span>
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={shareWedding}
+                      className="flex flex-col items-center space-y-1 p-2"
+                    >
+                      <Share2 className="h-4 w-4" />
+                      <span className="text-xs">Sdílet</span>
+                    </Button>
+                    
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAdmin(true)}
+                        className="flex flex-col items-center space-y-1 p-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span className="text-xs">Admin</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Notification Dropdown */}
@@ -489,6 +674,40 @@ export default function WeddingPage() {
           <AiFeatures />
         </section>
       </main>
+
+      {/* Floating Back to Top Button */}
+      <AnimatePresence>
+        {scrollProgress > 0.2 && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              setActiveTab('info');
+            }}
+            className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full shadow-lg shadow-pink-500/25 flex items-center justify-center hover:shadow-xl transition-shadow"
+          >
+            <ChevronRight className="h-5 w-5 rotate-[-90deg]" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Navigation Helper Toast */}
+      <AnimatePresence>
+        {scrollProgress === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 left-6 z-40 bg-black/80 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm"
+          >
+            💡 Tip: Use Alt + arrows for keyboard navigation
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Admin Panel */}
       <AdminPanel isOpen={showAdmin} onClose={() => setShowAdmin(false)} />
