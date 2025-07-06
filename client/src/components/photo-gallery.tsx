@@ -26,7 +26,7 @@ export default function PhotoGallery() {
   const toggleLike = useTogglePhotoLike();
   const addComment = useAddPhotoComment();
   const { toast } = useToast();
-  
+
   // States
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function PhotoGallery() {
   const [userLikes, setUserLikes] = useState<Set<number>>(new Set());
   const [likeAnimations, setLikeAnimations] = useState<LikeAnimation[]>([]);
   const [showUnlikeDialog, setShowUnlikeDialog] = useState<number | null>(null);
-  
+
   // Android-style states
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -56,7 +56,7 @@ export default function PhotoGallery() {
     if (searchTerm && !photo.originalName.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
-    
+
     switch (filterType) {
       case 'liked':
         return userLikes.has(photo.id);
@@ -105,14 +105,14 @@ export default function PhotoGallery() {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     const animationId = `heart-${Date.now()}-${Math.random()}`;
     setLikeAnimations(prev => [...prev, { id: animationId, x, y }]);
   };
 
   const handleLike = (photoId: number, e?: React.MouseEvent) => {
     const isAlreadyLiked = userLikes.has(photoId);
-    
+
     if (isAlreadyLiked) {
       setShowUnlikeDialog(photoId);
       return;
@@ -127,13 +127,13 @@ export default function PhotoGallery() {
       newSet.add(photoId);
       return newSet;
     });
-    
+
     toggleLike.mutate(photoId, {
       onSuccess: (data) => {
         const savedLikes = JSON.parse(localStorage.getItem('user-likes') || '{}');
         savedLikes[photoId] = data.liked;
         localStorage.setItem('user-likes', JSON.stringify(savedLikes));
-        
+
         toast({
           title: "Líbí se mi!",
           description: "Fotka byla označena jako oblíbená",
@@ -167,7 +167,7 @@ export default function PhotoGallery() {
         const savedLikes = JSON.parse(localStorage.getItem('user-likes') || '{}');
         savedLikes[photoId] = data.liked;
         localStorage.setItem('user-likes', JSON.stringify(savedLikes));
-        
+
         toast({
           title: "Odebrané z oblíbených",
           description: "Fotka již není v oblíbených",
@@ -225,7 +225,7 @@ export default function PhotoGallery() {
 
   const handleAddComment = (photoId: number) => {
     if (!newComment.trim() || !commenterName.trim()) return;
-    
+
     addComment.mutate(
       { 
         photoId, 
@@ -257,7 +257,7 @@ export default function PhotoGallery() {
 
   const navigatePhoto = (direction: 'prev' | 'next') => {
     if (!photos) return;
-    
+
     if (direction === 'next') {
       setSelectedPhotoIndex((prev) => (prev + 1) % photos.length);
     } else {
@@ -339,7 +339,7 @@ export default function PhotoGallery() {
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -359,7 +359,7 @@ export default function PhotoGallery() {
             </Button>
           </div>
         </div>
-        
+
         {/* Search Bar */}
         <AnimatePresence>
           {isSearchActive && (
@@ -381,7 +381,7 @@ export default function PhotoGallery() {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Filter Menu */}
         <AnimatePresence>
           {showFilterMenu && (
@@ -415,7 +415,7 @@ export default function PhotoGallery() {
                   })}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Zobrazení:</span>
                 <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-full p-1">
@@ -527,7 +527,7 @@ export default function PhotoGallery() {
                             }`}
                           />
                           {photo.likes}
-                          
+
                           {likeAnimations.map((animation) => (
                             <motion.div
                               key={animation.id}
@@ -545,7 +545,7 @@ export default function PhotoGallery() {
                             </motion.div>
                           ))}
                         </Button>
-                        
+
                         <Button
                           variant="ghost"
                           size="sm"
@@ -559,7 +559,7 @@ export default function PhotoGallery() {
                           {photo.commentCount || 0}
                         </Button>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
@@ -572,7 +572,7 @@ export default function PhotoGallery() {
                         >
                           <Share2 className="h-4 w-4" />
                         </Button>
-                        
+
                         <Button
                           variant="ghost"
                           size="sm"
@@ -586,7 +586,7 @@ export default function PhotoGallery() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     {/* Expanded Content */}
                     <AnimatePresence>
                       {expandedCard === photo.id && (
@@ -609,7 +609,7 @@ export default function PhotoGallery() {
                               </Badge>
                             )}
                           </div>
-                          
+
                           <div className="text-sm text-gray-600 dark:text-gray-400">
                             <p className="mb-2">
                               <span className="font-medium">Nahrané:</span> {' '}
@@ -652,7 +652,47 @@ export default function PhotoGallery() {
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between bg-black/60 backdrop-blur-sm rounded-lg p-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={(e) => handleLike(photo.id, e)}
+                        variant="ghost"
+                        size="sm"
+                        className={`text-white hover:bg-white/20 rounded-full h-8 px-2 ${
+                          userLikes.has(photo.id) ? 'bg-red-500/20' : ''
+                        }`}
+                      >
+                        <Heart 
+                          className={`h-4 w-4 ${
+                            userLikes.has(photo.id) ? 'fill-current text-red-400' : ''
+                          }`}
+                        />
+                        <span className="ml-1 text-xs">{photo.likes || 0}</span>
+                      </Button>
+
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCommentsDialog(photo.id);
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:bg-white/20 rounded-full h-8 px-2"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span className="ml-1 text-xs">{photoComments[photo.id]?.length || 0}</span>
+                      </Button>
+                    </div>
+
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <AIPhotoEnhancer 
+                        photoId={photo.id} 
+                        photoUrl={photo.url}
+                        inlineMode={true}
+                      />
+                    </div>
+                  </div>
+
                     {/* Overlay info */}
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="flex items-center justify-between text-white">
@@ -666,7 +706,7 @@ export default function PhotoGallery() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Like indicator */}
                     {userLikes.has(photo.id) && (
                       <div className="absolute top-2 right-2">
@@ -704,7 +744,7 @@ export default function PhotoGallery() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-800 dark:text-white truncate">
                         {photo.originalName}
@@ -723,7 +763,7 @@ export default function PhotoGallery() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
@@ -738,7 +778,7 @@ export default function PhotoGallery() {
                       >
                         <Heart className={`h-4 w-4 ${userLikes.has(photo.id) ? 'fill-current' : ''}`} />
                       </Button>
-                      
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -764,7 +804,7 @@ export default function PhotoGallery() {
             <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="h-10 w-10 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            <h3 className="text-lg font-semiboldtext-gray-800 dark:text-white mb-2">
               Nenalezeny žádné fotky
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -792,8 +832,42 @@ export default function PhotoGallery() {
           <DialogDescription className="sr-only">
             Detailní zobrazení fotky s možností navigace a interakce
           </DialogDescription>
-          
+
           <div className="relative h-full flex flex-col">
+            {/* Mobile-first status bar overlay */}
+            <div className="absolute top-0 left-0 right-0 h-6 bg-black/80 backdrop-blur-sm md:hidden z-50">
+              <div className="flex items-center justify-between px-4 h-full text-white text-xs">
+                <span>{new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</span>
+                <div className="flex items-center gap-2">
+                  {/* Signal strength indicator */}
+                  <div className="flex items-end gap-[1px]">
+                    <div className="w-1 h-1 bg-white rounded-full"></div>
+                    <div className="w-1 h-2 bg-white rounded-[1px]"></div>
+                    <div className="w-1 h-3 bg-white rounded-[1px]"></div>
+                    <div className="w-1 h-4 bg-white rounded-[1px]"></div>
+                  </div>
+
+                  {/* WiFi indicator */}
+                  <div className="relative w-4 h-3">
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                      <div className="w-1 h-1 bg-white rounded-full"></div>
+                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 border border-white border-b-0 rounded-t-full"></div>
+                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 border border-white border-b-0 rounded-t-full"></div>
+                    </div>
+                  </div>
+
+                  {/* Battery indicator */}
+                  <div className="flex items-center">
+                    <div className="w-6 h-3 border border-white rounded-sm relative">
+                      <div className="absolute right-[-2px] top-[3px] w-[2px] h-[6px] bg-white rounded-r-sm"></div>
+                      <div className="w-4 h-full bg-green-400 rounded-sm"></div>
+                    </div>
+                    <span className="ml-1 text-[10px]">85%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Status bar style header */}
             <div className="absolute top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm">
               <div className="flex items-center justify-between p-4">
@@ -815,7 +889,7 @@ export default function PhotoGallery() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setIsAutoPlay(!isAutoPlay)}
@@ -827,7 +901,7 @@ export default function PhotoGallery() {
                   >
                     {isAutoPlay ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                   </Button>
-                  
+
                   <Button
                     onClick={() => shareImage(selectedPhoto?.url || '')}
                     variant="ghost"
@@ -836,7 +910,7 @@ export default function PhotoGallery() {
                   >
                     <Share2 className="h-5 w-5" />
                   </Button>
-                  
+
                   <Button
                     onClick={() => downloadImage(selectedPhoto?.url || '', selectedPhoto?.originalName || '')}
                     variant="ghost"
@@ -857,7 +931,7 @@ export default function PhotoGallery() {
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
-              
+
               <Button
                 onClick={() => navigatePhoto('next')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm rounded-full w-12 h-12 p-0"
@@ -894,7 +968,7 @@ export default function PhotoGallery() {
                     />
                     {selectedPhoto?.likes || 0}
                   </Button>
-                  
+
                   <Button
                     onClick={() => openCommentsDialog(selectedPhoto?.id || 0)}
                     variant="ghost"
@@ -904,7 +978,7 @@ export default function PhotoGallery() {
                     {comments.length}
                   </Button>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {selectedPhoto && (
                     <AIPhotoEnhancer 
@@ -913,6 +987,14 @@ export default function PhotoGallery() {
                       inlineMode={true}
                     />
                   )}
+
+                  <Button
+                    onClick={() => setSelectedPhoto(null)}
+                    variant="ghost"
+                    className="text-white hover:bg-white/20 rounded-full h-12 px-4"
+                  >
+                    Zavřít
+                  </Button>
                 </div>
               </div>
             </div>
@@ -927,7 +1009,7 @@ export default function PhotoGallery() {
           <DialogDescription className="sr-only">
             Komentáře k fotce
           </DialogDescription>
-          
+
           <div className="flex flex-col h-full max-h-[80vh]">
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 border-b">
@@ -951,7 +1033,7 @@ export default function PhotoGallery() {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            
+
             {/* Comments list */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
@@ -982,7 +1064,7 @@ export default function PhotoGallery() {
                     </div>
                   </motion.div>
                 ))}
-                
+
                 {commentDialogComments.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -1033,7 +1115,7 @@ export default function PhotoGallery() {
           <DialogDescription className="text-center text-gray-600 dark:text-gray-400 mb-6">
             Tato fotka již nebude v seznamu oblíbených fotek.
           </DialogDescription>
-          
+
           <div className="flex flex-col gap-3">
             <Button
               onClick={() => showUnlikeDialog && confirmUnlike(showUnlikeDialog)}
