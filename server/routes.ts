@@ -505,6 +505,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...enhancement,
         suggestions: JSON.parse(enhancement.suggestions),
         weddingContext: JSON.parse(enhancement.weddingContext),
+        detailedScores: enhancement.detailedScores ? JSON.parse(enhancement.detailedScores) : null,
+        enhancementPotential: enhancement.enhancementPotential ? JSON.parse(enhancement.enhancementPotential) : null,
+        professionalInsights: enhancement.professionalInsights ? JSON.parse(enhancement.professionalInsights) : null,
         analysisMetadata: enhancement.analysisMetadata ? JSON.parse(enhancement.analysisMetadata) : null
       });
     } catch (error) {
@@ -530,6 +533,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...existingEnhancement,
           suggestions: JSON.parse(existingEnhancement.suggestions),
           weddingContext: JSON.parse(existingEnhancement.weddingContext),
+          detailedScores: existingEnhancement.detailedScores ? JSON.parse(existingEnhancement.detailedScores) : null,
+          enhancementPotential: existingEnhancement.enhancementPotential ? JSON.parse(existingEnhancement.enhancementPotential) : null,
+          professionalInsights: existingEnhancement.professionalInsights ? JSON.parse(existingEnhancement.professionalInsights) : null,
           analysisMetadata: existingEnhancement.analysisMetadata ? JSON.parse(existingEnhancement.analysisMetadata) : null
         });
       }
@@ -548,6 +554,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         suggestions: JSON.stringify(analysisResult.suggestions),
         strengths: analysisResult.strengths,
         weddingContext: JSON.stringify(analysisResult.weddingContext),
+        detailedScores: analysisResult.detailedScores ? JSON.stringify(analysisResult.detailedScores) : null,
+        enhancementPotential: analysisResult.enhancementPotential ? JSON.stringify(analysisResult.enhancementPotential) : null,
+        professionalInsights: analysisResult.professionalInsights ? JSON.stringify(analysisResult.professionalInsights) : null,
         enhancementPreview,
         isVisible: true,
         analysisMetadata: analysisResult.analysisMetadata ? JSON.stringify(analysisResult.analysisMetadata) : null
@@ -557,6 +566,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...enhancement,
         suggestions: analysisResult.suggestions,
         weddingContext: analysisResult.weddingContext,
+        detailedScores: analysisResult.detailedScores,
+        enhancementPotential: analysisResult.enhancementPotential,
+        professionalInsights: analysisResult.professionalInsights,
         analysisMetadata: analysisResult.analysisMetadata
       });
     } catch (error) {
@@ -605,6 +617,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         suggestions: JSON.stringify(analysisResult.suggestions),
         strengths: analysisResult.strengths,
         weddingContext: JSON.stringify(analysisResult.weddingContext),
+        detailedScores: analysisResult.detailedScores ? JSON.stringify(analysisResult.detailedScores) : null,
+        enhancementPotential: analysisResult.enhancementPotential ? JSON.stringify(analysisResult.enhancementPotential) : null,
+        professionalInsights: analysisResult.professionalInsights ? JSON.stringify(analysisResult.professionalInsights) : null,
         enhancementPreview,
         isVisible: true,
         analysisMetadata: analysisResult.analysisMetadata ? JSON.stringify(analysisResult.analysisMetadata) : null
@@ -614,6 +629,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...enhancement,
         suggestions: analysisResult.suggestions,
         weddingContext: analysisResult.weddingContext,
+        detailedScores: analysisResult.detailedScores,
+        enhancementPotential: analysisResult.enhancementPotential,
+        professionalInsights: analysisResult.professionalInsights,
         analysisMetadata: analysisResult.analysisMetadata
       });
     } catch (error) {

@@ -360,13 +360,40 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
         photoType: result.weddingContext?.photoType || 'candid',
         subjects: Array.isArray(result.weddingContext?.subjects) ? result.weddingContext.subjects.slice(0, 5) : [],
         setting: result.weddingContext?.setting || 'unknown',
-        lighting: result.weddingContext?.lighting || 'natural'
+        lighting: result.weddingContext?.lighting || 'natural',
+        emotionalTone: result.weddingContext?.emotionalTone || 'radostný',
+        significance: result.weddingContext?.significance || 'důležitý moment'
+      },
+      detailedScores: {
+        technical: Math.max(1, Math.min(10, parseInt(result.detailedScores?.technical) || 7)),
+        artistic: Math.max(1, Math.min(10, parseInt(result.detailedScores?.artistic) || 7)),
+        composition: Math.max(1, Math.min(10, parseInt(result.detailedScores?.composition) || 7)),
+        lighting: Math.max(1, Math.min(10, parseInt(result.detailedScores?.lighting) || 7)),
+        colors: Math.max(1, Math.min(10, parseInt(result.detailedScores?.colors) || 7)),
+        emotion: Math.max(1, Math.min(10, parseInt(result.detailedScores?.emotion) || 8)),
+        storytelling: Math.max(1, Math.min(10, parseInt(result.detailedScores?.storytelling) || 8)),
+        memoryValue: Math.max(1, Math.min(10, parseInt(result.detailedScores?.memoryValue) || 9))
+      },
+      enhancementPotential: {
+        easyFixes: Math.max(0, Math.min(10, parseInt(result.enhancementPotential?.easyFixes) || 2)),
+        mediumFixes: Math.max(0, Math.min(10, parseInt(result.enhancementPotential?.mediumFixes) || 1)),
+        hardFixes: Math.max(0, Math.min(10, parseInt(result.enhancementPotential?.hardFixes) || 0)),
+        totalImpactScore: Math.max(1, Math.min(100, parseInt(result.enhancementPotential?.totalImpactScore) || 20)),
+        estimatedTimeMinutes: Math.max(1, Math.min(120, parseInt(result.enhancementPotential?.estimatedTimeMinutes) || 15))
+      },
+      professionalInsights: {
+        photographyTechniques: Array.isArray(result.professionalInsights?.photographyTechniques) ? result.professionalInsights.photographyTechniques.slice(0, 5) : ['Svatební fotografie', 'Dokumentární styl'],
+        historicalContext: result.professionalInsights?.historicalContext || 'Zachycuje moderní český svatební styl',
+        culturalSignificance: result.professionalInsights?.culturalSignificance || 'Důležitý dokument rodinné historie',
+        emotionalResonance: result.professionalInsights?.emotionalResonance || 'Vysoká emotivní hodnota pro rodinu a přátele'
       },
       analysisMetadata: {
         aiModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
         analysisTime,
         confidence: 0.9,
-        usedFallback: false
+        usedFallback: false,
+        analysisDepth: 'comprehensive' as const,
+        processingSteps: ['Analýza obrazu', 'Detekce problémů', 'Generování návrhů', 'Profesionální hodnocení']
       }
     };
   } catch (error: any) {
@@ -409,14 +436,41 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
           photoType: "portrét",
           subjects: ["nevěsta", "ženich"],
           setting: "venkovní",
-          lighting: "přírodní"
+          lighting: "přírodní",
+          emotionalTone: "radostný",
+          significance: "důležitý svatební moment"
+        },
+        detailedScores: {
+          technical: 7,
+          artistic: 8,
+          composition: 6,
+          lighting: 7,
+          colors: 8,
+          emotion: 9,
+          storytelling: 8,
+          memoryValue: 9
+        },
+        enhancementPotential: {
+          easyFixes: 2,
+          mediumFixes: 1,
+          hardFixes: 0,
+          totalImpactScore: 25,
+          estimatedTimeMinutes: 10
+        },
+        professionalInsights: {
+          photographyTechniques: ['Svatební portrétní fotografie', 'Přírodní osvětlení', 'Dokumentární styl'],
+          historicalContext: 'Zachycuje moderní český svatební styl',
+          culturalSignificance: 'Důležitý dokument rodinné historie a lásky',
+          emotionalResonance: 'Vysoká emotivní hodnota pro rodinu a přátele'
         },
         analysisMetadata: {
           aiModel: 'Fallback Analysis (AI Failed)',
           analysisTime,
           confidence: 0.7,
           usedFallback: true,
-          errorDetails: error.message || 'AI analysis error'
+          errorDetails: error.message || 'AI analysis error',
+          analysisDepth: 'basic' as const,
+          processingSteps: ['Fallback analýza', 'Základní hodnocení', 'Standardní návrhy']
         }
       };
     }
