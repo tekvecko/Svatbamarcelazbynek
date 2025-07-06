@@ -72,11 +72,151 @@ export interface PhotoAnalysisResult {
   };
 }
 
+// Function to check if AI model is available
+async function checkModelAvailability(): Promise<{ isAvailable: boolean; workingModel?: string; error?: string }> {
+  const modelsToTry = [
+    'llama-3.2-90b-vision-preview',
+    'llava-v1.5-7b-4096-preview',
+    'llama-3.2-11b-vision-preview'
+  ];
+
+  for (const model of modelsToTry) {
+    try {
+      // Test with minimal request to check availability
+      const testResponse = await groq.chat.completions.create({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: "Test message"
+          }
+        ],
+        max_completion_tokens: 1
+      });
+
+      if (testResponse.choices[0]) {
+        return { isAvailable: true, workingModel: model };
+      }
+    } catch (error: any) {
+      console.log(`Model ${model} not available:`, error.message);
+      
+      // If model is decommissioned, try next one
+      if (error.message?.includes('decommissioned') || error.message?.includes('not exist')) {
+        continue;
+      }
+      
+      // If it's a quota or rate limit error, model exists but is temporarily unavailable
+      if (error.status === 429 || error.status === 503) {
+        return { isAvailable: false, error: 'AI služby jsou dočasně nedostupné kvůli omezením.' };
+      }
+    }
+  }
+
+  return { isAvailable: false, error: 'Žádný AI model pro vision analýzu není momentálně dostupný.' };
+}
+
 export async function analyzePhotoForEnhancement(imageUrl: string): Promise<PhotoAnalysisResult> {
   const startTime = Date.now();
 
   if (!process.env.GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY is not configured. AI analysis is not available.');
+  }
+
+  // Check AI model availability first
+  const modelCheck = await checkModelAvailability();
+  
+  if (!modelCheck.isAvailable) {
+    console.log('AI models not available, using baseline analysis:', modelCheck.error);
+    // Use baseline analysis when AI is not available
+    const useBaselineAnalysis = true;
+  
+    if (useBaselineAnalysis) {
+      const analysisTime = Date.now() - startTime;
+      // Return baseline analysis with model unavailability info
+      const basicScore = Math.floor(Math.random() * 3) + 7;
+      const analysisVariants = [
+        {
+          score: basicScore,
+          issues: ["AI modely nejsou dostupné", "Použita základní analýza", "Kontrola kompozice"],
+          suggestions: [
+            {
+              category: 'lighting' as const,
+              severity: 'medium' as const,
+              title: 'Optimalizace osvětlení',
+              description: 'Základní analýza osvětlení bez AI',
+              suggestion: 'Zvyšte jas ve stínech a snižte přeexponované oblasti',
+              technicalDetails: 'Analýza bez AI - obecné doporučení pro svatební fotografie',
+              specificValues: 'Stíny: +20, Světla: -10, Kontrast: +10',
+              confidence: 0.6,
+              priority: 1
+            }
+          ],
+          strengths: ["Zachycený moment", "Základní kompozice", "Svatební atmosféra"],
+          context: {
+            photoType: "svatební moment",
+            subjects: ["svatební hosté"],
+            setting: "svatební prostředí",
+            lighting: "neznámé"
+          }
+        }
+      ];
+
+      const variant = analysisVariants[0];
+
+      return {
+        overallScore: variant.score,
+        primaryIssues: variant.issues,
+        suggestions: variant.suggestions.map(s => ({
+          ...s,
+          beforeAfterPreview: {
+            description: 'Základní vylepšení',
+            expectedImprovement: 'Lepší technická kvalita',
+            processingTime: '2-3 minuty',
+            difficulty: 'easy' as const
+          },
+          relatedAdjustments: ['Kontrast', 'Jas'],
+          impactScore: 6
+        })),
+        strengths: variant.strengths,
+        weddingContext: {
+          ...variant.context,
+          emotionalTone: 'radostný',
+          significance: 'svatební okamžik'
+        },
+        detailedScores: {
+          technical: 6,
+          artistic: 7,
+          composition: 6,
+          lighting: 6,
+          colors: 7,
+          emotion: 8,
+          storytelling: 7,
+          memoryValue: 8
+        },
+        enhancementPotential: {
+          easyFixes: 1,
+          mediumFixes: 1,
+          hardFixes: 0,
+          totalImpactScore: 12,
+          estimatedTimeMinutes: 8
+        },
+        professionalInsights: {
+          photographyTechniques: ['Základní analýza', 'Svatební fotografie'],
+          historicalContext: 'Moderní svatební styl',
+          culturalSignificance: 'Rodinný dokument',
+          emotionalResonance: 'Vysoká emotivní hodnota'
+        },
+        analysisMetadata: {
+          aiModel: 'Baseline Analysis (No AI Available)',
+          analysisTime,
+          confidence: 0.5,
+          usedFallback: true,
+          errorDetails: modelCheck.error,
+          analysisDepth: 'basic' as const,
+          processingSteps: ['Kontrola AI dostupnosti', 'Základní analýza', 'Fallback návrhy']
+        }
+      };
+    }
   }
 
   // Use simple baseline analysis when AI is not available
@@ -217,7 +357,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
   try {
     const response = await groq.chat.completions.create({
-      model: "llama-3.2-11b-vision-preview", // Latest available Llama 3.2 Vision model
+      model: modelCheck.workingModel || "llama-3.2-90b-vision-preview", // Use checked working model
       messages: [
         {
           role: "system",
@@ -388,12 +528,12 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
         emotionalResonance: result.professionalInsights?.emotionalResonance || 'Vysoká emotivní hodnota pro rodinu a přátele'
       },
       analysisMetadata: {
-        aiModel: 'meta-llama/llama-3.2-90b-vision-preview',
+        aiModel: modelCheck.workingModel || 'Unknown AI Model',
         analysisTime,
         confidence: 0.9,
         usedFallback: false,
         analysisDepth: 'comprehensive' as const,
-        processingSteps: ['Analýza obrazu', 'Detekce problémů', 'Generování návrhů', 'Profesionální hodnocení']
+        processingSteps: ['Kontrola AI dostupnosti', 'Analýza obrazu', 'Detekce problémů', 'Generování návrhů', 'Profesionální hodnocení']
       }
     };
   } catch (error: any) {
@@ -490,8 +630,15 @@ export async function generateEnhancementPreview(
       .map(s => `- ${s.title}: ${s.suggestion}`)
       .join('\n');
 
+    // Check model availability for enhancement preview
+    const modelCheck = await checkModelAvailability();
+    
+    if (!modelCheck.isAvailable) {
+      return 'Vylepšená verze by ukázala zlepšené osvětlení, kompozici a celkový vizuální dojem fotografie.';
+    }
+
     const response = await groq.chat.completions.create({
-      model: "llama-3.2-11b-vision-preview", // Use same working model for consistency
+      model: modelCheck.workingModel || "llama-3.2-90b-vision-preview", // Use checked working model
       messages: [
         {
           role: "system",
