@@ -112,12 +112,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Photo endpoints
+  // Photo endpoints with pagination
   app.get('/api/photos', async (req, res) => {
     try {
       const approved = req.query.approved === 'true' ? true : req.query.approved === 'false' ? false : undefined;
-      const photos = await storage.getPhotos(approved);
-      res.json(photos);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = (page - 1) * limit;
+      
+      const photos = await storage.getPhotos(approved, limit, offset);
+      const totalCount = await storage.getPhotosCount(approved);
+      
+      res.json({
+        photos,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          pages: Math.ceil(totalCount / limit),
+          hasNext: page * limit < totalCount,
+          hasPrev: page > 1
+        }
+      });
     } catch (error) {
       console.error("Error fetching photos:", error);
       res.status(500).json({ message: "Failed to fetch photos" });

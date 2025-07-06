@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type Photo, type PhotoComment } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-export function usePhotos(approved?: boolean) {
+export function usePhotos(approved?: boolean, page = 1, limit = 12) {
   return useQuery({
-    queryKey: ["/api/photos", approved],
-    queryFn: () => api.getPhotos(approved),
+    queryKey: ["/api/photos", approved, page, limit],
+    queryFn: () => api.getPhotos(approved, page, limit),
   });
 }
 

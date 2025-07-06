@@ -173,25 +173,46 @@ export const api = {
     return handleResponse<WeddingDetails>(response);
   },
 
-  async getPhotos(approved?: boolean): Promise<Photo[]> {
+  async getPhotos(approved?: boolean, page = 1, limit = 12): Promise<{ photos: Photo[], pagination: any }> {
     if (IS_STATIC) {
       const data = await loadStaticData();
-      const photos = data?.photos || STATIC_PHOTOS;
+      const allPhotos = data?.photos || STATIC_PHOTOS;
       const storedLikes = getLocalStorageData('photo-likes', {} as Record<number, number>);
       const storedComments = getLocalStorageData('photo-comments', {} as Record<number, any[]>);
 
-      return photos.map(photo => ({
+      const photos = allPhotos.map((photo: Photo) => ({
         ...photo,
         likes: storedLikes[photo.id] || photo.likes || 0,
         commentCount: (storedComments[photo.id] || []).length
       }));
+
+      // Simple pagination for static data
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedPhotos = photos.slice(startIndex, endIndex);
+
+      return {
+        photos: paginatedPhotos,
+        pagination: {
+          page,
+          limit,
+          total: photos.length,
+          pages: Math.ceil(photos.length / limit),
+          hasNext: endIndex < photos.length,
+          hasPrev: page > 1
+        }
+      };
     }
+
     const params = new URLSearchParams();
     if (approved !== undefined) {
       params.append("approved", String(approved));
     }
+    params.append("page", String(page));
+    params.append("limit", String(limit));
+    
     const response = await fetch(`${API_BASE_URL}/api/photos?${params}`);
-    return handleResponse<Photo[]>(response);
+    return handleResponse<{ photos: Photo[], pagination: any }>(response);
   },
 
   async uploadPhotos(files: FileList): Promise<Photo[]> {

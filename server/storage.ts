@@ -4,7 +4,8 @@ import { eq, sql, desc, and, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Photo operations
-  getPhotos(approved?: boolean): Promise<Photo[]>;
+  getPhotos(approved?: boolean, limit?: number, offset?: number): Promise<Photo[]>;
+  getPhotosCount(approved?: boolean): Promise<number>;
   getPhoto(id: number): Promise<Photo | undefined>;
   createPhoto(photo: InsertPhoto): Promise<Photo>;
   approvePhoto(id: number): Promise<void>;
@@ -80,12 +81,20 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getPhotos(approved?: boolean): Promise<Photo[]> {
-    // First get photos
+  async getPhotos(approved?: boolean, limit?: number, offset?: number): Promise<Photo[]> {
+    // First get photos with pagination
     let photosQuery = db.select().from(photos).orderBy(desc(photos.uploadedAt));
 
     if (approved !== undefined) {
       photosQuery = photosQuery.where(eq(photos.approved, approved)) as any;
+    }
+
+    if (limit !== undefined) {
+      photosQuery = photosQuery.limit(limit) as any;
+    }
+
+    if (offset !== undefined) {
+      photosQuery = photosQuery.offset(offset) as any;
     }
 
     const photoResults = await photosQuery;
@@ -106,6 +115,17 @@ export class DatabaseStorage implements IStorage {
     );
 
     return photosWithCounts;
+  }
+
+  async getPhotosCount(approved?: boolean): Promise<number> {
+    let countQuery = db.select({ count: sql<number>`COUNT(*)::int` }).from(photos);
+
+    if (approved !== undefined) {
+      countQuery = countQuery.where(eq(photos.approved, approved)) as any;
+    }
+
+    const result = await countQuery;
+    return result[0]?.count || 0;
   }
 
   async getPhoto(id: number): Promise<Photo | undefined> {

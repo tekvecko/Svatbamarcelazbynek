@@ -22,7 +22,10 @@ type ViewMode = 'grid' | 'list' | 'cards';
 type FilterType = 'all' | 'liked' | 'recent' | 'popular';
 
 export default function PhotoGallery() {
-  const { data: photos, isLoading } = usePhotos(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: photosResponse, isLoading } = usePhotos(true, currentPage, 12);
+  const photos = photosResponse?.photos || [];
+  const pagination = photosResponse?.pagination;
   const toggleLike = useTogglePhotoLike();
   const addComment = useAddPhotoComment();
   const { toast } = useToast();
@@ -680,7 +683,7 @@ export default function PhotoGallery() {
                         className="text-white hover:bg-white/20 rounded-full h-8 px-2"
                       >
                         <MessageCircle className="h-4 w-4" />
-                        <span className="ml-1 text-xs">{photoComments[photo.id]?.length || 0}</span>
+                        <span className="ml-1 text-xs">{photo.commentCount || 0}</span>
                       </Button>
                     </div>
 
@@ -989,7 +992,7 @@ export default function PhotoGallery() {
                   )}
 
                   <Button
-                    onClick={() => setSelectedPhoto(null)}
+                    onClick={() => setIsDialogOpen(false)}
                     variant="ghost"
                     className="text-white hover:bg-white/20 rounded-full h-12 px-4"
                   >
@@ -1134,6 +1137,58 @@ export default function PhotoGallery() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.pages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8 mb-4">
+          <Button
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={!pagination.hasPrev}
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Předchozí
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                className={`rounded-full w-10 h-10 ${
+                  currentPage === page 
+                    ? 'bg-blue-600 text-white' 
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+
+          <Button
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={!pagination.hasNext}
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+          >
+            Další
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+
+      {/* Loading indicator for pagination */}
+      {pagination && (
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Stránka {currentPage} z {pagination.pages} • Celkem {pagination.total} fotek
+        </div>
+      )}
     </div>
   );
 }
