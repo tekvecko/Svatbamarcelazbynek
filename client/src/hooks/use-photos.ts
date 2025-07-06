@@ -5,7 +5,11 @@ import { useToast } from "@/hooks/use-toast";
 export function usePhotos(approved?: boolean, page = 1, limit = 12) {
   return useQuery({
     queryKey: ["/api/photos", approved, page, limit],
-    queryFn: () => api.getPhotos(approved, page, limit),
+    queryFn: async () => {
+      const response = await api.getPhotos(approved, page, limit);
+      // Extract photos array from the response object
+      return response.photos || [];
+    },
   });
 }
 

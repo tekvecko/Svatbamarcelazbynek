@@ -56,14 +56,17 @@ export default function HighlightReel({
   const [currentTransition, setCurrentTransition] = useState<keyof typeof transitionVariants>('fadeIn');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Ensure photos is always an array
+  const safePhotos = Array.isArray(photos) ? photos : [];
+
   const transitionTypes = Object.keys(transitionVariants) as Array<keyof typeof transitionVariants>;
 
   useEffect(() => {
-    if (!isPlaying || !photos || photos.length === 0) return;
+    if (!isPlaying || safePhotos.length === 0) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => {
-        const nextIndex = (prev + 1) % photos.length;
+        const nextIndex = (prev + 1) % safePhotos.length;
         // Change transition type every few photos for variety
         if (nextIndex % 3 === 0) {
           setCurrentTransition(transitionTypes[Math.floor(Math.random() * transitionTypes.length)]);
@@ -73,17 +76,17 @@ export default function HighlightReel({
     }, transitionDuration);
 
     return () => clearInterval(interval);
-  }, [isPlaying, photos, transitionDuration, transitionTypes]);
+  }, [isPlaying, safePhotos, transitionDuration, transitionTypes]);
 
   const goToNext = () => {
-    if (!photos || photos.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % photos.length);
+    if (safePhotos.length === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % safePhotos.length);
     setCurrentTransition(transitionTypes[Math.floor(Math.random() * transitionTypes.length)]);
   };
 
   const goToPrevious = () => {
-    if (!photos || photos.length === 0) return;
-    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
+    if (safePhotos.length === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + safePhotos.length) % safePhotos.length);
     setCurrentTransition(transitionTypes[Math.floor(Math.random() * transitionTypes.length)]);
   };
 
@@ -107,7 +110,7 @@ export default function HighlightReel({
     );
   }
 
-  if (!photos || photos.length === 0) {
+  if (safePhotos.length === 0) {
     return (
       <Card className="aspect-video bg-gradient-to-br from-purple-100 to-pink-100 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
         <div className="text-center">
@@ -122,7 +125,7 @@ export default function HighlightReel({
   }
 
   const ReelContent = ({ isFullscreenMode = false }) => {
-    const photo = photos[currentIndex];
+    const photo = safePhotos[currentIndex];
 
     return (
       <div className={`relative ${isFullscreenMode ? 'h-screen w-screen' : 'aspect-video'} bg-black rounded-xl overflow-hidden`}>
@@ -166,7 +169,7 @@ export default function HighlightReel({
                       </h3>
                       <div className="flex items-center gap-4 text-sm opacity-90">
                         <span>💝 {photo.likes} lajků</span>
-                        <span>📷 {currentIndex + 1} z {photos.length}</span>
+                        <span>📷 {currentIndex + 1} z {safePhotos.length}</span>
                       </div>
                     </motion.div>
                   </>
@@ -252,7 +255,7 @@ export default function HighlightReel({
                 <motion.div
                   className="bg-white h-full"
                   initial={{ width: 0 }}
-                  animate={{ width: isPlaying ? '100%' : `${((currentIndex + 1) / photos.length) * 100}%` }}
+                  animate={{ width: isPlaying ? '100%' : `${((currentIndex + 1) / safePhotos.length) * 100}%` }}
                   transition={{ 
                     duration: isPlaying ? transitionDuration / 1000 : 0.3,
                     ease: "linear"
@@ -265,7 +268,7 @@ export default function HighlightReel({
 
         {/* Thumbnail Strip */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-2">
-          {photos.slice(0, Math.min(7, photos.length)).map((photo, index) => (
+          {safePhotos.slice(0, Math.min(7, safePhotos.length)).map((photo, index) => (
             <button
               key={photo.id}
               onClick={() => jumpToPhoto(index)}
@@ -276,7 +279,7 @@ export default function HighlightReel({
               }`}
             />
           ))}
-          {photos.length > 7 && (
+          {safePhotos.length > 7 && (
             <div className="w-3 h-3 rounded-full bg-white/30 flex items-center justify-center">
               <div className="text-white text-xs">+</div>
             </div>
