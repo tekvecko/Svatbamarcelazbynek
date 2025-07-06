@@ -121,158 +121,170 @@ export default function HighlightReel({
     );
   }
 
-  const ReelContent = ({ isFullscreenMode = false }) => (
-    <div className={`relative ${isFullscreenMode ? 'h-screen w-screen' : 'aspect-video'} bg-black rounded-xl overflow-hidden`}>
-      {/* Main Photo Display */}
-      <div className="relative w-full h-full">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${currentIndex}-${currentTransition}`}
-            className="absolute inset-0"
-            variants={transitionVariants[currentTransition]}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ 
-              duration: 0.8, 
-              ease: [0.4, 0, 0.2, 1],
-              type: currentTransition === 'rotate' || currentTransition === 'flip' ? 'spring' : 'tween'
-            }}
+  const ReelContent = ({ isFullscreenMode = false }) => {
+    const photo = photos[currentIndex];
+
+    return (
+      <div className={`relative ${isFullscreenMode ? 'h-screen w-screen' : 'aspect-video'} bg-black rounded-xl overflow-hidden`}>
+        {/* Main Photo Display */}
+        <div className="relative w-full h-full">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${currentIndex}-${currentTransition}`}
+              className="absolute inset-0"
+              variants={transitionVariants[currentTransition]}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ 
+                duration: 0.8, 
+                ease: [0.4, 0, 0.2, 1],
+                type: currentTransition === 'rotate' || currentTransition === 'flip' ? 'spring' : 'tween'
+              }}
+            >
+              <div className="relative w-full h-full">
+                {photo ? (
+                  <>
+                    <img
+                      src={photo.url}
+                      alt={photo.originalName}
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Gradient Overlay for Text */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                    {/* Photo Info */}
+                    <motion.div 
+                      className="absolute bottom-6 left-6 right-6 text-white"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <h3 className="text-lg font-semibold mb-1">
+                        {photo.originalName}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm opacity-90">
+                        <span>💝 {photo.likes} lajků</span>
+                        <span>📷 {currentIndex + 1} z {photos.length}</span>
+                      </div>
+                    </motion.div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black">
+                    <p className="text-white/50">Loading...</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Cinematic Bars for Fullscreen */}
+          {isFullscreenMode && (
+            <>
+              <div className="absolute top-0 left-0 right-0 h-16 bg-black z-10" />
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-black z-10" />
+            </>
+          )}
+        </div>
+
+        {/* Controls */}
+        {showControls && (
+          <motion.div 
+            className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300"
+            whileHover={{ opacity: 1 }}
           >
-            <div className="relative w-full h-full">
-              <img
-                src={photos[currentIndex].url}
-                alt={photos[currentIndex].originalName}
-                className="w-full h-full object-cover"
-              />
+            {/* Navigation Arrows */}
+            <button
+              onClick={goToPrevious}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 transition-colors"
+            >
+              <SkipBack className="h-6 w-6 text-white" />
+            </button>
 
-              {/* Gradient Overlay for Text */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <button
+              onClick={goToNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 transition-colors"
+            >
+              <SkipForward className="h-6 w-6 text-white" />
+            </button>
 
-              {/* Photo Info */}
-              <motion.div 
-                className="absolute bottom-6 left-6 right-6 text-white"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+            {/* Center Controls */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
+              <Button
+                onClick={togglePlayPause}
+                size="lg"
+                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 rounded-full w-16 h-16"
               >
-                <h3 className="text-lg font-semibold mb-1">
-                  {photos[currentIndex].originalName}
-                </h3>
-                <div className="flex items-center gap-4 text-sm opacity-90">
-                  <span>💝 {photos[currentIndex].likes} lajků</span>
-                  <span>📷 {currentIndex + 1} z {photos.length}</span>
-                </div>
-              </motion.div>
+                {isPlaying ? (
+                  <Pause className="h-8 w-8 text-white" />
+                ) : (
+                  <Play className="h-8 w-8 text-white ml-1" />
+                )}
+              </Button>
+            </div>
+
+            {/* Top Right Controls */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              {!isFullscreenMode && (
+                <Button
+                  onClick={() => setIsFullscreen(true)}
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 rounded-full"
+                >
+                  <Maximize className="h-4 w-4 text-white" />
+                </Button>
+              )}
+              {isFullscreenMode && (
+                <Button
+                  onClick={() => setIsFullscreen(false)}
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 rounded-full"
+                >
+                  <X className="h-4 w-4 text-white" />
+                </Button>
+              )}
+            </div>
+
+            {/* Progress Bar */}
+            <div className="absolute bottom-20 left-6 right-6">
+              <div className="bg-white/20 rounded-full h-1 overflow-hidden">
+                <motion.div
+                  className="bg-white h-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: isPlaying ? '100%' : `${((currentIndex + 1) / photos.length) * 100}%` }}
+                  transition={{ 
+                    duration: isPlaying ? transitionDuration / 1000 : 0.3,
+                    ease: "linear"
+                  }}
+                />
+              </div>
             </div>
           </motion.div>
-        </AnimatePresence>
-
-        {/* Cinematic Bars for Fullscreen */}
-        {isFullscreenMode && (
-          <>
-            <div className="absolute top-0 left-0 right-0 h-16 bg-black z-10" />
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-black z-10" />
-          </>
         )}
-      </div>
 
-      {/* Controls */}
-      {showControls && (
-        <motion.div 
-          className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300"
-          whileHover={{ opacity: 1 }}
-        >
-          {/* Navigation Arrows */}
-          <button
-            onClick={goToPrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 transition-colors"
-          >
-            <SkipBack className="h-6 w-6 text-white" />
-          </button>
-
-          <button
-            onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 transition-colors"
-          >
-            <SkipForward className="h-6 w-6 text-white" />
-          </button>
-
-          {/* Center Controls */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
-            <Button
-              onClick={togglePlayPause}
-              size="lg"
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 rounded-full w-16 h-16"
-            >
-              {isPlaying ? (
-                <Pause className="h-8 w-8 text-white" />
-              ) : (
-                <Play className="h-8 w-8 text-white ml-1" />
-              )}
-            </Button>
-          </div>
-
-          {/* Top Right Controls */}
-          <div className="absolute top-4 right-4 flex gap-2">
-            {!isFullscreenMode && (
-              <Button
-                onClick={() => setIsFullscreen(true)}
-                size="sm"
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 rounded-full"
-              >
-                <Maximize className="h-4 w-4 text-white" />
-              </Button>
-            )}
-            {isFullscreenMode && (
-              <Button
-                onClick={() => setIsFullscreen(false)}
-                size="sm"
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-0 rounded-full"
-              >
-                <X className="h-4 w-4 text-white" />
-              </Button>
-            )}
-          </div>
-
-          {/* Progress Bar */}
-          <div className="absolute bottom-20 left-6 right-6">
-            <div className="bg-white/20 rounded-full h-1 overflow-hidden">
-              <motion.div
-                className="bg-white h-full"
-                initial={{ width: 0 }}
-                animate={{ width: isPlaying ? '100%' : `${((currentIndex + 1) / photos.length) * 100}%` }}
-                transition={{ 
-                  duration: isPlaying ? transitionDuration / 1000 : 0.3,
-                  ease: "linear"
-                }}
-              />
+        {/* Thumbnail Strip */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-2">
+          {photos.slice(0, Math.min(7, photos.length)).map((photo, index) => (
+            <button
+              key={photo.id}
+              onClick={() => jumpToPhoto(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentIndex 
+                  ? 'bg-white scale-125' 
+                  : 'bg-white/50 hover:bg-white/75'
+              }`}
+            />
+          ))}
+          {photos.length > 7 && (
+            <div className="w-3 h-3 rounded-full bg-white/30 flex items-center justify-center">
+              <div className="text-white text-xs">+</div>
             </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Thumbnail Strip */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-2">
-        {photos.slice(0, Math.min(7, photos.length)).map((photo, index) => (
-          <button
-            key={photo.id}
-            onClick={() => jumpToPhoto(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentIndex 
-                ? 'bg-white scale-125' 
-                : 'bg-white/50 hover:bg-white/75'
-            }`}
-          />
-        ))}
-        {photos.length > 7 && (
-          <div className="w-3 h-3 rounded-full bg-white/30 flex items-center justify-center">
-            <div className="text-white text-xs">+</div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (isFullscreen) {
     return (
