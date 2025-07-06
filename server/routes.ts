@@ -9,6 +9,7 @@ import cloudinary from "./cloudinary";
 import { insertPhotoSchema, insertPlaylistSongSchema, updateWeddingDetailsSchema, insertWeddingDetailsSchema, insertSiteMetadataSchema, updateSiteMetadataSchema, insertWeddingScheduleSchema, updateWeddingScheduleSchema, insertPhotoEnhancementSchema } from "@shared/schema";
 import { analyzePhotoForEnhancement, generateEnhancementPreview } from "./ai-photo-enhancer";
 import { analyzeWeddingPhoto, generatePlaylistSuggestions, generateWeddingAdvice, analyzeGuestMessage, generateWeddingStory, generatePhotoCaption } from "./ai-services";
+import { analyzeWeddingPhotoWithHuggingFace, generateImageCaptionWithHuggingFace, checkHuggingFaceAvailability } from "./huggingface-ai";
 import { z } from "zod";
 
 // Configure multer for memory storage (Cloudinary upload)
@@ -676,7 +677,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  
+  // Hugging Face AI endpoints
+  app.get('/api/huggingface/status', async (req, res) => {
+    try {
+      const status = await checkHuggingFaceAvailability();
+      res.json(status);
+    } catch (error) {
+      console.error("Error checking Hugging Face status:", error);
+      res.status(500).json({ message: "Failed to check Hugging Face status" });
+    }
+  });
+
+  app.post('/api/huggingface/analyze-photo', async (req, res) => {
+    try {
+      const { imageUrl } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({ message: "Image URL is required" });
+      }
+
+      const analysis = await analyzeWeddingPhotoWithHuggingFace(imageUrl);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing photo with Hugging Face:", error);
+      res.status(500).json({ 
+        message: "Failed to analyze photo with Hugging Face",
+        details: error.message 
+      });
+    }
+  });
+
+  app.post('/api/huggingface/generate-caption', async (req, res) => {
+    try {
+      const { imageUrl } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({ message: "Image URL is required" });
+      }
+
+      const caption = await generateImageCaptionWithHuggingFace(imageUrl);
+      res.json({ caption });
+    } catch (error) {
+      console.error("Error generating caption with Hugging Face:", error);
+      res.status(500).json({ 
+        message: "Failed to generate caption with Hugging Face",
+        details: error.message 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
