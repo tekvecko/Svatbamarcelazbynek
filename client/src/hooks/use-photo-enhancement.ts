@@ -43,16 +43,24 @@ async function fetchPhotoEnhancement(photoId: number): Promise<PhotoEnhancementA
 }
 
 async function analyzePhoto(photoId: number): Promise<PhotoEnhancementAnalysis> {
+  console.log('Starting photo analysis for photo ID:', photoId);
+
   const response = await fetch(`/api/photos/${photoId}/analyze`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
   });
+
   if (!response.ok) {
-    throw new Error('Failed to analyze photo');
+    const errorText = await response.text();
+    console.error('Analysis request failed:', response.status, errorText);
+    throw new Error(`Failed to analyze photo: ${response.status} ${response.statusText}`);
   }
-  return response.json();
+
+  const analysis = await response.json();
+  console.log('Photo analysis completed:', analysis);
+  return analysis;
 }
 
 async function reanalyzePhoto(photoId: number): Promise<PhotoEnhancementAnalysis> {

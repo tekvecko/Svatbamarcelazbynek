@@ -59,6 +59,23 @@ export interface GuestMessage {
 // AI Photo Analysis
 export async function analyzeWeddingPhoto(imageUrl: string): Promise<PhotoAnalysis> {
   try {
+    console.log('Fetching image from URL:', imageUrl);
+
+    // Verify image URL is accessible
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.error(`Image fetch failed: ${response.status} ${response.statusText}`);
+      throw new Error(`Image not accessible: ${response.status} ${response.statusText}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.startsWith('image/')) {
+      console.error('Invalid content type:', contentType);
+      throw new Error(`Invalid content type: ${contentType}`);
+    }
+
+    console.log('Image fetched successfully, starting AI analysis...');
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -90,7 +107,7 @@ export async function analyzeWeddingPhoto(imageUrl: string): Promise<PhotoAnalys
     });
 
     const analysis = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     return {
       overallScore: analysis.overallScore || 7,
       categories: {
@@ -113,11 +130,11 @@ export async function analyzeWeddingPhoto(imageUrl: string): Promise<PhotoAnalys
     };
   } catch (error: any) {
     console.error('AI photo analysis failed:', error);
-    
+
     // If quota exceeded, provide intelligent fallback
     if (error.status === 429 || error.code === 'insufficient_quota') {
       console.log('OpenAI quota exceeded for photo analysis, providing baseline analysis');
-      
+
       return {
         overallScore: 7,
         categories: {
@@ -151,7 +168,7 @@ export async function analyzeWeddingPhoto(imageUrl: string): Promise<PhotoAnalys
         isWeddingRelevant: true
       };
     }
-    
+
     throw new Error('Analýza fotografie se nezdařila');
   }
 }
@@ -184,15 +201,15 @@ export async function generatePlaylistSuggestions(
     });
 
     const suggestions = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     return suggestions.songs || [];
   } catch (error: any) {
     console.error('AI playlist generation failed:', error);
-    
+
     // If quota exceeded, provide curated wedding music suggestions
     if (error.status === 429 || error.code === 'insufficient_quota') {
       console.log('OpenAI quota exceeded for playlist, providing curated suggestions');
-      
+
       const curatedSongs = [
         {
           title: "Perfect",
@@ -240,10 +257,10 @@ export async function generatePlaylistSuggestions(
           popularity: 80
         }
       ];
-      
+
       return curatedSongs;
     }
-    
+
     throw new Error('Generování playlistu se nezdařilo');
   }
 }
@@ -256,7 +273,7 @@ export async function generateWeddingAdvice(
 ): Promise<WeddingAdvice[]> {
   try {
     const monthsUntilWedding = Math.ceil((weddingDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30));
-    
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -277,15 +294,15 @@ export async function generateWeddingAdvice(
     });
 
     const advice = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     return advice.advice || [];
   } catch (error: any) {
     console.error('AI wedding advice generation failed:', error);
-    
+
     // If quota exceeded, provide essential wedding planning advice
     if (error.status === 429 || error.code === 'insufficient_quota') {
       console.log('OpenAI quota exceeded for wedding advice, providing essential guidance');
-      
+
       const essentialAdvice = [
         {
           category: "Dokumenty a úřady",
@@ -323,10 +340,10 @@ export async function generateWeddingAdvice(
           actionItems: ["Výběr floristy", "Barevné schéma", "Dekorace prostoru"]
         }
       ];
-      
+
       return essentialAdvice;
     }
-    
+
     throw new Error('Generování svatebních rad se nezdařilo');
   }
 }
@@ -353,7 +370,7 @@ export async function analyzeGuestMessage(message: string): Promise<GuestMessage
     });
 
     const analysis = JSON.parse(response.choices[0].message.content || '{}');
-    
+
     return {
       message: analysis.message || message,
       sentiment: analysis.sentiment || 'neutral',
@@ -389,7 +406,7 @@ export async function generateWeddingStory(
           - Pár: ${coupleNames}
           - Časová osa: ${timeline.join(', ')}
           - Počet fotografií: ${photos.length}
-          
+
           Vytvořit příběh dlouhý 3-4 odstavce.`
         }
       ],
@@ -399,11 +416,11 @@ export async function generateWeddingStory(
     return response.choices[0].message.content || 'Příběh se nepodařilo vygenerovat.';
   } catch (error: any) {
     console.error('AI story generation failed:', error);
-    
+
     // If quota exceeded, provide a template story
     if (error.status === 429 || error.code === 'insufficient_quota') {
       console.log('OpenAI quota exceeded for story generation, providing template story');
-      
+
       const templateStory = `
 Ve dni, kdy se ${coupleNames} rozhodli říci si "ano", se celý svět zdál být naplněn radostí a láskou. 
 ${timeline.length > 0 ? `Od ${timeline[0]} až po ${timeline[timeline.length - 1]}` : 'Celý den'}, 
@@ -418,10 +435,10 @@ kapitoly naplněné láskou, společnými sny a nekonečnými možnostmi.
 Svatba nebyla jen oslavou jejich lásky, ale i oslavou všech, 
 kteří je na této cestě podporovali.
       `.trim();
-      
+
       return templateStory;
     }
-    
+
     throw new Error('Generování příběhu se nezdařilo');
   }
 }
