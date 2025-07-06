@@ -351,8 +351,6 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
         }
       };
     }
-  }
-
   // Use simple baseline analysis when AI is not available or when mock AI is enabled
   if (process.env.USE_MOCK_AI === 'true') {
     useBaselineAnalysis = true;
