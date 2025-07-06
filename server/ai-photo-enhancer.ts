@@ -140,10 +140,12 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
   // Check AI model availability first
   const modelCheck = await checkModelAvailability();
   
+  let useBaselineAnalysis = false;
+  
   if (!modelCheck.isAvailable) {
     console.log('AI models not available, using baseline analysis:', modelCheck.error);
     // Use baseline analysis when AI is not available
-    const useBaselineAnalysis = true;
+    useBaselineAnalysis = true;
   } else if (modelCheck.workingModel === 'gemini-1.5-flash') {
     // Use Google Gemini for analysis
     try {
@@ -262,7 +264,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
     }
   }
   
-    if (useBaselineAnalysis) {
+  if (useBaselineAnalysis) {
       const analysisTime = Date.now() - startTime;
       // Return baseline analysis with model unavailability info
       const basicScore = Math.floor(Math.random() * 3) + 7;
@@ -351,8 +353,10 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
     }
   }
 
-  // Use simple baseline analysis when AI is not available
-  const useBaselineAnalysis = process.env.USE_MOCK_AI === 'true';
+  // Use simple baseline analysis when AI is not available or when mock AI is enabled
+  if (process.env.USE_MOCK_AI === 'true') {
+    useBaselineAnalysis = true;
+  }
 
   if (useBaselineAnalysis) {
     const analysisTime = Date.now() - startTime;
