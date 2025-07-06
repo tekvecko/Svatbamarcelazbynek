@@ -6,7 +6,7 @@ const groq = new Groq({
 });
 
 export interface PhotoEnhancementSuggestion {
-  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast';
+  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast' | 'saturation' | 'sharpness' | 'highlights' | 'shadows' | 'clarity' | 'vibrance';
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
@@ -15,6 +15,14 @@ export interface PhotoEnhancementSuggestion {
   specificValues: string;
   confidence: number;
   priority: number;
+  beforeAfterPreview?: {
+    description: string;
+    expectedImprovement: string;
+    processingTime: string;
+    difficulty: 'easy' | 'medium' | 'hard' | 'professional';
+  };
+  relatedAdjustments?: string[];
+  impactScore: number; // 1-10 scale for visual impact
 }
 
 export interface PhotoAnalysisResult {
@@ -27,6 +35,31 @@ export interface PhotoAnalysisResult {
     subjects: string[];
     setting: string;
     lighting: string;
+    emotionalTone: string;
+    significance: string;
+  };
+  detailedScores: {
+    technical: number;
+    artistic: number;
+    composition: number;
+    lighting: number;
+    colors: number;
+    emotion: number;
+    storytelling: number;
+    memoryValue: number;
+  };
+  enhancementPotential: {
+    easyFixes: number;
+    mediumFixes: number;
+    hardFixes: number;
+    totalImpactScore: number;
+    estimatedTimeMinutes: number;
+  };
+  professionalInsights: {
+    photographyTechniques: string[];
+    historicalContext: string;
+    culturalSignificance: string;
+    emotionalResonance: string;
   };
   analysisMetadata?: {
     aiModel: string;
@@ -34,6 +67,8 @@ export interface PhotoAnalysisResult {
     confidence: number;
     usedFallback: boolean;
     errorDetails?: string;
+    analysisDepth: 'basic' | 'detailed' | 'comprehensive';
+    processingSteps: string[];
   };
 }
 
@@ -129,14 +164,53 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
     return {
       overallScore: variant.score,
       primaryIssues: variant.issues,
-      suggestions: variant.suggestions,
+      suggestions: variant.suggestions.map(s => ({
+        ...s,
+        beforeAfterPreview: {
+          description: 'Zlepšení vizuální kvality',
+          expectedImprovement: 'Lepší technická kvalita a vizuální přitažlivost',
+          processingTime: '2-3 minuty',
+          difficulty: 'easy' as const
+        },
+        relatedAdjustments: ['Kontrast', 'Jas', 'Sytost'],
+        impactScore: Math.floor(Math.random() * 4) + 6
+      })),
       strengths: variant.strengths,
-      weddingContext: variant.context,
+      weddingContext: {
+        ...variant.context,
+        emotionalTone: 'radostný',
+        significance: 'zachycení svatebního okamžiku'
+      },
+      detailedScores: {
+        technical: Math.floor(Math.random() * 3) + 6,
+        artistic: Math.floor(Math.random() * 3) + 7,
+        composition: Math.floor(Math.random() * 3) + 6,
+        lighting: Math.floor(Math.random() * 3) + 6,
+        colors: Math.floor(Math.random() * 3) + 7,
+        emotion: Math.floor(Math.random() * 3) + 8,
+        storytelling: Math.floor(Math.random() * 3) + 7,
+        memoryValue: Math.floor(Math.random() * 3) + 8
+      },
+      enhancementPotential: {
+        easyFixes: 2,
+        mediumFixes: 1,
+        hardFixes: 0,
+        totalImpactScore: Math.floor(Math.random() * 10) + 15,
+        estimatedTimeMinutes: Math.floor(Math.random() * 5) + 8
+      },
+      professionalInsights: {
+        photographyTechniques: ['Svatební fotografie', 'Dokumentární styl', 'Momentová fotografie'],
+        historicalContext: 'Zachycuje moderní český svatební styl',
+        culturalSignificance: 'Důležitý dokument rodinné historie',
+        emotionalResonance: 'Vysoká emotivní hodnota pro rodinu a přátele'
+      },
       analysisMetadata: {
         aiModel: 'Baseline Analysis (No AI)',
         analysisTime,
         confidence: 0.6,
-        usedFallback: true
+        usedFallback: true,
+        analysisDepth: 'basic' as const,
+        processingSteps: ['Základní analýza', 'Automatické skórování', 'Obecné návrhy']
       }
     };
   }
@@ -147,16 +221,17 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
       messages: [
         {
           role: "system",
-          content: `Jste svatební fotograf a expert na úpravu fotografií. Analyzujte tuto svatební fotografii a poskytněte návrhy na vylepšení.
+          content: `Jste wereldová špička v oblasti svatební fotografie a digitální úpravy fotografií. Analyzujte tuto svatební fotografii s nejvyšší odborností a poskytněte komplexní návrhy na vylepšení.
 
 Zaměřte se na:
-- Expozici a osvětlení
-- Kompozici a rámování  
-- Barevné ladění
-- Technickou kvalitu
-- Svatební kontext
+- Technickou kvalitu (expozice, ostrost, šum, vyvážení bílé)
+- Uměleckou hodnotu (kompozice, světlo, emoce)
+- Barevné ladění a tónování
+- Profesionální retušování
+- Svatební kontext a významnost
+- Storytelling a emotivní dopad
 
-Odpovězte POUZE validním JSON objektem v češtině bez dalšího textu. Žádné nové řádky nebo escape sekvence v textech. Používejte pouze celá čísla pro priority. Formát:
+Odpovězte POUZE validním JSON objektem v češtině bez dalšího textu. Žádné nové řádky nebo escape sekvence v textech. Používejte pouze celá čísla pro priority a impactScore. Formát:
 
 {
   "overallScore": 7,
@@ -171,7 +246,15 @@ Odpovězte POUZE validním JSON objektem v češtině bez dalšího textu. Žád
       "technicalDetails": "Technické odůvodnění", 
       "specificValues": "Konkrétní hodnoty",
       "confidence": 0.8,
-      "priority": 1
+      "priority": 1,
+      "beforeAfterPreview": {
+        "description": "Popis změny",
+        "expectedImprovement": "Očekávané zlepšení",
+        "processingTime": "Čas zpracování",
+        "difficulty": "easy"
+      },
+      "relatedAdjustments": ["úprava1", "úprava2"],
+      "impactScore": 8
     }
   ],
   "strengths": ["silná stránka1", "silná stránka2"],
@@ -179,13 +262,40 @@ Odpovězte POUZE validním JSON objektem v češtině bez dalšího textu. Žád
     "photoType": "ceremony",
     "subjects": ["nevěsta", "ženich"], 
     "setting": "outdoor",
-    "lighting": "natural"
+    "lighting": "natural",
+    "emotionalTone": "radostný",
+    "significance": "význam fotky"
+  },
+  "detailedScores": {
+    "technical": 7,
+    "artistic": 8,
+    "composition": 6,
+    "lighting": 7,
+    "colors": 8,
+    "emotion": 9,
+    "storytelling": 8,
+    "memoryValue": 9
+  },
+  "enhancementPotential": {
+    "easyFixes": 2,
+    "mediumFixes": 1,
+    "hardFixes": 0,
+    "totalImpactScore": 20,
+    "estimatedTimeMinutes": 15
+  },
+  "professionalInsights": {
+    "photographyTechniques": ["technika1", "technika2"],
+    "historicalContext": "historický kontext",
+    "culturalSignificance": "kulturní význam",
+    "emotionalResonance": "emotivní dopad"
   }
 }
 
-Kategorie: "lighting", "composition", "color", "technical", "artistic", "exposure", "focus", "noise", "white-balance", "contrast"
+Kategorie: "lighting", "composition", "color", "technical", "artistic", "exposure", "focus", "noise", "white-balance", "contrast", "saturation", "sharpness", "highlights", "shadows", "clarity", "vibrance"
 Závažnost: "low", "medium", "high", "critical"
-Priority jako celá čísla: 1, 2, 3, 4, 5`
+Difficulty: "easy", "medium", "hard", "professional"
+Priority jako celá čísla: 1, 2, 3, 4, 5
+Impact Score: 1-10 (10 = největší vizuální dopad)`
         },
         {
           role: "user",

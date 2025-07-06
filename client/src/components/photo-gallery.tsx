@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, ChevronRight, X, Search, Menu, MoreVertical, Eye, Camera, Star, Clock, TrendingUp, Grid3X3, List, Play, Pause, Maximize2, MinusCircle, PlusCircle } from "lucide-react";
-import AIPhotoEnhancer from "@/components/ai-photo-enhancer";
+import EnhancedAIPhotoAnalyzer from "@/components/enhanced-ai-photo-analyzer";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -597,7 +597,7 @@ export default function PhotoGallery() {
                           className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
                         >
                           <div className="flex items-center gap-3 mb-3">
-                            <AIPhotoEnhancer 
+                            <EnhancedAIPhotoAnalyzer 
                               photoId={photo.id} 
                               photoUrl={photo.url}
                               inlineMode={true}
@@ -685,7 +685,7 @@ export default function PhotoGallery() {
                     </div>
 
                     <div onClick={(e) => e.stopPropagation()}>
-                      <AIPhotoEnhancer 
+                      <EnhancedAIPhotoAnalyzer 
                         photoId={photo.id} 
                         photoUrl={photo.url}
                         inlineMode={true}
@@ -981,7 +981,7 @@ export default function PhotoGallery() {
 
                 <div className="flex items-center gap-2">
                   {selectedPhoto && (
-                    <AIPhotoEnhancer 
+                    <EnhancedAIPhotoAnalyzer 
                       photoId={selectedPhoto.id} 
                       photoUrl={selectedPhoto.url}
                       inlineMode={true}

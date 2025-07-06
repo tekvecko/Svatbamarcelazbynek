@@ -37,6 +37,12 @@ const CategoryIcons = {
   noise: AlertTriangle,
   'white-balance': Palette,
   contrast: Star,
+  saturation: Palette,
+  sharpness: Focus,
+  highlights: Sun,
+  shadows: Sun,
+  clarity: Focus,
+  vibrance: Palette,
 };
 
 export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false, inlineMode = false }: AIPhotoEnhancerProps) {

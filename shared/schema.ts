@@ -103,6 +103,9 @@ export const photoEnhancements = pgTable("photo_enhancements", {
   suggestions: text("suggestions").notNull(), // JSON string
   strengths: text("strengths").array(),
   weddingContext: text("wedding_context").notNull(), // JSON string
+  detailedScores: text("detailed_scores"), // JSON string for technical, artistic, etc. scores
+  enhancementPotential: text("enhancement_potential"), // JSON string for enhancement metrics
+  professionalInsights: text("professional_insights"), // JSON string for photography techniques, cultural context
   enhancementPreview: text("enhancement_preview"),
   analysisDate: timestamp("analysis_date").defaultNow().notNull(),
   isVisible: boolean("is_visible").default(true).notNull(),

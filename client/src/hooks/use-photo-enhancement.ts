@@ -2,15 +2,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 export interface PhotoEnhancementSuggestion {
-  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast';
+  category: 'lighting' | 'composition' | 'color' | 'technical' | 'artistic' | 'exposure' | 'focus' | 'noise' | 'white-balance' | 'contrast' | 'saturation' | 'sharpness' | 'highlights' | 'shadows' | 'clarity' | 'vibrance';
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
   suggestion: string;
-  technicalDetails?: string;
-  specificValues?: string;
+  technicalDetails: string;
+  specificValues: string;
   confidence: number;
-  priority?: number;
+  priority: number;
+  beforeAfterPreview?: {
+    description: string;
+    expectedImprovement: string;
+    processingTime: string;
+    difficulty: 'easy' | 'medium' | 'hard' | 'professional';
+  };
+  relatedAdjustments?: string[];
+  impactScore: number;
 }
 
 export interface PhotoEnhancementAnalysis {
@@ -25,6 +33,31 @@ export interface PhotoEnhancementAnalysis {
     subjects: string[];
     setting: string;
     lighting: string;
+    emotionalTone?: string;
+    significance?: string;
+  };
+  detailedScores?: {
+    technical: number;
+    artistic: number;
+    composition: number;
+    lighting: number;
+    colors: number;
+    emotion: number;
+    storytelling: number;
+    memoryValue: number;
+  };
+  enhancementPotential?: {
+    easyFixes: number;
+    mediumFixes: number;
+    hardFixes: number;
+    totalImpactScore: number;
+    estimatedTimeMinutes: number;
+  };
+  professionalInsights?: {
+    photographyTechniques: string[];
+    historicalContext: string;
+    culturalSignificance: string;
+    emotionalResonance: string;
   };
   enhancementPreview?: string;
   analysisDate: string;
