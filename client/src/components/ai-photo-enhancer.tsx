@@ -1,7 +1,4 @@
-The code modification addresses a missing aria-describedby attribute in the DialogContent component for accessibility.
-```
 
-```replit_final_file
 import { useState } from "react";
 import { usePhotoEnhancement, useAnalyzePhoto, useReanalyzePhoto, useUpdateEnhancementVisibility, type PhotoEnhancementSuggestion } from "@/hooks/use-photo-enhancement";
 import { Button } from "@/components/ui/button";
@@ -182,9 +179,9 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
               <Sparkles className="h-5 w-5 text-purple-600" />
               AI Návrhy na vylepšení fotky
             </DialogTitle>
-            <div id="ai-analysis-description" className="sr-only">
+            <DialogDescription id="ai-analysis-description">
               Dialog pro zobrazení AI analýzy fotografie s návrhy na vylepšení
-            </div>
+            </DialogDescription>
           </DialogHeader>
 
         <div className="space-y-6">
