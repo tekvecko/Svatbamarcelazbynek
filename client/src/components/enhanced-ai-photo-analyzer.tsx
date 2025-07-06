@@ -194,9 +194,14 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
               </div>
             ))}
 
-            <Dialog>
+            <Dialog open={showFullAnalysis} onOpenChange={setShowFullAnalysis}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => setShowFullAnalysis(true)}
+                >
                   <Eye className="h-4 w-4 mr-2" />
                   Kompletní profesionální analýza
                 </Button>
