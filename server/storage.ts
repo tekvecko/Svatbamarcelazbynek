@@ -444,6 +444,21 @@ export class DatabaseStorage implements IStorage {
   async deleteAiWeddingStory(storyId: number): Promise<void> {
     await db.delete(aiWeddingStories).where(eq(aiWeddingStories.id, storyId));
   }
+
+  async createPhotoEnhancement(data: {
+    photoId: number;
+    overallScore: number;
+    primaryIssues: string[];
+    suggestions: string;
+    strengths: string[];
+    weddingContext: string;
+    enhancementPreview?: string;
+    isVisible: boolean;
+    analysisMetadata?: string;
+  }) {
+    const [enhancement] = await db.insert(photoEnhancements).values(data).returning();
+    return enhancement;
+  }
 }
 
 export const storage = new DatabaseStorage();

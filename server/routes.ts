@@ -504,7 +504,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         ...enhancement,
         suggestions: JSON.parse(enhancement.suggestions),
-        weddingContext: JSON.parse(enhancement.weddingContext)
+        weddingContext: JSON.parse(enhancement.weddingContext),
+        analysisMetadata: enhancement.analysisMetadata ? JSON.parse(enhancement.analysisMetadata) : null
       });
     } catch (error) {
       console.error("Error fetching photo enhancement:", error);
@@ -528,7 +529,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({
           ...existingEnhancement,
           suggestions: JSON.parse(existingEnhancement.suggestions),
-          weddingContext: JSON.parse(existingEnhancement.weddingContext)
+          weddingContext: JSON.parse(existingEnhancement.weddingContext),
+          analysisMetadata: existingEnhancement.analysisMetadata ? JSON.parse(existingEnhancement.analysisMetadata) : null
         });
       }
 
@@ -547,13 +549,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         strengths: analysisResult.strengths,
         weddingContext: JSON.stringify(analysisResult.weddingContext),
         enhancementPreview,
-        isVisible: true
+        isVisible: true,
+        analysisMetadata: analysisResult.analysisMetadata ? JSON.stringify(analysisResult.analysisMetadata) : null
       });
 
       res.json({
         ...enhancement,
         suggestions: analysisResult.suggestions,
-        weddingContext: analysisResult.weddingContext
+        weddingContext: analysisResult.weddingContext,
+        analysisMetadata: analysisResult.analysisMetadata
       });
     } catch (error) {
       console.error("Error analyzing photo:", error);
@@ -602,13 +606,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         strengths: analysisResult.strengths,
         weddingContext: JSON.stringify(analysisResult.weddingContext),
         enhancementPreview,
-        isVisible: true
+        isVisible: true,
+        analysisMetadata: analysisResult.analysisMetadata ? JSON.stringify(analysisResult.analysisMetadata) : null
       });
 
       res.json({
         ...enhancement,
         suggestions: analysisResult.suggestions,
-        weddingContext: analysisResult.weddingContext
+        weddingContext: analysisResult.weddingContext,
+        analysisMetadata: analysisResult.analysisMetadata
       });
     } catch (error) {
       console.error("Error reanalyzing photo:", error);

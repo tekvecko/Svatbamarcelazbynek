@@ -28,9 +28,18 @@ export interface PhotoAnalysisResult {
     setting: string;
     lighting: string;
   };
+  analysisMetadata?: {
+    aiModel: string;
+    analysisTime: number;
+    confidence: number;
+    usedFallback: boolean;
+    errorDetails?: string;
+  };
 }
 
 export async function analyzePhotoForEnhancement(imageUrl: string): Promise<PhotoAnalysisResult> {
+  const startTime = Date.now();
+  
   if (!process.env.GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY is not configured. AI analysis is not available.');
   }
@@ -39,6 +48,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
   const useBaselineAnalysis = process.env.USE_MOCK_AI === 'true';
 
   if (useBaselineAnalysis) {
+    const analysisTime = Date.now() - startTime;
     // Basic analysis without AI - still useful for users
     const basicScore = Math.floor(Math.random() * 3) + 7; // 7-9 range for wedding photos
     const analysisVariants = [
@@ -121,7 +131,13 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
       primaryIssues: variant.issues,
       suggestions: variant.suggestions,
       strengths: variant.strengths,
-      weddingContext: variant.context
+      weddingContext: variant.context,
+      analysisMetadata: {
+        aiModel: 'Baseline Analysis (No AI)',
+        analysisTime,
+        confidence: 0.6,
+        usedFallback: true
+      }
     };
   }
 
@@ -140,7 +156,7 @@ Zaměřte se na:
 - Technickou kvalitu
 - Svatební kontext
 
-Odpovězte POUZE validním JSON objektem v češtině bez dalšího textu. Používejte pouze celá čísla pro priority. Formát:
+Odpovězte POUZE validním JSON objektem v češtině bez dalšího textu. Žádné nové řádky nebo escape sekvence v textech. Používejte pouze celá čísla pro priority. Formát:
 
 {
   "overallScore": 7,
@@ -193,12 +209,24 @@ Priority jako celá čísla: 1, 2, 3, 4, 5`
     });
 
     let result;
+    const analysisTime = Date.now() - startTime;
+    
     try {
       const content = response.choices[0].message.content || '{}';
       console.log('Raw AI response:', content.substring(0, 500) + '...');
-      result = JSON.parse(content);
+      
+      // Clean the JSON string to prevent common parsing errors
+      const cleanedContent = content
+        .replace(/\\n/g, ' ')  // Remove escaped newlines
+        .replace(/\n/g, ' ')   // Remove actual newlines
+        .replace(/\\"/g, '"')  // Fix escaped quotes
+        .replace(/"\s*"/g, '""') // Fix double quotes
+        .trim();
+      
+      result = JSON.parse(cleanedContent);
     } catch (parseError) {
       console.error('JSON parsing failed:', parseError);
+      console.log('Attempted to parse:', response.choices[0].message.content?.substring(0, 1000));
       throw new Error('AI response was not valid JSON');
     }
 
@@ -223,6 +251,12 @@ Priority jako celá čísla: 1, 2, 3, 4, 5`
         subjects: Array.isArray(result.weddingContext?.subjects) ? result.weddingContext.subjects.slice(0, 5) : [],
         setting: result.weddingContext?.setting || 'unknown',
         lighting: result.weddingContext?.lighting || 'natural'
+      },
+      analysisMetadata: {
+        aiModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        analysisTime,
+        confidence: 0.9,
+        usedFallback: false
       }
     };
   } catch (error: any) {
@@ -231,6 +265,8 @@ Priority jako celá čísla: 1, 2, 3, 4, 5`
     // If JSON validation failed or quota exceeded, return mock data instead of failing
     if (error.status === 429 || error.code === 'insufficient_quota' || error.status === 400 || error.message?.includes('JSON')) {
       console.log('AI analysis failed, returning baseline analysis data');
+      const analysisTime = Date.now() - startTime;
+      
       return {
         overallScore: 8,
         primaryIssues: ["Mírně podexponovaná fotka", "Kompozice by mohla být vylepšena", "Nerovnoměrné osvětlení"],
@@ -264,6 +300,13 @@ Priority jako celá čísla: 1, 2, 3, 4, 5`
           subjects: ["nevěsta", "ženich"],
           setting: "venkovní",
           lighting: "přírodní"
+        },
+        analysisMetadata: {
+          aiModel: 'Fallback Analysis (AI Failed)',
+          analysisTime,
+          confidence: 0.7,
+          usedFallback: true,
+          errorDetails: error.message || 'AI analysis error'
         }
       };
     }

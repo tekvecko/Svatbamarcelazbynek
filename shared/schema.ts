@@ -106,6 +106,7 @@ export const photoEnhancements = pgTable("photo_enhancements", {
   enhancementPreview: text("enhancement_preview"),
   analysisDate: timestamp("analysis_date").defaultNow().notNull(),
   isVisible: boolean("is_visible").default(true).notNull(),
+  analysisMetadata: text("analysis_metadata"), // JSON string for AI model, timing, etc.
 });
 
 // AI Generated Captions

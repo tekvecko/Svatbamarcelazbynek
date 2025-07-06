@@ -29,6 +29,13 @@ export interface PhotoEnhancementAnalysis {
   enhancementPreview?: string;
   analysisDate: string;
   isVisible: boolean;
+  analysisMetadata?: {
+    aiModel: string;
+    analysisTime: number;
+    confidence: number;
+    usedFallback: boolean;
+    errorDetails?: string;
+  };
 }
 
 async function fetchPhotoEnhancement(photoId: number): Promise<PhotoEnhancementAnalysis> {

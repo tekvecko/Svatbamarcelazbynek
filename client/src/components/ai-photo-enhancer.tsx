@@ -390,6 +390,52 @@ export default function AIPhotoEnhancer({ photoId, photoUrl, isAdminMode = false
                     </Button>
                   </div>
 
+                  {/* Analysis Metadata */}
+                  {enhancement.analysisMetadata && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-blue-500" />
+                          Informace o analýze
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">AI Model:</span>
+                            <span className="ml-2">{enhancement.analysisMetadata.aiModel}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Doba analýzy:</span>
+                            <span className="ml-2">{(enhancement.analysisMetadata.analysisTime / 1000).toFixed(2)}s</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Spolehlivost AI:</span>
+                            <span className="ml-2">{Math.round(enhancement.analysisMetadata.confidence * 100)}%</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Typ analýzy:</span>
+                            <span className="ml-2">{enhancement.analysisMetadata.usedFallback ? 'Základní' : 'Pokročilá AI'}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Datum analýzy:</span>
+                            <span className="ml-2">{new Date(enhancement.analysisDate).toLocaleString('cs-CZ')}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Počet návrhů:</span>
+                            <span className="ml-2">{enhancement.suggestions.length}</span>
+                          </div>
+                          {enhancement.analysisMetadata.errorDetails && (
+                            <div className="col-span-2">
+                              <span className="font-medium">Poznámky:</span>
+                              <span className="ml-2 text-orange-600">{enhancement.analysisMetadata.errorDetails}</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Wedding Context */}
                   <Card>
                     <CardHeader>
