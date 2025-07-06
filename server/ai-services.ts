@@ -303,45 +303,57 @@ export async function generateWeddingAdvice(
     if (error.status === 429 || error.code === 'insufficient_quota') {
       console.log('OpenAI quota exceeded for wedding advice, providing essential guidance');
 
-      const essentialAdvice = [
+      // Fallback advice when AI is not available
+      const weddingDetails = await storage.getWeddingDetails();
+      const weddingDate = weddingDetails?.weddingDate ? new Date(weddingDetails.weddingDate) : new Date();
+      const now = new Date();
+      const daysUntilWedding = Math.ceil((weddingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const monthsUntilWedding = Math.ceil(daysUntilWedding / 30);
+
+      return [
         {
-          category: "Dokumenty a úřady",
-          advice: "Vyřiďte si včas všechny potřebné dokumenty pro svatbu - vysvědčení o svobodném stavu, rodné listy a další požadované doklady.",
+          category: 'Přípravy',
+          advice: `Do svatby zbývá ${daysUntilWedding} dní. Ujistěte se, že máte vše připravené.`,
+          priority: 'high' as const,
+          timeframe: `${monthsUntilWedding} měsíců před svatbou`,
+          actionItems: []
+        },
+        {
+          category: 'Dokumenty a úřady',
+          advice: 'Vyřiďte si včas všechny potřebné dokumenty pro svatbu - vysvědčení o svobodném stavu, rodné listy a další požadované doklady.',
           priority: 'high' as const,
           timeframe: `${monthsUntilWedding > 3 ? 'co nejdříve' : 'urgentně'}`,
           actionItems: ["Návštěva matričního úřadu", "Shromáždění dokumentů", "Rezervace termínu"]
         },
         {
-          category: "Catering a menu",
+          category: 'Catering a menu',
           advice: `Pro ${guestCount} hostů plánujte rozmanité menu s českými specialitami a alternativami pro různé dietní požadavky.`,
           priority: 'high' as const,
           timeframe: `${monthsUntilWedding > 2 ? '2-3 měsíce předem' : 'co nejdříve'}`,
           actionItems: ["Degustace menu", "Výběr nápojů", "Dietní alternativy"]
         },
         {
-          category: "Fotografie a video",
-          advice: "Najděte si kvalitního svatebního fotografa, který zachytí všechny důležité momenty vašeho velkého dne.",
+          category: 'Fotografie a video',
+          advice: 'Najděte si kvalitního svatebního fotografa, který zachytí všechny důležité momenty vašeho velkého dne.',
           priority: 'high' as const,
           timeframe: "4-6 měsíců předem",
           actionItems: ["Výběr fotografa", "Prohlídka portfolia", "Sjednání smlouvy"]
         },
         {
-          category: "Hudba a zábava",
-          advice: "Zajistěte si DJ nebo živou hudbu pro ceremonie i oslavu. Připravte si playlist oblíbených písní.",
+          category: 'Hudba a zábava',
+          advice: 'Zajistěte si DJ nebo živou hudbu pro ceremonie i oslavu. Připravte si playlist oblíbených písní.',
           priority: 'medium' as const,
           timeframe: "2-3 měsíce předem",
           actionItems: ["Rezervace DJ/kapely", "Příprava playlistu", "Technické požadavky"]
         },
         {
-          category: "Dekorace a květiny",
-          advice: "Vyberte dekoraci, která odpovídá stylu vaší svatby a ročnímu období.",
+          category: 'Dekorace a květiny',
+          advice: 'Vyberte dekoraci, která odpovídá stylu vaší svatby a ročnímu období.',
           priority: 'medium' as const,
           timeframe: "1-2 měsíce předem",
           actionItems: ["Výběr floristy", "Barevné schéma", "Dekorace prostoru"]
         }
       ];
-
-      return essentialAdvice;
     }
 
     throw new Error('Generování svatebních rad se nezdařilo');
