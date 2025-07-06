@@ -520,6 +520,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const photoId = parseInt(req.params.id);
       
+      if (isNaN(photoId)) {
+        return res.status(400).json({ message: "Invalid photo ID" });
+      }
+      
       // Get photo details
       const photo = await storage.getPhoto(photoId);
       if (!photo) {
@@ -590,6 +594,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/photos/:id/reanalyze', async (req, res) => {
     try {
       const photoId = parseInt(req.params.id);
+      
+      if (isNaN(photoId)) {
+        return res.status(400).json({ message: "Invalid photo ID" });
+      }
       
       // Get photo details
       const photo = await storage.getPhoto(photoId);

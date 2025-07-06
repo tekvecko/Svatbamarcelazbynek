@@ -89,7 +89,7 @@ async function checkModelAvailability(): Promise<{ isAvailable: boolean; working
       
       // Test API availability with a simple request
       await model.generateContent('Test connection');
-      return { isAvailable: true, workingModel: 'gemini-1.5-flash' };
+      return { isAvailable: true, workingModel: 'gemini-1.5-flash-8b' };
     } catch (error) {
       console.log('Google Gemini not available:', error);
     }
@@ -151,7 +151,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
     try {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
 
       // Convert image URL to base64 for Gemini
       const imageResponse = await fetch(imageUrl);
@@ -161,7 +161,9 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
       const result = await model.generateContent([
         {
-          text: `Jsi expert na svatební fotografie. Analyzuj tuto fotografii a poskytni detailní hodnocení ve formátu JSON. Zaměř se na kompozici, osvětlení, barvy, emocionální obsah a technickou kvalitu. Vrať přesně tento JSON formát bez dalšího textu:
+          text: `Jsi expert na svatební fotografie. Analyzuj tuto fotografii a poskytni detailní hodnocení ve formátu JSON. Zaměř se na kompozici, osvětlení, barvy, emocionální obsah a technickou kvalitu. 
+
+DŮLEŽITÉ: Vrať POUZE čistý JSON objekt bez jakéhokoli dalšího textu, komentářů nebo markdown formátování. Nezačínej odpověď s \`\`\`json a nekončí s \`\`\`.
 
 {
   "overallScore": 8,
@@ -209,7 +211,11 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
       ]);
 
       const response = await result.response;
-      const text = response.text();
+      let text = response.text();
+      
+      // Clean up Gemini response - remove markdown code blocks if present
+      text = text.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+      
       const analysis = JSON.parse(text);
 
       const analysisTime = Date.now() - startTime;
@@ -250,7 +256,7 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
           emotionalResonance: "Silný emocionální obsah"
         },
         analysisMetadata: {
-          aiModel: 'Google Gemini 1.5 Flash',
+          aiModel: 'Google Gemini 1.5 Flash 8B',
           analysisTime,
           confidence: 0.85,
           usedFallback: false,
@@ -260,7 +266,8 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
       };
     } catch (error) {
       console.error('Google Gemini analysis failed:', error);
-      // Fall back to baseline analysis
+      // Fall back to Groq models or baseline analysis
+      useBaselineAnalysis = true;
     }
   }
   
