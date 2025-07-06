@@ -189,24 +189,24 @@ export default function WeddingPage() {
         <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600 transition-all duration-300 ease-out" 
              style={{ width: `${scrollProgress * 100}%` }}></div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo and Title */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg cursor-pointer"
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg cursor-pointer flex-shrink-0"
                 onClick={() => scrollToSection('home')}
               >
-                <Heart className="h-5 w-5 text-white" />
+                <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </motion.div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white truncate">
                   {weddingDetails?.coupleNames || 'Naše Svatba'}
                 </h1>
-                <div className="flex items-center space-x-2">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
                     {weddingDate.toLocaleDateString('cs-CZ', { 
                       day: 'numeric', 
                       month: 'long',
@@ -214,8 +214,8 @@ export default function WeddingPage() {
                     })}
                   </p>
                   {/* Current Section Breadcrumb */}
-                  <span className="text-gray-400">•</span>
-                  <span className="text-sm text-pink-600 dark:text-pink-400 font-medium">
+                  <span className="text-gray-400 hidden sm:inline">•</span>
+                  <span className="text-xs sm:text-sm text-pink-600 dark:text-pink-400 font-medium">
                     {tabs.find(tab => tab.id === activeTab)?.label}
                   </span>
                 </div>
@@ -262,23 +262,24 @@ export default function WeddingPage() {
             </nav>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative"
+                className="relative w-8 h-8 sm:w-10 sm:h-10 p-0"
               >
-                <Bell className="h-4 w-4" />
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full"></div>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={shareWedding}
+                className="w-8 h-8 sm:w-10 sm:h-10 p-0"
               >
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
 
               {isAdmin && (
@@ -286,10 +287,10 @@ export default function WeddingPage() {
                   onClick={() => setShowAdmin(true)}
                   variant="outline"
                   size="sm"
-                  className="bg-purple-600 text-white border-purple-600 hover:bg-purple-700"
+                  className="bg-purple-600 text-white border-purple-600 hover:bg-purple-700 px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm hidden sm:flex"
                 >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Admin
+                  <Settings className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Admin</span>
                 </Button>
               )}
 
@@ -470,58 +471,63 @@ export default function WeddingPage() {
       <main>
 
         {/* Hero Section */}
-        <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden pt-16">
-          <div className="absolute inset-0 bg-black/30 z-10"></div>
+        <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-black/40 z-10"></div>
           <img 
             src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=80" 
             alt="Wedding venue"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="relative z-20 text-center text-white max-w-4xl px-4">
+          <div className="relative z-20 text-center text-white max-w-4xl px-4 py-20">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1 }}
+              className="space-y-6"
             >
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-pink-100 to-white bg-clip-text">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold leading-tight bg-gradient-to-r from-white via-pink-100 to-white bg-clip-text">
                 {weddingDetails?.coupleNames || "Marcela & Zbyněk"}
               </h1>
-              <p className="text-xl md:text-2xl mb-4 text-pink-100">
-                {weddingDetails?.weddingDate} • {weddingDetails?.venue}
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-pink-100 px-4">
+                {weddingDate.toLocaleDateString('cs-CZ', { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })} • {weddingDetails?.venue}
               </p>
-              <div className="text-lg text-white/90 mb-8">
+              <div className="text-sm sm:text-base md:text-lg text-white/90">
                 <CountdownTimer targetDate={weddingDate} />
               </div>
             </motion.div>
           </div>
 
-          {/* Scroll indicator */}
+          {/* Scroll indicator - Hidden on mobile */}
           <motion.div 
-            className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 hidden sm:block"
             animate={{ y: [0, 10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <div className="w-8 h-12 border-2 border-white/60 rounded-full flex justify-center">
-              <div className="w-1 h-3 bg-white/60 rounded-full mt-2"></div>
+            <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center">
+              <div className="w-0.5 h-2 bg-white/60 rounded-full mt-2"></div>
             </div>
           </motion.div>
         </section>
 
         {/* Hero Section - Wedding Info */}
-        <section id="info" className="px-4 py-8">
+        <section id="info" className="px-4 py-8 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center mb-8"
           >
-            <div className="w-32 h-32 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
-              <Heart className="h-16 w-16 text-white" />
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+              <Heart className="h-12 w-12 sm:h-16 sm:w-16 text-white" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4 px-2">
               {weddingDetails?.coupleNames || 'Naše svatba'}
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-6 px-4">
               {weddingDate.toLocaleDateString('cs-CZ', { 
                 weekday: 'long',
                 day: 'numeric', 
@@ -529,32 +535,34 @@ export default function WeddingPage() {
                 year: 'numeric' 
               })}
             </p>
-            <CountdownTimer targetDate={weddingDate} />
+            <div className="mb-8">
+              <CountdownTimer targetDate={weddingDate} />
+            </div>
           </motion.div>
 
-          {/* Android Material Cards */}
-          <div className="space-y-4">
+          {/* Mobile Optimized Cards */}
+          <div className="space-y-3 sm:space-y-4 max-w-2xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
-                <div className="flex items-center p-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
-                    <MapPin className="h-6 w-6 text-white" />
+              <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-lg border-0 rounded-xl sm:rounded-2xl">
+                <div className="flex items-center p-3 sm:p-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-full flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
+                    <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 dark:text-white">Místo konání</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-800 dark:text-white text-sm sm:text-base">Místo konání</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                       {weddingDetails?.venue || 'Krásné místo'}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 hidden sm:block">
                       {weddingDetails?.venueAddress || 'Adresa bude upřesněna'}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" className="w-10 h-10 p-0 rounded-full">
-                    <ChevronRight className="h-5 w-5" />
+                  <Button variant="ghost" size="sm" className="w-8 h-8 sm:w-10 sm:h-10 p-0 rounded-full flex-shrink-0">
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </div>
               </Card>
@@ -565,22 +573,22 @@ export default function WeddingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-2xl">
-                <div className="flex items-center p-4">
-                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mr-4">
-                    <Clock className="h-6 w-6 text-white" />
+              <Card className="overflow-hidden bg-white dark:bg-gray-800 shadow-lg border-0 rounded-xl sm:rounded-2xl">
+                <div className="flex items-center p-3 sm:p-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-600 rounded-full flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 dark:text-white">Čas začátku</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-800 dark:text-white text-sm sm:text-base">Čas začátku</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                       {weddingDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 hidden sm:block">
                       Doporučujeme příchod o 15 minut dříve
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" className="w-10 h-10 p-0 rounded-full">
-                    <ChevronRight className="h-5 w-5" />
+                  <Button variant="ghost" size="sm" className="w-8 h-8 sm:w-10 sm:h-10 p-0 rounded-full flex-shrink-0">
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </div>
               </Card>
@@ -650,27 +658,27 @@ export default function WeddingPage() {
         </section>
 
         {/* Photo Gallery Section */}
-        <section id="gallery" className="px-0 py-8">
+        <section id="gallery" className="px-2 sm:px-4 py-6 sm:py-8">
           <PhotoGallery />
         </section>
 
         {/* Playlist Section */}
-        <section id="playlist" className="px-4 py-8">
+        <section id="playlist" className="px-3 sm:px-4 py-6 sm:py-8">
           <Playlist />
         </section>
 
         {/* Upload Section */}
-        <section id="upload" className="px-4 py-8">
+        <section id="upload" className="px-3 sm:px-4 py-6 sm:py-8">
           <PhotoUpload />
         </section>
 
         {/* Highlights Section */}
-        <section id="highlights" className="px-4 py-8">
+        <section id="highlights" className="px-3 sm:px-4 py-6 sm:py-8">
           <HighlightReel />
         </section>
 
         {/* AI Features Section */}
-        <section id="ai" className="px-4 py-8">
+        <section id="ai" className="px-3 sm:px-4 py-6 sm:py-8">
           <AiFeatures />
         </section>
       </main>
@@ -688,21 +696,21 @@ export default function WeddingPage() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
               setActiveTab('info');
             }}
-            className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full shadow-lg shadow-pink-500/25 flex items-center justify-center hover:shadow-xl transition-shadow"
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full shadow-lg shadow-pink-500/25 flex items-center justify-center hover:shadow-xl transition-shadow"
           >
-            <ChevronRight className="h-5 w-5 rotate-[-90deg]" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 rotate-[-90deg]" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Navigation Helper Toast */}
+      {/* Navigation Helper Toast - Hidden on mobile */}
       <AnimatePresence>
         {scrollProgress === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-6 z-40 bg-black/80 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm"
+            className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 bg-black/80 text-white px-3 py-2 sm:px-4 rounded-lg text-xs sm:text-sm backdrop-blur-sm hidden sm:block"
           >
             💡 Tip: Use Alt + arrows for keyboard navigation
           </motion.div>
