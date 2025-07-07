@@ -445,7 +445,7 @@ export default function WeddingPage() {
             {/* Events List */}
             <div className="p-4 max-h-96 overflow-y-auto">
               <div className="space-y-3">
-                {scheduleQuery.data?.map((event: WeddingScheduleItem, index: number) => {
+                {schedule?.map((event: WeddingScheduleItem, index: number) => {
                   const now = new Date();
                   const eventTime = new Date();
                   const [hours, minutes] = event.time.split(':');
