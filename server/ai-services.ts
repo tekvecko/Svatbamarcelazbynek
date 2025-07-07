@@ -55,10 +55,22 @@ export async function analyzeWeddingPhoto(imageUrl: string): Promise<PhotoAnalys
       messages: [
         {
           role: "system",
-          content: `Jsi expert na svatební fotografie. Analyzuj fotografii a poskytni detailní hodnocení v češtině. 
-          Zaměř se na kompozici, osvětlení, barvy, emocionální obsah a technickou kvalitu.
-          Identifikuj typ svatební fotografie (ceremonie, oslava, portrét, detail, atd.).
-          Poskytni konkrétní návrhy na zlepšení a vyzdvihni silné stránky.`
+          content: `Jsi renomovaný expert na svatební fotografii s dlouholetými zkušenostmi s českými svatbami. Analyzuj předloženou fotografii a poskytni komplexní odborné hodnocení výhradně v českém jazyce.
+
+OBLASTI ANALÝZY (všechny komentáře pouze v češtině):
+- Kompozice a umělecké hodnoty
+- Osvětlení a technická kvalita  
+- Barevné ladění a atmosféra
+- Emocionální obsah a storytelling
+- Kontext české svatební tradice
+- Typ svatební fotografie (obřad, oslava, portrét, detail, dokumentární)
+
+POŽADAVKY NA ODPOVĚĎ:
+- Veškerý text pouze v české jazyce
+- Konkrétní a praktické návrhy na vylepšení
+- Zdůraznění silných stránek fotografie
+- Technická doporučení pro editaci
+- Hodnocení v kontextu svatební fotografie`
         },
         {
           role: "user",
@@ -119,14 +131,14 @@ export async function analyzeWeddingPhoto(imageUrl: string): Promise<PhotoAnalys
           technical: 7
         },
         suggestions: [
-          "Zvažte jemné zvýšení expozice pro lepší detail ve stínech",
-          "Aplikujte teplejší tóny pro romantičtější atmosféru",
-          "Zkuste lehké vystředění hlavního subjektu"
+          "Doporučuji jemné zvýšení expozice pro lepší čitelnost detailů ve stínových oblastech",
+          "Aplikace teplejších barevných tónů by dodala fotografii romantičtější a intimnější atmosféru",
+          "Zvažte mírné přesměrování kompozice podle pravidla třetin pro dynamičtější uspořádání"
         ],
         strengths: [
-          "Krásné zachycení emocí",
-          "Dobrá celková kompozice",
-          "Příjemná svatební atmosféra"
+          "Výborné zachycení autentických emocí a svatební atmosféry",
+          "Harmonická celková kompozice s dobrým využitím prostoru", 
+          "Krásná spontánnost a přirozený výraz subjektů"
         ],
         weddingContext: {
           photoType: 'svatební moment',

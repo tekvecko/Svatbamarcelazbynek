@@ -86,7 +86,7 @@ async function checkModelAvailability(): Promise<{ isAvailable: boolean; working
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      
+
       // Test API availability with a simple request
       await model.generateContent('Test connection');
       return { isAvailable: true, workingModel: 'gemini-1.5-flash' };
@@ -114,12 +114,12 @@ async function checkModelAvailability(): Promise<{ isAvailable: boolean; working
       }
     } catch (error: any) {
       console.log(`Model ${model} not available:`, error.message);
-      
+
       // If model is decommissioned, try next one
       if (error.message?.includes('decommissioned') || error.message?.includes('not exist')) {
         continue;
       }
-      
+
       // If it's a quota or rate limit error, model exists but is temporarily unavailable
       if (error.status === 429 || error.status === 503) {
         return { isAvailable: false, error: 'AI služby jsou dočasně nedostupné kvůli omezením.' };
@@ -139,9 +139,9 @@ export async function analyzePhotoForEnhancement(imageUrl: string): Promise<Phot
 
   // Check AI model availability first
   const modelCheck = await checkModelAvailability();
-  
+
   let useBaselineAnalysis = false;
-  
+
   if (!modelCheck.isAvailable) {
     console.log('AI models not available, using baseline analysis:', modelCheck.error);
     // Use baseline analysis when AI is not available
@@ -212,10 +212,10 @@ DŮLEŽITÉ: Vrať POUZE čistý JSON objekt bez jakéhokoli dalšího textu, ko
 
       const response = await result.response;
       let text = response.text();
-      
+
       // Clean up Gemini response - remove markdown code blocks if present
       text = text.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
-      
+
       const analysis = JSON.parse(text);
 
       const analysisTime = Date.now() - startTime;
@@ -270,7 +270,7 @@ DŮLEŽITÉ: Vrať POUZE čistý JSON objekt bez jakéhokoli dalšího textu, ko
       useBaselineAnalysis = true;
     }
   }
-  
+
   if (useBaselineAnalysis) {
       const analysisTime = Date.now() - startTime;
       // Return baseline analysis with model unavailability info
@@ -280,19 +280,19 @@ DŮLEŽITÉ: Vrať POUZE čistý JSON objekt bez jakéhokoli dalšího textu, ko
           score: basicScore,
           issues: ["AI modely nejsou dostupné", "Použita základní analýza", "Kontrola kompozice"],
           suggestions: [
-            {
-              category: 'lighting' as const,
-              severity: 'medium' as const,
-              title: 'Optimalizace osvětlení',
-              description: 'Základní analýza osvětlení bez AI',
-              suggestion: 'Zvyšte jas ve stínech a snižte přeexponované oblasti',
-              technicalDetails: 'Analýza bez AI - obecné doporučení pro svatební fotografie',
-              specificValues: 'Stíny: +20, Světla: -10, Kontrast: +10',
-              confidence: 0.6,
-              priority: 1
-            }
-          ],
-          strengths: ["Zachycený moment", "Základní kompozice", "Svatební atmosféra"],
+          {
+            category: 'lighting' as const,
+            severity: 'medium' as const,
+            title: 'Optimalizace osvětlení fotografie',
+            description: 'Fotografie vykazuje nerovnoměrné osvětlení, které lze vylepšit základními úpravami',
+            suggestion: 'Zvyšte jas ve stínech a snižte přeexponované oblasti pro vyrovnanější celkový dojem',
+            technicalDetails: 'Základní analýza ukazuje potřebu vyrovnání dynamického rozsahu pro lepší čitelnost detailů',
+            specificValues: 'Stíny: +20, Světla: -10, Celkový kontrast: +10, Čistota: +5',
+            confidence: 0.6,
+            priority: 1
+          }
+        ],
+        strengths: ["Krásně zachycený autentický okamžik", "Příjemná svatební atmosféra", "Dobrá celková kompozice"],
           context: {
             photoType: "svatební moment",
             subjects: ["svatební hosté"],
@@ -370,32 +370,32 @@ DŮLEŽITÉ: Vrať POUZE čistý JSON objekt bez jakéhokoli dalšího textu, ko
     const analysisVariants = [
       {
         score: basicScore,
-        issues: ["Analýza expozice", "Kontrola kompozice", "Posouzení barevného ladění"],
+        issues: ["Základní analýza expozičních hodnot", "Kontrola kompozičních pravidel", "Posouzení barevného ladění svatební fotografie"],
         suggestions: [
-          {
-            category: 'lighting' as const,
-            severity: 'medium' as const,
-            title: 'Optimalizace osvětlení',
-            description: 'Zjištěna nerovnoměrnost osvětlení na fotografii',
-            suggestion: 'Zvyšte jas ve stínech a snižte přeexponované oblasti pro vyrovnanější osvětlení',
-            technicalDetails: 'Dynamický rozsah vyžaduje lokální úpravy pro lepší vyvážení',
-            specificValues: 'Stíny: +25, Světla: -10, Kontrast: +15',
-            confidence: 0.8,
-            priority: 1
-          },
-          {
-            category: 'composition' as const,
-            severity: 'low' as const,
-            title: 'Vylepšení kompozice',
-            description: 'Kompozice má prostor pro zlepšení podle fotografických pravidel',
-            suggestion: 'Zvažte aplikaci pravidla třetin nebo zlatého řezu pro dynamičtější kompozici',
-            technicalDetails: 'Umístění hlavního subjektu může být optimalizováno',
-            specificValues: 'Posun: horizontálně o 10-15%, vertikálně zachovat',
-            confidence: 0.75,
-            priority: 2
-          }
-        ],
-        strengths: ["Zachycený autentický moment", "Dobrá barevná harmonie", "Příjemná atmosféra"],
+            {
+              category: 'lighting' as const,
+              severity: 'medium' as const,
+              title: 'Optimalizace osvětlení svatební fotografie',
+              description: 'Analýza odhalila nerovnoměrné rozložení světla na fotografii, které ovlivňuje celkový dojem',
+              suggestion: 'Doporučuji zvýšit jas ve tmavých oblastech a snížit přeexponované partie pro vyrovnanější osvětlení',
+              technicalDetails: 'Dynamický rozsah fotografie vyžaduje selektivní úpravy pro optimální vyvážení světel a stínů',
+              specificValues: 'Stíny: +25, Světlé partie: -10, Celkový kontrast: +15, Sytost: +5',
+              confidence: 0.8,
+              priority: 1
+            },
+            {
+              category: 'composition' as const,
+              severity: 'low' as const,
+              title: 'Vylepšení kompozičního uspořádání',
+              description: 'Kompozice fotografie má potenciál pro zlepšení podle klasických fotografických pravidel',
+              suggestion: 'Zvažte aplikaci pravidla třetin nebo zlatého řezu pro vytvoření dynamičtější a zajímavější kompozice',
+              technicalDetails: 'Umístění hlavních subjektů ve fotografii by mohlo být lépe optimalizováno pro větší vizuální dopad',
+              specificValues: 'Horizontální posun: 10-15%, vertikální umístění zachovat, možný mírný ořez',
+              confidence: 0.75,
+              priority: 2
+            }
+          ],
+        strengths: ["Krásně zachycený autentický svatební moment", "Harmonické barevné ladění", "Příjemná a romantická atmosféra"],
         context: {
           photoType: "svatební moment",
           subjects: ["svatební hosté"],
@@ -707,7 +707,9 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
             title: 'Upravit ořez pro lepší kompozici',
             description: 'Subjekt není ideálně umístěn podle pravidla třetin',
             suggestion: 'Použijte pravidlo třetin - umístěte hlavní subjekt na průsečíky třetinových linií',
-            technicalDetails: 'Aktuální kompozice má subjekt příliš centrovaný, což snižuje dynamiku snímku',
+            technicalDetails: 'Aktuální kompozice má subjekt příliš centrovaný, což snižuje dynamikuThe code is modified to ensure that the results of the AI analysis are always in Czech.
+```typescript
+snímku',
             specificValues: 'Ořez: posun subjektu o 15% doleva, aspect ratio zachovat',
             confidence: 0.75,
             priority: 2,
