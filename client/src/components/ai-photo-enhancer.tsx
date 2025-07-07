@@ -14,7 +14,7 @@ interface AIPhotoEnhancerProps {
   className?: string;
 }
 
-export function AIPhotoEnhancer({ photoId, className }: AIPhotoEnhancerProps) {
+function AIPhotoEnhancer({ photoId, className }: AIPhotoEnhancerProps) {
   const [showDetails, setShowDetails] = useState(false);
 
   const { data: enhancement, isLoading: enhancementLoading } = usePhotoEnhancement(photoId);
@@ -127,3 +127,6 @@ export function AIPhotoEnhancer({ photoId, className }: AIPhotoEnhancerProps) {
     </div>
   );
 }
+
+export default AIPhotoEnhancer;
+export { AIPhotoEnhancer };
