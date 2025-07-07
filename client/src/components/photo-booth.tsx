@@ -75,22 +75,35 @@ export default function PhotoBooth({ weddingDetails }: PhotoBoothProps) {
     },
   });
 
-  // Start camera
+  // Start camera with mobile optimizations
   const startCamera = useCallback(async () => {
     try {
       setCameraError("");
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      
+      // Mobile-optimized camera constraints
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const constraints = {
         video: {
           facingMode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          width: isMobile ? { ideal: 1280, max: 1920 } : { ideal: 1920 },
+          height: isMobile ? { ideal: 720, max: 1080 } : { ideal: 1080 },
+          frameRate: isMobile ? { ideal: 15, max: 30 } : { ideal: 30 },
+          // Mobile-specific optimizations
+          aspectRatio: isMobile ? 16/9 : undefined,
+          resizeMode: isMobile ? 'crop-and-scale' : undefined
         },
         audio: false
-      });
+      };
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Mobile video optimizations
+        videoRef.current.playsInline = true;
+        videoRef.current.muted = true;
+        videoRef.current.autoplay = true;
       }
       setIsActive(true);
     } catch (error) {
@@ -109,7 +122,7 @@ export default function PhotoBooth({ weddingDetails }: PhotoBoothProps) {
     setCapturedPhoto(null);
   }, [stream]);
 
-  // Capture photo
+  // Capture photo with mobile optimizations
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -119,19 +132,38 @@ export default function PhotoBooth({ weddingDetails }: PhotoBoothProps) {
 
     if (!context) return;
 
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Mobile-optimized canvas sizing
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const maxWidth = isMobile ? 1280 : 1920;
+    const maxHeight = isMobile ? 720 : 1080;
+    
+    let { videoWidth, videoHeight } = video;
+    
+    // Scale down for mobile to reduce memory usage
+    if (isMobile && (videoWidth > maxWidth || videoHeight > maxHeight)) {
+      const scale = Math.min(maxWidth / videoWidth, maxHeight / videoHeight);
+      videoWidth *= scale;
+      videoHeight *= scale;
+    }
+
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
 
     // Draw video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    context.drawImage(video, 0, 0, videoWidth, videoHeight);
 
     // Add wedding overlay
-    addWeddingOverlay(context, canvas.width, canvas.height);
+    addWeddingOverlay(context, videoWidth, videoHeight);
 
-    // Convert to data URL
-    const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    // Mobile-optimized compression
+    const quality = isMobile ? 0.8 : 0.9;
+    const photoDataUrl = canvas.toDataURL('image/jpeg', quality);
     setCapturedPhoto(photoDataUrl);
+    
+    // Add haptic feedback on mobile
+    if ('vibrate' in navigator) {
+      navigator.vibrate(100);
+    }
   }, []);
 
   // Add wedding overlay to photo
@@ -291,9 +323,9 @@ export default function PhotoBooth({ weddingDetails }: PhotoBoothProps) {
               <Button
                 onClick={startCamera}
                 size="lg"
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg"
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg w-full sm:w-auto h-14 text-lg font-semibold"
               >
-                <Camera className="h-5 w-5 mr-2" />
+                <Camera className="h-6 w-6 mr-3" />
                 Spustit Foto Koutek
               </Button>
             </motion.div>
@@ -306,50 +338,70 @@ export default function PhotoBooth({ weddingDetails }: PhotoBoothProps) {
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              <div className="relative bg-black rounded-xl overflow-hidden">
+              <div className="relative bg-black rounded-xl overflow-hidden touch-none">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-64 sm:h-80 object-cover"
+                  className="w-full h-64 sm:h-80 md:h-96 object-cover select-none"
+                  style={{ 
+                    aspectRatio: '16/9',
+                    maxHeight: 'calc(100vh - 400px)'
+                  }}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onTouchEnd={(e) => e.preventDefault()}
                 />
                 
-                {/* Camera Controls Overlay */}
-                <div className="absolute top-4 left-4 right-4 flex justify-between">
+                {/* Camera Controls Overlay - Mobile Optimized */}
+                <div className="absolute top-3 left-3 right-3 flex justify-between items-center">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={stopCamera}
-                    className="bg-black/20 border-white/20 text-white hover:bg-black/40"
+                    className="bg-black/30 border-white/30 text-white hover:bg-black/50 backdrop-blur-sm h-10 w-10 p-0 rounded-full"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                   
-                  <Badge variant="secondary" className="bg-black/20 text-white border-white/20">
-                    {facingMode === "user" ? "📱 Přední kamera" : "📷 Zadní kamera"}
+                  <Badge variant="secondary" className="bg-black/30 text-white border-white/30 backdrop-blur-sm px-3 py-1 text-xs">
+                    {facingMode === "user" ? "📱 Přední" : "📷 Zadní"}
                   </Badge>
                   
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={switchCamera}
-                    className="bg-black/20 border-white/20 text-white hover:bg-black/40"
+                    className="bg-black/30 border-white/30 text-white hover:bg-black/50 backdrop-blur-sm h-10 w-10 p-0 rounded-full"
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
                 </div>
 
-                {/* Capture Button */}
+                {/* Mobile-Optimized Capture Button */}
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                   <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={capturePhoto}
-                    className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center"
+                    className="w-20 h-20 sm:w-16 sm:h-16 bg-white rounded-full shadow-xl flex items-center justify-center ring-4 ring-white/50 active:ring-white/80 transition-all duration-150"
+                    style={{ 
+                      touchAction: 'manipulation',
+                      userSelect: 'none',
+                      WebkitTouchCallout: 'none'
+                    }}
                   >
-                    <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"></div>
+                    <div className="w-16 h-16 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <Camera className="h-6 w-6 sm:h-4 sm:w-4 text-white" />
+                    </div>
                   </motion.button>
+                </div>
+                
+                {/* Mobile Touch Hint */}
+                <div className="absolute bottom-28 left-1/2 transform -translate-x-1/2 sm:hidden">
+                  <div className="bg-black/40 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+                    Dotkněte se pro focení
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -382,17 +434,31 @@ export default function PhotoBooth({ weddingDetails }: PhotoBoothProps) {
               ) : (
                 /* Photo Preview */
                 <>
-                  <div className="relative">
+                  {/* Mobile-Optimized Photo Preview */}
+                  <div className="relative rounded-xl overflow-hidden shadow-lg">
                     <img
                       src={capturedPhoto}
                       alt="Captured photo"
-                      className="w-full h-64 sm:h-80 object-cover rounded-xl"
+                      className="w-full h-64 sm:h-80 md:h-96 object-cover select-none"
+                      style={{ 
+                        aspectRatio: '16/9',
+                        maxHeight: 'calc(100vh - 500px)'
+                      }}
+                      onTouchStart={(e) => e.preventDefault()}
+                      onTouchEnd={(e) => e.preventDefault()}
                     />
+                    
+                    {/* Photo overlay badge */}
+                    <div className="absolute top-3 right-3">
+                      <Badge className="bg-gradient-to-r from-pink-500 to-purple-600 text-white border-0 shadow-lg">
+                        ✨ Foto koutek
+                      </Badge>
+                    </div>
                   </div>
 
-                  {/* Guest Name Input */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {/* Mobile-Optimized Guest Name Input */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
                       Vaše jméno (zobrazí se u fotky):
                     </label>
                     <Input
@@ -400,47 +466,59 @@ export default function PhotoBooth({ weddingDetails }: PhotoBoothProps) {
                       placeholder="Zadejte své jméno..."
                       value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
-                      className="bg-white dark:bg-gray-800"
+                      className="bg-white dark:bg-gray-800 h-12 sm:h-10 text-base sm:text-sm px-4"
+                      style={{
+                        fontSize: '16px', // Prevents zoom on iOS
+                        touchAction: 'manipulation'
+                      }}
+                      autoComplete="name"
+                      autoCapitalize="words"
                     />
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCapturedPhoto(null)}
-                      className="flex-1"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Znovu
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      onClick={downloadPhoto}
-                      className="flex-1"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Stáhnout
-                    </Button>
-                    
+                  {/* Mobile-Optimized Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+                    {/* Primary action button - full width on mobile */}
                     <Button
                       onClick={uploadPhoto}
                       disabled={uploadMutation.isPending || !guestName.trim()}
-                      className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                      className="w-full sm:flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-12 sm:h-10 text-base sm:text-sm font-semibold"
                     >
                       {uploadMutation.isPending ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-5 w-5 sm:h-4 sm:w-4 border-b-2 border-white mr-3 sm:mr-2"></div>
                           Nahrávám...
                         </>
                       ) : (
                         <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Sdílet
+                          <Upload className="h-5 w-5 sm:h-4 sm:w-4 mr-3 sm:mr-2" />
+                          Sdílet do galerie
                         </>
                       )}
                     </Button>
+                    
+                    {/* Secondary actions - side by side on mobile */}
+                    <div className="flex gap-2 sm:contents">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCapturedPhoto(null)}
+                        className="flex-1 sm:flex-initial h-12 sm:h-10"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">Znovu</span>
+                        <span className="sm:hidden">Opakovat</span>
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        onClick={downloadPhoto}
+                        className="flex-1 sm:flex-initial h-12 sm:h-10"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">Stáhnout</span>
+                        <span className="sm:hidden">Uložit</span>
+                      </Button>
+                    </div>
                   </div>
                 </>
               )}
