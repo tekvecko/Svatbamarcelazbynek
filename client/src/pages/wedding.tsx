@@ -536,7 +536,7 @@ export default function WeddingPage() {
                   );
                 })}
                 
-                {(!scheduleQuery.data || scheduleQuery.data.length === 0) && (
+                {(!schedule || schedule.length === 0) && (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
                       <Calendar className="h-8 w-8 text-gray-400" />
@@ -910,7 +910,7 @@ export default function WeddingPage() {
 
       {/* Event Navigation Toast */}
       <AnimatePresence>
-        {showNotifications && scheduleQuery.data && scheduleQuery.data.length > 0 && (
+        {showNotifications && schedule && schedule.length > 0 && (
           <motion.div
             initial={{ opacity: 0, x: -100 }}
             animate={{ opacity: 1, x: 0 }}
