@@ -11,6 +11,7 @@ import { analyzePhotoForEnhancement, generateEnhancementPreview } from "./ai-pho
 import { analyzeWeddingPhoto, generatePlaylistSuggestions, generateWeddingAdvice, analyzeGuestMessage, generateWeddingStory, generatePhotoCaption } from "./ai-services";
 import { analyzeWeddingPhotoWithHuggingFace, generateImageCaptionWithHuggingFace, checkHuggingFaceAvailability } from "./huggingface-ai";
 import { z } from "zod";
+import { validateImageFile, sanitizeString, validatePagination, validateId } from "./validation";
 
 // Configure multer for memory storage (Cloudinary upload)
 const upload = multer({
@@ -116,8 +117,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/photos', async (req, res) => {
     try {
       const approved = req.query.approved === 'true' ? true : req.query.approved === 'false' ? false : undefined;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const { page, limit } = validatePagination(
+        parseInt(req.query.page as string), 
+        parseInt(req.query.limit as string) || 20
+      );
       const offset = (page - 1) * limit;
       
       const photos = await storage.getPhotos(approved, limit, offset);
@@ -300,7 +303,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Author and text are required" });
       }
       
-      const comment = await storage.addPhotoComment(photoId, author.trim(), text.trim());
+      // Enhanced validation
+      if (typeof author !== 'string' || typeof text !== 'string') {
+        return res.status(400).json({ message: "Invalid data types" });
+      }
+      
+      if (author.length > 100) {
+        return res.status(400).json({ message: "Author name too long (max 100 characters)" });
+      }
+      
+      if (text.length > 1000) {
+        return res.status(400).json({ message: "Comment too long (max 1000 characters)" });
+      }
+      
+      // Sanitize input
+      const sanitizedAuthor = author.trim().substring(0, 100);
+      const sanitizedText = text.trim().substring(0, 1000);
+      
+      const comment = await storage.addPhotoComment(photoId, sanitizedAuthor, sanitizedText);
       res.json(comment);
     } catch (error) {
       console.error("Error adding comment:", error);

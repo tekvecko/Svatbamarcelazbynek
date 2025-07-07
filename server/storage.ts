@@ -177,32 +177,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async togglePhotoLike(photoId: number, userSession: string): Promise<{ liked: boolean; likes: number }> {
-    const [existingLike] = await db
-      .select()
-      .from(photoLikes)
-      .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.userSession, userSession)));
+    // Use transaction to prevent race conditions
+    return await db.transaction(async (tx) => {
+      const [existingLike] = await tx
+        .select()
+        .from(photoLikes)
+        .where(and(eq(photoLikes.photoId, photoId), eq(photoLikes.userSession, userSession)));
 
-    if (existingLike) {
-      // Remove like
-      await db.delete(photoLikes).where(eq(photoLikes.id, existingLike.id));
-      await db
-        .update(photos)
-        .set({ likes: sql`${photos.likes} - 1` })
-        .where(eq(photos.id, photoId));
+      if (existingLike) {
+        // Remove like
+        await tx.delete(photoLikes).where(eq(photoLikes.id, existingLike.id));
+        await tx
+          .update(photos)
+          .set({ likes: sql`GREATEST(${photos.likes} - 1, 0)` }) // Prevent negative likes
+          .where(eq(photos.id, photoId));
 
-      const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
-      return { liked: false, likes: photo.likes };
-    } else {
-      // Add like
-      await db.insert(photoLikes).values({ photoId, userSession });
-      await db
-        .update(photos)
-        .set({ likes: sql`${photos.likes} + 1` })
-        .where(eq(photos.id, photoId));
+        const [photo] = await tx.select().from(photos).where(eq(photos.id, photoId));
+        return { liked: false, likes: photo?.likes || 0 };
+      } else {
+        // Add like
+        await tx.insert(photoLikes).values({ photoId, userSession });
+        await tx
+          .update(photos)
+          .set({ likes: sql`${photos.likes} + 1` })
+          .where(eq(photos.id, photoId));
 
-      const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
-      return { liked: true, likes: photo.likes };
-    }
+        const [photo] = await tx.select().from(photos).where(eq(photos.id, photoId));
+        return { liked: true, likes: photo?.likes || 1 };
+      }
+    });
   }
 
   async getPlaylistSongs(): Promise<PlaylistSong[]> {
@@ -215,32 +218,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async toggleSongLike(songId: number, userSession: string): Promise<{ liked: boolean; likes: number }> {
-    const [existingLike] = await db
-      .select()
-      .from(songLikes)
-      .where(and(eq(songLikes.songId, songId), eq(songLikes.userSession, userSession)));
+    // Use transaction to prevent race conditions
+    return await db.transaction(async (tx) => {
+      const [existingLike] = await tx
+        .select()
+        .from(songLikes)
+        .where(and(eq(songLikes.songId, songId), eq(songLikes.userSession, userSession)));
 
-    if (existingLike) {
-      // Remove like
-      await db.delete(songLikes).where(eq(songLikes.id, existingLike.id));
-      await db
-        .update(playlistSongs)
-        .set({ likes: sql`${playlistSongs.likes} - 1` })
-        .where(eq(playlistSongs.id, songId));
+      if (existingLike) {
+        // Remove like
+        await tx.delete(songLikes).where(eq(songLikes.id, existingLike.id));
+        await tx
+          .update(playlistSongs)
+          .set({ likes: sql`GREATEST(${playlistSongs.likes} - 1, 0)` }) // Prevent negative likes
+          .where(eq(playlistSongs.id, songId));
 
-      const [song] = await db.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
-      return { liked: false, likes: song.likes };
-    } else {
-      // Add like
-      await db.insert(songLikes).values({ songId, userSession });
-      await db
-        .update(playlistSongs)
-        .set({ likes: sql`${playlistSongs.likes} + 1` })
-        .where(eq(playlistSongs.id, songId));
+        const [song] = await tx.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
+        return { liked: false, likes: song?.likes || 0 };
+      } else {
+        // Add like
+        await tx.insert(songLikes).values({ songId, userSession });
+        await tx
+          .update(playlistSongs)
+          .set({ likes: sql`${playlistSongs.likes} + 1` })
+          .where(eq(playlistSongs.id, songId));
 
-      const [song] = await db.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
-      return { liked: true, likes: song.likes };
-    }
+        const [song] = await tx.select().from(playlistSongs).where(eq(playlistSongs.id, songId));
+        return { liked: true, likes: song?.likes || 1 };
+      }
+    });
   }
 
   async deletePlaylistSong(id: number): Promise<void> {

@@ -308,17 +308,23 @@ export type InsertPhotoEnhancement = z.infer<typeof insertPhotoEnhancementSchema
 export type UpdatePhotoEnhancement = z.infer<typeof updatePhotoEnhancementSchema>;
 
 // AI Types
+export const insertAiCaptionSchema = createInsertSchema(aiCaptions);
+export const insertAiPlaylistSuggestionSchema = createInsertSchema(aiPlaylistSuggestions);
+export const insertAiWeddingAdviceSchema = createInsertSchema(aiWeddingAdvice);
+export const insertAiGuestMessageSchema = createInsertSchema(aiGuestMessages);
+export const insertAiWeddingStorySchema = createInsertSchema(aiWeddingStories);
+
 export type AiCaption = typeof aiCaptions.$inferSelect;
-export type InsertAiCaption = typeof aiCaptions.$inferInsert;
+export type InsertAiCaption = z.infer<typeof insertAiCaptionSchema>;
 
 export type AiPlaylistSuggestion = typeof aiPlaylistSuggestions.$inferSelect;
-export type InsertAiPlaylistSuggestion = typeof aiPlaylistSuggestions.$inferInsert;
+export type InsertAiPlaylistSuggestion = z.infer<typeof insertAiPlaylistSuggestionSchema>;
 
 export type AiWeddingAdvice = typeof aiWeddingAdvice.$inferSelect;
-export type InsertAiWeddingAdvice = typeof aiWeddingAdvice.$inferInsert;
+export type InsertAiWeddingAdvice = z.infer<typeof insertAiWeddingAdviceSchema>;
 
 export type AiGuestMessage = typeof aiGuestMessages.$inferSelect;
-export type InsertAiGuestMessage = typeof aiGuestMessages.$inferInsert;
+export type InsertAiGuestMessage = z.infer<typeof insertAiGuestMessageSchema>;
 
 export type AiWeddingStory = typeof aiWeddingStories.$inferSelect;
-export type InsertAiWeddingStory = typeof aiWeddingStories.$inferInsert;
+export type InsertAiWeddingStory = z.infer<typeof insertAiWeddingStorySchema>;

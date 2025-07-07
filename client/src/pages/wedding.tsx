@@ -23,7 +23,6 @@ export default function WeddingPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const scheduleQuery = useWeddingSchedule();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return document.documentElement.classList.contains('dark');

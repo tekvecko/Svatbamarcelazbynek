@@ -84,8 +84,10 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   }, [weddingDetails]);
 
   const handleLogin = () => {
-    // Simple password check - in production, use proper authentication
-    if (password === "admin123") {
+    // Check against environment variable or stored password hash
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (password === adminPassword) {
       setIsAuthenticated(true);
       toast({
         title: "Přihlášení úspěšné",

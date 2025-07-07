@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { usePhotos, useTogglePhotoLike, usePhotoComments, useAddPhotoComment } from "@/hooks/use-photos";
 import { Button } from "@/components/ui/button";
+import { sanitizeInput } from "@/lib/sanitize";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -1049,20 +1050,20 @@ export default function PhotoGallery() {
                   >
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white text-sm font-medium">
-                        {comment.author.charAt(0).toUpperCase()}
+                        {sanitizeInput(comment.author).charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-sm text-gray-800 dark:text-white">
-                          {comment.author}
+                          {sanitizeInput(comment.author)}
                         </span>
                         <span className="text-xs text-gray-500">
                           {new Date(comment.createdAt).toLocaleString('cs-CZ')}
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 dark:text-gray-300">
-                        {comment.text}
+                        {sanitizeInput(comment.text)}
                       </p>
                     </div>
                   </motion.div>
