@@ -11,7 +11,7 @@ interface SimpleAIPhotoAnalyzerProps {
   className?: string;
 }
 
-export function SimpleAIPhotoAnalyzer({ photoId, className }: SimpleAIPhotoAnalyzerProps) {
+export default function SimpleAIPhotoAnalyzer({ photoId, className }: SimpleAIPhotoAnalyzerProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
