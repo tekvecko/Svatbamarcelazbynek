@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HuggingFaceAI from "./huggingface-ai";
 
 export default function AIFeatures() {
-  const { data: photos = [] } = useQuery({
+  const { data: photosData = { photos: [] } } = useQuery({
     queryKey: ["/api/photos"],
     queryFn: async () => {
       const response = await fetch("/api/photos");
@@ -19,6 +19,8 @@ export default function AIFeatures() {
       return response.json();
     },
   });
+
+  const photos = photosData.photos || [];
 
   return (
     <div className="space-y-6">

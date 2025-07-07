@@ -236,7 +236,7 @@ export default function HuggingFaceAI({ photos }: HuggingFaceAIProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {photos.slice(0, 8).map((photo, index) => (
+            {(Array.isArray(photos) ? photos : []).slice(0, 8).map((photo, index) => (
               <motion.div
                 key={photo.id || index}
                 whileHover={{ scale: 1.05 }}
