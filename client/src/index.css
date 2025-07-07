@@ -445,6 +445,17 @@ html {
   }
 }
 
+/* Navigation spacing fix */
+.main-content {
+  padding-top: 140px; /* Space for fixed header */
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding-top: 120px; /* Reduced on smaller screens */
+  }
+}
+
 /* Responsive photo gallery */
 @media (max-width: 640px) {
   .photo-item {
@@ -454,6 +465,10 @@ html {
   .photo-gallery-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
+  }
+  
+  .main-content {
+    padding-top: 100px; /* Further reduced on mobile */
   }
 }
 

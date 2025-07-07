@@ -113,7 +113,7 @@ export default function WeddingNavigation({
 
       // Find active section based on scroll position
       const sections = navigationTabs.map(tab => tab.id);
-      const headerHeight = 120;
+      const headerHeight = 140; // Zvýšeno kvůli vyšší navigaci
       
       for (let i = sections.length - 1; i >= 0; i--) {
         const element = document.getElementById(sections[i]);
@@ -135,7 +135,7 @@ export default function WeddingNavigation({
     const element = document.getElementById(sectionId);
     
     if (element) {
-      const headerHeight = 100;
+      const headerHeight = 140; // Zvýšeno kvůli vyšší navigaci
       const elementPosition = element.offsetTop - headerHeight;
       
       window.scrollTo({
