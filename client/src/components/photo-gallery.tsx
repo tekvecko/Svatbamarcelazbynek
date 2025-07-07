@@ -25,8 +25,8 @@ type FilterType = 'all' | 'liked' | 'recent' | 'popular';
 export default function PhotoGallery() {
   const [currentPage, setCurrentPage] = useState(1);
   const { data: photosResponse, isLoading } = usePhotos(true, currentPage, 12);
-  const photos = photosResponse?.photos || [];
-  const pagination = photosResponse?.pagination;
+  const photos = Array.isArray(photosResponse) ? photosResponse : [];
+  const pagination = { page: currentPage, limit: 12, total: photos.length, hasNext: false, hasPrev: false };
   const toggleLike = useTogglePhotoLike();
   const addComment = useAddPhotoComment();
   const { toast } = useToast();
@@ -1140,11 +1140,11 @@ export default function PhotoGallery() {
       </Dialog>
 
       {/* Pagination Controls */}
-      {pagination && pagination.pages > 1 && (
+      {photos && photos.length > 12 && (
         <div className="flex justify-center items-center gap-2 mt-8 mb-4">
           <Button
             onClick={() => setCurrentPage(currentPage - 1)}
-            disabled={!pagination.hasPrev}
+            disabled={currentPage <= 1}
             variant="outline"
             size="sm"
             className="rounded-full"
@@ -1154,26 +1154,14 @@ export default function PhotoGallery() {
           </Button>
           
           <div className="flex items-center gap-2">
-            {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                className={`rounded-full w-10 h-10 ${
-                  currentPage === page 
-                    ? 'bg-blue-600 text-white' 
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                {page}
-              </Button>
-            ))}
+            <span className="text-sm text-gray-500">
+              Stránka {currentPage}
+            </span>
           </div>
 
           <Button
             onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={!pagination.hasNext}
+            disabled={photos.length < 12}
             variant="outline"
             size="sm"
             className="rounded-full"
@@ -1185,9 +1173,9 @@ export default function PhotoGallery() {
       )}
 
       {/* Loading indicator for pagination */}
-      {pagination && (
+      {photos && (
         <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Stránka {currentPage} z {pagination.pages} • Celkem {pagination.total} fotek
+          Celkem {photos.length} fotek
         </div>
       )}
     </div>
