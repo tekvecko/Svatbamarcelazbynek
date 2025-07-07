@@ -80,12 +80,30 @@ export default function WeddingPage() {
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
+    
     if (element) {
       const headerHeight = 80;
       const elementPosition = element.offsetTop - headerHeight;
+      
       window.scrollTo({
         top: elementPosition,
         behavior: 'smooth'
+      });
+      
+      // Also update the active tab when scrolling
+      setActiveTab(sectionId);
+      
+      // Show subtle toast notification for feedback
+      toast({
+        title: "Navigace",
+        description: `Přecházím na sekci: ${tabs.find(t => t.id === sectionId)?.label || sectionId}`,
+        duration: 1500,
+      });
+    } else {
+      toast({
+        title: "Chyba navigace",
+        description: "Sekce nebyla nalezena",
+        duration: 2000,
       });
     }
     setShowMobileMenu(false); // Close mobile menu after navigation
@@ -166,7 +184,7 @@ export default function WeddingPage() {
             break;
           case 'Home':
             e.preventDefault();
-            scrollToSection('home');
+            scrollToSection('info');
             break;
         }
       }
@@ -199,7 +217,7 @@ export default function WeddingPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-lg cursor-pointer flex-shrink-0"
-                onClick={() => scrollToSection('home')}
+                onClick={() => scrollToSection('info')}
               >
                 <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </motion.div>
@@ -476,7 +494,7 @@ export default function WeddingPage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       onClick={() => {
-                        scrollToSection('schedule');
+                        scrollToSection('info');
                         setShowNotifications(false);
                         // Highlight specific event
                         setTimeout(() => {
@@ -813,7 +831,7 @@ export default function WeddingPage() {
               whileTap={{ scale: 0.9 }}
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                setActiveTab('home');
+                setActiveTab('info');
               }}
               className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full shadow-lg shadow-pink-500/25 flex items-center justify-center hover:shadow-xl transition-all duration-300 group"
             >
