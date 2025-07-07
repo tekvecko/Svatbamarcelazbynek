@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, cloudinaryPhotos, photoEnhancements, aiCaptions, aiPlaylistSuggestions, aiWeddingAdvice, aiGuestMessages, aiWeddingStories, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem, type CloudinaryPhoto, type InsertCloudinaryPhoto, type PhotoEnhancement, type InsertPhotoEnhancement, type UpdatePhotoEnhancement, type AiCaption, type InsertAiCaption, type AiPlaylistSuggestion, type InsertAiPlaylistSuggestion, type AiWeddingAdvice, type InsertAiWeddingAdvice, type AiGuestMessage, type InsertAiGuestMessage, type AiWeddingStory, type InsertAiWeddingStory } from "@shared/schema";
+import { photos, photoLikes, photoComments, playlistSongs, songLikes, weddingDetails, siteMetadata, weddingSchedule, cloudinaryPhotos, photoEnhancements, aiCaptions, aiPlaylistSuggestions, aiWeddingAdvice, aiGuestMessages, aiWeddingStories, gameChallenges, gameParticipants, gameCompletions, gameAchievements, gameUserAchievements, gameLeaderboard, gameActivities, gameEvents, gameEventParticipants, type Photo, type InsertPhoto, type PhotoComment, type PlaylistSong, type InsertPlaylistSong, type WeddingDetails, type InsertWeddingDetails, type UpdateWeddingDetails, type SiteMetadata, type InsertSiteMetadata, type UpdateSiteMetadata, type WeddingScheduleItem, type InsertWeddingScheduleItem, type UpdateWeddingScheduleItem, type CloudinaryPhoto, type InsertCloudinaryPhoto, type PhotoEnhancement, type InsertPhotoEnhancement, type UpdatePhotoEnhancement, type AiCaption, type InsertAiCaption, type AiPlaylistSuggestion, type InsertAiPlaylistSuggestion, type AiWeddingAdvice, type InsertAiWeddingAdvice, type AiGuestMessage, type InsertAiGuestMessage, type AiWeddingStory, type InsertAiWeddingStory, type GameChallenge, type InsertGameChallenge, type GameParticipant, type InsertGameParticipant, type GameCompletion, type InsertGameCompletion, type GameAchievement, type GameUserAchievement, type GameLeaderboard, type GameActivity, type InsertGameActivity, type GameEvent, type InsertGameEvent, type GameEventParticipant } from "@shared/schema";
 import { eq, sql, desc, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -78,6 +78,43 @@ export interface IStorage {
   createAiWeddingStory(story: InsertAiWeddingStory): Promise<AiWeddingStory>;
   publishAiWeddingStory(storyId: number): Promise<void>;
   deleteAiWeddingStory(storyId: number): Promise<void>;
+
+  // Gamification Features
+  // Game Participants
+  getGameParticipant(userSession: string): Promise<GameParticipant | undefined>;
+  createGameParticipant(participant: InsertGameParticipant): Promise<GameParticipant>;
+  updateGameParticipant(id: number, updates: Partial<GameParticipant>): Promise<GameParticipant>;
+  
+  // Game Challenges
+  getGameChallenges(isActive?: boolean): Promise<GameChallenge[]>;
+  getGameChallenge(id: number): Promise<GameChallenge | undefined>;
+  createGameChallenge(challenge: InsertGameChallenge): Promise<GameChallenge>;
+  updateGameChallenge(id: number, updates: Partial<GameChallenge>): Promise<GameChallenge>;
+  deleteGameChallenge(id: number): Promise<void>;
+  
+  // Game Completions
+  getGameCompletions(participantId: number): Promise<GameCompletion[]>;
+  createGameCompletion(completion: InsertGameCompletion): Promise<GameCompletion>;
+  approveGameCompletion(completionId: number, approved: boolean, notes?: string): Promise<void>;
+  
+  // Game Achievements
+  getGameAchievements(): Promise<GameAchievement[]>;
+  getUserAchievements(participantId: number): Promise<GameUserAchievement[]>;
+  unlockAchievement(participantId: number, achievementId: number): Promise<GameUserAchievement>;
+  
+  // Game Leaderboard
+  getLeaderboard(category?: string, limit?: number): Promise<GameLeaderboard[]>;
+  updateLeaderboard(): Promise<void>;
+  
+  // Game Activities
+  createGameActivity(activity: InsertGameActivity): Promise<GameActivity>;
+  getGameActivities(participantId?: number, limit?: number): Promise<GameActivity[]>;
+  
+  // Game Events
+  getGameEvents(isActive?: boolean): Promise<GameEvent[]>;
+  createGameEvent(event: InsertGameEvent): Promise<GameEvent>;
+  joinGameEvent(eventId: number, participantId: number): Promise<GameEventParticipant>;
+  updateEventScore(eventId: number, participantId: number, score: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -544,6 +581,230 @@ export class DatabaseStorage implements IStorage {
     await db.delete(aiWeddingStories).where(eq(aiWeddingStories.id, storyId));
   }
 
+  // Gamification Features Implementation
+
+  // Game Participants
+  async getGameParticipant(userSession: string): Promise<GameParticipant | undefined> {
+    const [participant] = await db.select().from(gameParticipants)
+      .where(eq(gameParticipants.userSession, userSession));
+    return participant;
+  }
+
+  async createGameParticipant(participant: InsertGameParticipant): Promise<GameParticipant> {
+    const [newParticipant] = await db.insert(gameParticipants).values(participant).returning();
+    return newParticipant;
+  }
+
+  async updateGameParticipant(id: number, updates: Partial<GameParticipant>): Promise<GameParticipant> {
+    const [updatedParticipant] = await db.update(gameParticipants)
+      .set({ ...updates, lastActivity: new Date() })
+      .where(eq(gameParticipants.id, id))
+      .returning();
+    return updatedParticipant;
+  }
+
+  // Game Challenges
+  async getGameChallenges(isActive?: boolean): Promise<GameChallenge[]> {
+    let query = db.select().from(gameChallenges).orderBy(asc(gameChallenges.difficultyLevel));
+    
+    if (isActive !== undefined) {
+      query = query.where(eq(gameChallenges.isActive, isActive)) as any;
+    }
+    
+    return await query;
+  }
+
+  async getGameChallenge(id: number): Promise<GameChallenge | undefined> {
+    const [challenge] = await db.select().from(gameChallenges)
+      .where(eq(gameChallenges.id, id));
+    return challenge;
+  }
+
+  async createGameChallenge(challenge: InsertGameChallenge): Promise<GameChallenge> {
+    const [newChallenge] = await db.insert(gameChallenges).values(challenge).returning();
+    return newChallenge;
+  }
+
+  async updateGameChallenge(id: number, updates: Partial<GameChallenge>): Promise<GameChallenge> {
+    const [updatedChallenge] = await db.update(gameChallenges)
+      .set(updates)
+      .where(eq(gameChallenges.id, id))
+      .returning();
+    return updatedChallenge;
+  }
+
+  async deleteGameChallenge(id: number): Promise<void> {
+    await db.delete(gameChallenges).where(eq(gameChallenges.id, id));
+  }
+
+  // Game Completions
+  async getGameCompletions(participantId: number): Promise<GameCompletion[]> {
+    return await db.select().from(gameCompletions)
+      .where(eq(gameCompletions.participantId, participantId))
+      .orderBy(desc(gameCompletions.completedAt));
+  }
+
+  async createGameCompletion(completion: InsertGameCompletion): Promise<GameCompletion> {
+    const [newCompletion] = await db.insert(gameCompletions).values(completion).returning();
+    
+    // Award points to participant
+    await db.update(gameParticipants)
+      .set({ 
+        totalPoints: sql`total_points + ${completion.pointsEarned}`,
+        experiencePoints: sql`experience_points + ${completion.pointsEarned}`,
+        lastActivity: new Date()
+      })
+      .where(eq(gameParticipants.id, completion.participantId));
+
+    return newCompletion;
+  }
+
+  async approveGameCompletion(completionId: number, approved: boolean, notes?: string): Promise<void> {
+    await db.update(gameCompletions)
+      .set({ 
+        isApproved: approved,
+        notes: notes,
+        approvedAt: new Date()
+      })
+      .where(eq(gameCompletions.id, completionId));
+  }
+
+  // Game Achievements
+  async getGameAchievements(): Promise<GameAchievement[]> {
+    return await db.select().from(gameAchievements)
+      .orderBy(asc(gameAchievements.category), asc(gameAchievements.pointsReward));
+  }
+
+  async getUserAchievements(participantId: number): Promise<GameUserAchievement[]> {
+    return await db.select().from(gameUserAchievements)
+      .where(eq(gameUserAchievements.participantId, participantId))
+      .orderBy(desc(gameUserAchievements.earnedAt));
+  }
+
+  async unlockAchievement(participantId: number, achievementId: number): Promise<GameUserAchievement> {
+    // Check if already unlocked
+    const existing = await db.select().from(gameUserAchievements)
+      .where(and(
+        eq(gameUserAchievements.participantId, participantId),
+        eq(gameUserAchievements.achievementId, achievementId)
+      ));
+
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    // Get achievement details for points
+    const [achievement] = await db.select().from(gameAchievements)
+      .where(eq(gameAchievements.id, achievementId));
+
+    // Unlock achievement
+    const [newAchievement] = await db.insert(gameUserAchievements)
+      .values({ participantId, achievementId })
+      .returning();
+
+    // Award bonus points
+    if (achievement && achievement.pointsReward > 0) {
+      await db.update(gameParticipants)
+        .set({ 
+          totalPoints: sql`total_points + ${achievement.pointsReward}`,
+          experiencePoints: sql`experience_points + ${achievement.pointsReward}`,
+          lastActivity: new Date()
+        })
+        .where(eq(gameParticipants.id, participantId));
+    }
+
+    return newAchievement;
+  }
+
+  // Game Leaderboard
+  async getLeaderboard(category: string = 'overall', limit: number = 10): Promise<GameLeaderboard[]> {
+    return await db.select().from(gameLeaderboard)
+      .where(eq(gameLeaderboard.category, category))
+      .orderBy(asc(gameLeaderboard.rank))
+      .limit(limit);
+  }
+
+  async updateLeaderboard(): Promise<void> {
+    // Update overall leaderboard
+    const participants = await db.select({
+      id: gameParticipants.id,
+      totalPoints: gameParticipants.totalPoints
+    }).from(gameParticipants)
+      .orderBy(desc(gameParticipants.totalPoints));
+
+    // Clear existing leaderboard for overall category
+    await db.delete(gameLeaderboard).where(eq(gameLeaderboard.category, 'overall'));
+
+    // Insert new rankings
+    const leaderboardEntries = participants.map((participant, index) => ({
+      participantId: participant.id,
+      category: 'overall',
+      points: participant.totalPoints,
+      rank: index + 1,
+      periodStart: new Date(new Date().getFullYear(), 0, 1), // Start of year
+      periodEnd: new Date(new Date().getFullYear(), 11, 31), // End of year
+    }));
+
+    if (leaderboardEntries.length > 0) {
+      await db.insert(gameLeaderboard).values(leaderboardEntries);
+    }
+  }
+
+  // Game Activities
+  async createGameActivity(activity: InsertGameActivity): Promise<GameActivity> {
+    const [newActivity] = await db.insert(gameActivities).values(activity).returning();
+    
+    // Update participant's last activity
+    await db.update(gameParticipants)
+      .set({ lastActivity: new Date() })
+      .where(eq(gameParticipants.id, activity.participantId));
+
+    return newActivity;
+  }
+
+  async getGameActivities(participantId?: number, limit: number = 50): Promise<GameActivity[]> {
+    let query = db.select().from(gameActivities)
+      .orderBy(desc(gameActivities.timestamp));
+
+    if (participantId !== undefined) {
+      query = query.where(eq(gameActivities.participantId, participantId)) as any;
+    }
+
+    return await query.limit(limit);
+  }
+
+  // Game Events
+  async getGameEvents(isActive?: boolean): Promise<GameEvent[]> {
+    let query = db.select().from(gameEvents)
+      .orderBy(asc(gameEvents.startTime));
+
+    if (isActive !== undefined) {
+      query = query.where(eq(gameEvents.isActive, isActive)) as any;
+    }
+
+    return await query;
+  }
+
+  async createGameEvent(event: InsertGameEvent): Promise<GameEvent> {
+    const [newEvent] = await db.insert(gameEvents).values(event).returning();
+    return newEvent;
+  }
+
+  async joinGameEvent(eventId: number, participantId: number): Promise<GameEventParticipant> {
+    const [participation] = await db.insert(gameEventParticipants)
+      .values({ eventId, participantId })
+      .returning();
+    return participation;
+  }
+
+  async updateEventScore(eventId: number, participantId: number, score: number): Promise<void> {
+    await db.update(gameEventParticipants)
+      .set({ score })
+      .where(and(
+        eq(gameEventParticipants.eventId, eventId),
+        eq(gameEventParticipants.participantId, participantId)
+      ));
+  }
 
 }
 

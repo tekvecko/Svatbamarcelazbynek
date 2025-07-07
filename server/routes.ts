@@ -768,6 +768,229 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Gamification API Routes
+
+  // Game Participants
+  app.get('/api/game/participant', async (req, res) => {
+    try {
+      const userSession = getUserSession(req);
+      const participant = await storage.getGameParticipant(userSession);
+      res.json(participant || null);
+    } catch (error) {
+      console.error("Error getting game participant:", error);
+      res.status(500).json({ message: "Failed to get participant" });
+    }
+  });
+
+  app.post('/api/game/participant', async (req, res) => {
+    try {
+      const { displayName } = req.body;
+      const userSession = getUserSession(req);
+      
+      if (!displayName) {
+        return res.status(400).json({ message: "Display name is required" });
+      }
+
+      // Check if participant already exists
+      const existing = await storage.getGameParticipant(userSession);
+      if (existing) {
+        return res.json(existing);
+      }
+
+      const participant = await storage.createGameParticipant({
+        userSession,
+        displayName: sanitizeString(displayName, 255)
+      });
+
+      res.json(participant);
+    } catch (error) {
+      console.error("Error creating game participant:", error);
+      res.status(500).json({ message: "Failed to create participant" });
+    }
+  });
+
+  // Game Challenges
+  app.get('/api/game/challenges', async (req, res) => {
+    try {
+      const isActive = req.query.active === 'true' ? true : undefined;
+      const challenges = await storage.getGameChallenges(isActive);
+      res.json(challenges);
+    } catch (error) {
+      console.error("Error getting challenges:", error);
+      res.status(500).json({ message: "Failed to get challenges" });
+    }
+  });
+
+  app.post('/api/game/challenges/:challengeId/complete', async (req, res) => {
+    try {
+      const challengeId = validateId(req.params.challengeId);
+      const { proofData } = req.body;
+      const userSession = getUserSession(req);
+      
+      if (!challengeId) {
+        return res.status(400).json({ message: "Invalid challenge ID" });
+      }
+
+      // Get participant
+      const participant = await storage.getGameParticipant(userSession);
+      if (!participant) {
+        return res.status(400).json({ message: "Player not registered" });
+      }
+
+      // Get challenge details
+      const challenge = await storage.getGameChallenge(challengeId);
+      if (!challenge || !challenge.isActive) {
+        return res.status(400).json({ message: "Challenge not available" });
+      }
+
+      // Create completion
+      const completion = await storage.createGameCompletion({
+        participantId: participant.id,
+        challengeId: challengeId,
+        pointsEarned: challenge.pointsReward,
+        proofData: proofData ? JSON.stringify(proofData) : null
+      });
+
+      // Create activity record
+      await storage.createGameActivity({
+        participantId: participant.id,
+        activityType: 'challenge_complete',
+        referenceId: challengeId,
+        pointsEarned: challenge.pointsReward,
+        metadata: JSON.stringify({ challengeTitle: challenge.title })
+      });
+
+      res.json(completion);
+    } catch (error) {
+      console.error("Error completing challenge:", error);
+      res.status(500).json({ message: "Failed to complete challenge" });
+    }
+  });
+
+  // Game Leaderboard
+  app.get('/api/game/leaderboard', async (req, res) => {
+    try {
+      const category = req.query.category as string || 'overall';
+      const limit = parseInt(req.query.limit as string) || 10;
+      const leaderboard = await storage.getLeaderboard(category, limit);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error getting leaderboard:", error);
+      res.status(500).json({ message: "Failed to get leaderboard" });
+    }
+  });
+
+  // User achievements
+  app.get('/api/game/achievements', async (req, res) => {
+    try {
+      const userSession = getUserSession(req);
+      const participant = await storage.getGameParticipant(userSession);
+      
+      if (!participant) {
+        return res.json([]);
+      }
+
+      const achievements = await storage.getUserAchievements(participant.id);
+      res.json(achievements);
+    } catch (error) {
+      console.error("Error getting achievements:", error);
+      res.status(500).json({ message: "Failed to get achievements" });
+    }
+  });
+
+  // Game activities feed
+  app.get('/api/game/activities', async (req, res) => {
+    try {
+      const userSession = getUserSession(req);
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      let participantId: number | undefined;
+      if (req.query.user_only === 'true') {
+        const participant = await storage.getGameParticipant(userSession);
+        participantId = participant?.id;
+      }
+
+      const activities = await storage.getGameActivities(participantId, limit);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error getting activities:", error);
+      res.status(500).json({ message: "Failed to get activities" });
+    }
+  });
+
+  // Game events
+  app.get('/api/game/events', async (req, res) => {
+    try {
+      const isActive = req.query.active === 'true' ? true : undefined;
+      const events = await storage.getGameEvents(isActive);
+      res.json(events);
+    } catch (error) {
+      console.error("Error getting events:", error);
+      res.status(500).json({ message: "Failed to get events" });
+    }
+  });
+
+  app.post('/api/game/events/:eventId/join', async (req, res) => {
+    try {
+      const eventId = validateId(req.params.eventId);
+      const userSession = getUserSession(req);
+      
+      if (!eventId) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+
+      const participant = await storage.getGameParticipant(userSession);
+      if (!participant) {
+        return res.status(400).json({ message: "Player not registered" });
+      }
+
+      const participation = await storage.joinGameEvent(eventId, participant.id);
+      res.json(participation);
+    } catch (error) {
+      console.error("Error joining event:", error);
+      res.status(500).json({ message: "Failed to join event" });
+    }
+  });
+
+  // Admin routes for gamification
+  app.post('/api/admin/game/challenges', async (req, res) => {
+    try {
+      const challengeData = req.body;
+      const challenge = await storage.createGameChallenge(challengeData);
+      res.json(challenge);
+    } catch (error) {
+      console.error("Error creating challenge:", error);
+      res.status(500).json({ message: "Failed to create challenge" });
+    }
+  });
+
+  app.put('/api/admin/game/completions/:completionId/approve', async (req, res) => {
+    try {
+      const completionId = validateId(req.params.completionId);
+      const { approved, notes } = req.body;
+      
+      if (!completionId) {
+        return res.status(400).json({ message: "Invalid completion ID" });
+      }
+
+      await storage.approveGameCompletion(completionId, approved, notes);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error approving completion:", error);
+      res.status(500).json({ message: "Failed to approve completion" });
+    }
+  });
+
+  app.post('/api/admin/game/leaderboard/update', async (req, res) => {
+    try {
+      await storage.updateLeaderboard();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating leaderboard:", error);
+      res.status(500).json({ message: "Failed to update leaderboard" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

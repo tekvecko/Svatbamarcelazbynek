@@ -328,3 +328,225 @@ export type InsertAiGuestMessage = z.infer<typeof insertAiGuestMessageSchema>;
 
 export type AiWeddingStory = typeof aiWeddingStories.$inferSelect;
 export type InsertAiWeddingStory = z.infer<typeof insertAiWeddingStorySchema>;
+
+// Gamification System Tables
+
+// Challenges for wedding guests
+export const gameChallenges = pgTable("game_challenges", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  category: varchar("category", { length: 100 }).notNull(), // 'photo', 'social', 'activity', 'discovery'
+  difficultyLevel: integer("difficulty_level").default(1).notNull(), // 1-5
+  pointsReward: integer("points_reward").default(10).notNull(),
+  badgeIcon: varchar("badge_icon", { length: 100 }), // emoji or icon name
+  isActive: boolean("is_active").default(true).notNull(),
+  requiresApproval: boolean("requires_approval").default(false).notNull(),
+  maxCompletions: integer("max_completions").default(1), // null for unlimited
+  timeLimit: integer("time_limit_minutes"), // null for no time limit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User progress and achievements
+export const gameParticipants = pgTable("game_participants", {
+  id: serial("id").primaryKey(),
+  userSession: varchar("user_session", { length: 255 }).notNull().unique(),
+  displayName: varchar("display_name", { length: 255 }).notNull(),
+  totalPoints: integer("total_points").default(0).notNull(),
+  level: integer("level").default(1).notNull(),
+  experiencePoints: integer("experience_points").default(0).notNull(),
+  streak: integer("streak").default(0).notNull(), // consecutive days/activities
+  lastActivity: timestamp("last_activity").defaultNow().notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
+
+// Track completed challenges
+export const gameCompletions = pgTable("game_completions", {
+  id: serial("id").primaryKey(),
+  participantId: integer("participant_id").references(() => gameParticipants.id).notNull(),
+  challengeId: integer("challenge_id").references(() => gameChallenges.id).notNull(),
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+  proofData: text("proof_data"), // JSON data as proof (photo URL, coordinates, etc.)
+  pointsEarned: integer("points_earned").notNull(),
+  isApproved: boolean("is_approved").default(null), // null = pending, true/false = approved/rejected
+  approvedBy: varchar("approved_by", { length: 255 }),
+  approvedAt: timestamp("approved_at"),
+  notes: text("notes"),
+});
+
+// Achievements and badges
+export const gameAchievements = pgTable("game_achievements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  badgeIcon: varchar("badge_icon", { length: 100 }).notNull(),
+  badgeColor: varchar("badge_color", { length: 50 }).default('#FFD700'), // gold by default
+  requirements: text("requirements").notNull(), // JSON criteria
+  pointsReward: integer("points_reward").default(0).notNull(),
+  isSecret: boolean("is_secret").default(false).notNull(), // hidden until unlocked
+  category: varchar("category", { length: 100 }).default('general'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Track earned achievements
+export const gameUserAchievements = pgTable("game_user_achievements", {
+  id: serial("id").primaryKey(),
+  participantId: integer("participant_id").references(() => gameParticipants.id).notNull(),
+  achievementId: integer("achievement_id").references(() => gameAchievements.id).notNull(),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+  progress: integer("progress").default(100).notNull(), // percentage of completion
+});
+
+// Leaderboard and scoring
+export const gameLeaderboard = pgTable("game_leaderboard", {
+  id: serial("id").primaryKey(),
+  participantId: integer("participant_id").references(() => gameParticipants.id).notNull(),
+  category: varchar("category", { length: 100 }).notNull(), // 'overall', 'daily', 'weekly'
+  points: integer("points").notNull(),
+  rank: integer("rank").notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Real-time activities and interactions
+export const gameActivities = pgTable("game_activities", {
+  id: serial("id").primaryKey(),
+  participantId: integer("participant_id").references(() => gameParticipants.id).notNull(),
+  activityType: varchar("activity_type", { length: 100 }).notNull(), // 'photo_upload', 'comment', 'like', 'check_in'
+  referenceId: integer("reference_id"), // ID of related item (photo, comment, etc.)
+  pointsEarned: integer("points_earned").default(0).notNull(),
+  metadata: text("metadata"), // JSON data for activity details
+  location: text("location"), // venue area where activity happened
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// Special events and mini-games
+export const gameEvents = pgTable("game_events", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  eventType: varchar("event_type", { length: 100 }).notNull(), // 'trivia', 'scavenger_hunt', 'photo_contest'
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
+  maxParticipants: integer("max_participants"),
+  entryRequirement: text("entry_requirement"), // JSON requirements
+  rewards: text("rewards"), // JSON reward structure
+  rules: text("rules").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Event participation tracking
+export const gameEventParticipants = pgTable("game_event_participants", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").references(() => gameEvents.id).notNull(),
+  participantId: integer("participant_id").references(() => gameParticipants.id).notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  score: integer("score").default(0).notNull(),
+  rank: integer("rank"),
+  isWinner: boolean("is_winner").default(false).notNull(),
+  rewards: text("rewards"), // JSON earned rewards
+});
+
+// Relations for gamification
+export const gameChallengesRelations = relations(gameChallenges, ({ many }) => ({
+  completions: many(gameCompletions),
+}));
+
+export const gameParticipantsRelations = relations(gameParticipants, ({ many }) => ({
+  completions: many(gameCompletions),
+  achievements: many(gameUserAchievements),
+  activities: many(gameActivities),
+  eventParticipations: many(gameEventParticipants),
+}));
+
+export const gameCompletionsRelations = relations(gameCompletions, ({ one }) => ({
+  participant: one(gameParticipants, {
+    fields: [gameCompletions.participantId],
+    references: [gameParticipants.id],
+  }),
+  challenge: one(gameChallenges, {
+    fields: [gameCompletions.challengeId],
+    references: [gameChallenges.id],
+  }),
+}));
+
+export const gameAchievementsRelations = relations(gameAchievements, ({ many }) => ({
+  userAchievements: many(gameUserAchievements),
+}));
+
+export const gameUserAchievementsRelations = relations(gameUserAchievements, ({ one }) => ({
+  participant: one(gameParticipants, {
+    fields: [gameUserAchievements.participantId],
+    references: [gameParticipants.id],
+  }),
+  achievement: one(gameAchievements, {
+    fields: [gameUserAchievements.achievementId],
+    references: [gameAchievements.id],
+  }),
+}));
+
+// Gamification insert schemas
+export const insertGameChallengeSchema = createInsertSchema(gameChallenges).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGameParticipantSchema = createInsertSchema(gameParticipants).omit({
+  id: true,
+  totalPoints: true,
+  level: true,
+  experiencePoints: true,
+  streak: true,
+  lastActivity: true,
+  joinedAt: true,
+});
+
+export const insertGameCompletionSchema = createInsertSchema(gameCompletions).omit({
+  id: true,
+  completedAt: true,
+  isApproved: true,
+  approvedBy: true,
+  approvedAt: true,
+});
+
+export const insertGameAchievementSchema = createInsertSchema(gameAchievements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGameActivitySchema = createInsertSchema(gameActivities).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertGameEventSchema = createInsertSchema(gameEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Gamification types
+export type GameChallenge = typeof gameChallenges.$inferSelect;
+export type InsertGameChallenge = z.infer<typeof insertGameChallengeSchema>;
+
+export type GameParticipant = typeof gameParticipants.$inferSelect;
+export type InsertGameParticipant = z.infer<typeof insertGameParticipantSchema>;
+
+export type GameCompletion = typeof gameCompletions.$inferSelect;
+export type InsertGameCompletion = z.infer<typeof insertGameCompletionSchema>;
+
+export type GameAchievement = typeof gameAchievements.$inferSelect;
+export type InsertGameAchievement = z.infer<typeof insertGameAchievementSchema>;
+
+export type GameUserAchievement = typeof gameUserAchievements.$inferSelect;
+
+export type GameLeaderboard = typeof gameLeaderboard.$inferSelect;
+
+export type GameActivity = typeof gameActivities.$inferSelect;
+export type InsertGameActivity = z.infer<typeof insertGameActivitySchema>;
+
+export type GameEvent = typeof gameEvents.$inferSelect;
+export type InsertGameEvent = z.infer<typeof insertGameEventSchema>;
+
+export type GameEventParticipant = typeof gameEventParticipants.$inferSelect;
