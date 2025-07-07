@@ -707,9 +707,7 @@ Impact Score: 1-10 (10 = největší vizuální dopad)`
             title: 'Upravit ořez pro lepší kompozici',
             description: 'Subjekt není ideálně umístěn podle pravidla třetin',
             suggestion: 'Použijte pravidlo třetin - umístěte hlavní subjekt na průsečíky třetinových linií',
-            technicalDetails: 'Aktuální kompozice má subjekt příliš centrovaný, což snižuje dynamikuThe code is modified to ensure that the results of the AI analysis are always in Czech.
-```typescript
-snímku',
+            technicalDetails: 'Aktuální kompozice má subjekt příliš centrovaný, což snižuje dynamiku snímku',
             specificValues: 'Ořez: posun subjektu o 15% doleva, aspect ratio zachovat',
             confidence: 0.75,
             priority: 2,
