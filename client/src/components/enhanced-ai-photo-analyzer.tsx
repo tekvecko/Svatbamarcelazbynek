@@ -106,7 +106,7 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
         disabled={analyzePhoto.isPending}
         size="sm"
         variant="outline"
-        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 rounded-full shadow-md"
+        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 rounded-full shadow-md transition-all duration-300"
       >
         {analyzePhoto.isPending ? (
           <>
@@ -115,8 +115,8 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
           </>
         ) : (
           <>
-            <Brain className="h-4 w-4 mr-2" />
-            AI Analýza Pro
+            <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
+            AI Analýza
           </>
         )}
       </Button>
@@ -129,10 +129,10 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
         disabled
         size="sm"
         variant="outline"
-        className="bg-blue-500 text-white border-0 rounded-full"
+        className="bg-blue-500 text-white border-0 rounded-full opacity-90"
       >
         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-        Analýza...
+        AI Pracuje...
       </Button>
     );
   }
@@ -144,10 +144,10 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
           <Button
             size="sm"
             variant="outline"
-            className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 hover:from-green-600 hover:to-emerald-600 rounded-full shadow-md"
+            className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 hover:from-green-600 hover:to-emerald-600 rounded-full shadow-md transition-all duration-300"
           >
             <CheckCircle className="h-4 w-4 mr-2" />
-            Analýza Pro
+            AI Výsledek
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-96 max-h-96 overflow-y-auto">
@@ -194,18 +194,38 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
               </div>
             ))}
 
-            <Dialog open={showFullAnalysis} onOpenChange={setShowFullAnalysis}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => setShowFullAnalysis(true)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Kompletní profesionální analýza
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => reanalyzePhoto.mutate(photoId)}
+                disabled={reanalyzePhoto.isPending}
+                size="sm"
+                variant="outline"
+                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 hover:from-orange-600 hover:to-red-600 rounded-full"
+              >
+                {reanalyzePhoto.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Znovu...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Znovu
+                  </>
+                )}
+              </Button>
+              
+              <Dialog open={showFullAnalysis} onOpenChange={setShowFullAnalysis}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 hover:from-blue-600 hover:to-purple-600 rounded-full"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Detaily
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
@@ -586,12 +606,12 @@ export default function EnhancedAIPhotoAnalyzer({ photoId, photoUrl, isAdminMode
                   )}
                 </div>
               </DialogContent>
-            </Dialog>
-          </div>
-        </PopoverContent>
-      </Popover>
-    );
-  }
+              </Dialog>
+            </div>
+          </PopoverContent>
+        </Popover>
+      );
+    }
 
   return null;
 }
