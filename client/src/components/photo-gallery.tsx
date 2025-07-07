@@ -12,6 +12,7 @@ import { Heart, Download, Share2, Loader2, MessageCircle, Send, ChevronLeft, Che
 import SimpleAIPhotoAnalyzer from "@/components/ai-photo-enhancer-simple";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import MobilePhotoViewer from "@/components/mobile-photo-viewer";
 
 interface LikeAnimation {
   id: string;
@@ -829,7 +830,7 @@ export default function PhotoGallery() {
         )}
       </div>
 
-      {/* Photo Detail Dialog - Android Full Screen */}
+      {/* Photo Detail Dialog - Enhanced Mobile Full Screen */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-none max-h-none w-screen h-screen p-0 bg-black [&>button]:hidden">
           <DialogTitle className="sr-only">Detail fotky</DialogTitle>
@@ -837,172 +838,20 @@ export default function PhotoGallery() {
             Detailní zobrazení fotky s možností navigace a interakce
           </DialogDescription>
 
-          <div className="relative h-full flex flex-col">
-            {/* Mobile-first status bar overlay */}
-            <div className="absolute top-0 left-0 right-0 h-6 bg-black/80 backdrop-blur-sm md:hidden z-50">
-              <div className="flex items-center justify-between px-4 h-full text-white text-xs">
-                <span>{new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</span>
-                <div className="flex items-center gap-2">
-                  {/* Signal strength indicator */}
-                  <div className="flex items-end gap-[1px]">
-                    <div className="w-1 h-1 bg-white rounded-full"></div>
-                    <div className="w-1 h-2 bg-white rounded-[1px]"></div>
-                    <div className="w-1 h-3 bg-white rounded-[1px]"></div>
-                    <div className="w-1 h-4 bg-white rounded-[1px]"></div>
-                  </div>
-
-                  {/* WiFi indicator */}
-                  <div className="relative w-4 h-3">
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-                      <div className="w-1 h-1 bg-white rounded-full"></div>
-                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 border border-white border-b-0 rounded-t-full"></div>
-                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 border border-white border-b-0 rounded-t-full"></div>
-                    </div>
-                  </div>
-
-                  {/* Battery indicator */}
-                  <div className="flex items-center">
-                    <div className="w-6 h-3 border border-white rounded-sm relative">
-                      <div className="absolute right-[-2px] top-[3px] w-[2px] h-[6px] bg-white rounded-r-sm"></div>
-                      <div className="w-4 h-full bg-green-400 rounded-sm"></div>
-                    </div>
-                    <span className="ml-1 text-[10px]">85%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Status bar style header */}
-            <div className="absolute top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm">
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={() => setIsDialogOpen(false)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                  <div className="text-white">
-                    <div className="text-sm font-medium">
-                      {selectedPhotoIndex + 1} z {photos.length}
-                    </div>
-                    <div className="text-xs text-gray-300">
-                      {selectedPhoto?.originalName}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => setIsAutoPlay(!isAutoPlay)}
-                    variant="ghost"
-                    size="sm"
-                    className={`text-white hover:bg-white/20 rounded-full w-10 h-10 p-0 ${
-                      isAutoPlay ? 'bg-white/20' : ''
-                    }`}
-                  >
-                    {isAutoPlay ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                  </Button>
-
-                  <Button
-                    onClick={() => shareImage(selectedPhoto?.url || '')}
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-
-                  <Button
-                    onClick={() => downloadImage(selectedPhoto?.url || '', selectedPhoto?.originalName || '')}
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
-                  >
-                    <Download className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Photo container */}
-            <div className="flex-1 relative flex items-center justify-center">
-              <Button
-                onClick={() => navigatePhoto('prev')}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm rounded-full w-12 h-12 p-0"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-
-              <Button
-                onClick={() => navigatePhoto('next')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm rounded-full w-12 h-12 p-0"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-
-              <motion.img 
-                key={selectedPhoto?.id}
-                src={selectedPhoto?.url} 
-                alt={selectedPhoto?.originalName}
-                className="max-w-full max-h-full object-contain"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-
-            {/* Bottom action bar */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm">
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-4">
-                  <Button
-                    onClick={(e) => handleLike(selectedPhoto?.id || 0, e)}
-                    variant="ghost"
-                    className={`text-white hover:bg-white/20 rounded-full h-12 px-4 ${
-                      userLikes.has(selectedPhoto?.id || 0) ? 'bg-red-500/20' : ''
-                    }`}
-                  >
-                    <Heart 
-                      className={`h-5 w-5 mr-2 ${
-                        userLikes.has(selectedPhoto?.id || 0) ? 'fill-current text-red-400' : ''
-                      }`}
-                    />
-                    {selectedPhoto?.likes || 0}
-                  </Button>
-
-                  <Button
-                    onClick={() => openCommentsDialog(selectedPhoto?.id || 0)}
-                    variant="ghost"
-                    className="text-white hover:bg-white/20 rounded-full h-12 px-4"
-                  >
-                    <MessageCircle className="h-5 w-5 mr-2" />
-                    {comments.length}
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {selectedPhoto && (
-                    <SimpleAIPhotoAnalyzer 
-                      photoId={selectedPhoto.id} 
-                      photoUrl={selectedPhoto.url}
-                      inlineMode={true}
-                    />
-                  )}
-
-                  <Button
-                    onClick={() => setIsDialogOpen(false)}
-                    variant="ghost"
-                    className="text-white hover:bg-white/20 rounded-full h-12 px-4"
-                  >
-                    Zavřít
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <MobilePhotoViewer 
+            photos={photos}
+            selectedIndex={selectedPhotoIndex}
+            onIndexChange={setSelectedPhotoIndex}
+            onClose={() => setIsDialogOpen(false)}
+            userLikes={userLikes}
+            onLike={handleLike}
+            onComment={openCommentsDialog}
+            onShare={shareImage}
+            onDownload={downloadImage}
+            comments={comments}
+            isAutoPlay={isAutoPlay}
+            onAutoPlayToggle={() => setIsAutoPlay(!isAutoPlay)}
+          />
         </DialogContent>
       </Dialog>
 
