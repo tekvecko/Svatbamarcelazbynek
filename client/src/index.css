@@ -147,11 +147,11 @@ html {
 
 @layer base {
   * {
-    @apply border-border;
+    /* Removed border-border class as it doesn't exist in Tailwind */
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-white text-gray-900;
     font-family: 'Inter', sans-serif;
   }
 
