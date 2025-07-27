@@ -4,13 +4,15 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import WeddingPage from "@/pages/wedding";
+import { PostOfficePage } from "@/pages/PostOfficePage";
 import { ErrorBoundary } from "@/components/error-boundary";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={WeddingPage} />
-      <Route component={WeddingPage} />
+      <Route path="/" component={PostOfficePage} />
+      <Route path="/wedding" component={WeddingPage} />
+      <Route component={PostOfficePage} />
     </Switch>
   );
 }
